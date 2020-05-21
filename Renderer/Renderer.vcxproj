@@ -84,7 +84,7 @@
     <ClInclude Include="src\core\GRenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\1.cpp" />
+    <ClCompile Include="src\core\general\Logger.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
