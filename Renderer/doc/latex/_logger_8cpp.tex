@@ -3,3 +3,125 @@
 {\ttfamily \#include \char`\"{}../\+G\+Renderer.\+h\char`\"{}}\newline
 {\ttfamily \#include $<$iostream$>$}\newline
 {\ttfamily \#include $<$thread$>$}\newline
+{\ttfamily \#include $<$list$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$Windows.\+h$>$}\newline
+{\ttfamily \#include $<$Win\+User.\+h$>$}\newline
+{\ttfamily \#include $<$array$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{_logger_8cpp_aa161283497578df553a28c8eb192aa99}{get\+System\+Time}} ()
+\item 
+void \mbox{\hyperlink{_logger_8cpp_ac1f1f5b68161f6ad032be1f34ce6d6dc}{printmsg}} (\mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{G\+General\+::\+Logger\+::\+Message}} msg)
+\item 
+void \mbox{\hyperlink{_logger_8cpp_a5556008768e4fdcd30dcad3e63faa36b}{t\+\_\+process}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+std\+::list$<$ \mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{G\+General\+::\+Logger\+::\+Message}} $>$ \mbox{\hyperlink{_logger_8cpp_aa782721e6fcd9246c793feb59c29c611}{msg\+Buffer}}
+\item 
+std\+::thread \mbox{\hyperlink{_logger_8cpp_a57674dfadc38f9f7a6db3e274c28e806}{worker\+Thread}}
+\item 
+std\+::vector$<$ std\+::string $>$ \mbox{\hyperlink{_logger_8cpp_a689502f36d5d7fda990097ac7c43ab71}{user\+Names}}
+\item 
+const std\+::array$<$ unsigned int, 6 $>$ \mbox{\hyperlink{_logger_8cpp_ad64c2da3cf5ef5f3a2f7030b32279292}{Severity\+Colors}} = \{ 8, 9, 10, 6, 4, 64 \}
+\item 
+volatile \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{G\+General\+::\+Logger\+::\+Severity}} \mbox{\hyperlink{_logger_8cpp_a4797c25846dfad4c8fa6976d8034370e}{severity\+Filter}} = \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a939ce1f859bb4372ed1201611a770e0d}{G\+General\+::\+Logger\+::\+Severity\+::\+S\+\_\+\+M\+SG}}
+\item 
+volatile bool \mbox{\hyperlink{_logger_8cpp_ac4eddbd77742f6a9031c78fe7d3899f7}{is\+Init}} = false
+\item 
+volatile bool \mbox{\hyperlink{_logger_8cpp_ad9fdaaec67b9e400242cf74641ab5cdf}{should\+Thread\+Work}} = true
+\item 
+volatile bool \mbox{\hyperlink{_logger_8cpp_aed4efe0325cf1c39a818f7dc33efaa9e}{should\+Thread\+Terminate}} = false
+\item 
+volatile bool \mbox{\hyperlink{_logger_8cpp_a3fa59aaccf6c22244886425042e71b5e}{thread\+Buffer\+Clear\+Lock}} = false
+\item 
+volatile bool \mbox{\hyperlink{_logger_8cpp_a9abaf98f8d49870714163fd63bf492bb}{discard\+All\+Msg}} = false
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{_logger_8cpp_aa161283497578df553a28c8eb192aa99}\label{_logger_8cpp_aa161283497578df553a28c8eb192aa99}} 
+\index{Logger.cpp@{Logger.cpp}!getSystemTime@{getSystemTime}}
+\index{getSystemTime@{getSystemTime}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{getSystemTime()}{getSystemTime()}}
+{\footnotesize\ttfamily std\+::string get\+System\+Time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{_logger_8cpp_ac1f1f5b68161f6ad032be1f34ce6d6dc}\label{_logger_8cpp_ac1f1f5b68161f6ad032be1f34ce6d6dc}} 
+\index{Logger.cpp@{Logger.cpp}!printmsg@{printmsg}}
+\index{printmsg@{printmsg}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{printmsg()}{printmsg()}}
+{\footnotesize\ttfamily void printmsg (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{G\+General\+::\+Logger\+::\+Message}}}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{_logger_8cpp_a5556008768e4fdcd30dcad3e63faa36b}\label{_logger_8cpp_a5556008768e4fdcd30dcad3e63faa36b}} 
+\index{Logger.cpp@{Logger.cpp}!t\_process@{t\_process}}
+\index{t\_process@{t\_process}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{t\_process()}{t\_process()}}
+{\footnotesize\ttfamily void t\+\_\+process (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Variable Documentation}
+\mbox{\Hypertarget{_logger_8cpp_a9abaf98f8d49870714163fd63bf492bb}\label{_logger_8cpp_a9abaf98f8d49870714163fd63bf492bb}} 
+\index{Logger.cpp@{Logger.cpp}!discardAllMsg@{discardAllMsg}}
+\index{discardAllMsg@{discardAllMsg}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{discardAllMsg}{discardAllMsg}}
+{\footnotesize\ttfamily volatile bool discard\+All\+Msg = false}
+
+\mbox{\Hypertarget{_logger_8cpp_ac4eddbd77742f6a9031c78fe7d3899f7}\label{_logger_8cpp_ac4eddbd77742f6a9031c78fe7d3899f7}} 
+\index{Logger.cpp@{Logger.cpp}!isInit@{isInit}}
+\index{isInit@{isInit}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{isInit}{isInit}}
+{\footnotesize\ttfamily volatile bool is\+Init = false}
+
+\mbox{\Hypertarget{_logger_8cpp_aa782721e6fcd9246c793feb59c29c611}\label{_logger_8cpp_aa782721e6fcd9246c793feb59c29c611}} 
+\index{Logger.cpp@{Logger.cpp}!msgBuffer@{msgBuffer}}
+\index{msgBuffer@{msgBuffer}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{msgBuffer}{msgBuffer}}
+{\footnotesize\ttfamily std\+::list$<$\mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{G\+General\+::\+Logger\+::\+Message}}$>$ msg\+Buffer}
+
+\mbox{\Hypertarget{_logger_8cpp_ad64c2da3cf5ef5f3a2f7030b32279292}\label{_logger_8cpp_ad64c2da3cf5ef5f3a2f7030b32279292}} 
+\index{Logger.cpp@{Logger.cpp}!SeverityColors@{SeverityColors}}
+\index{SeverityColors@{SeverityColors}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{SeverityColors}{SeverityColors}}
+{\footnotesize\ttfamily const std\+::array$<$unsigned int, 6$>$ Severity\+Colors = \{ 8, 9, 10, 6, 4, 64 \}}
+
+\mbox{\Hypertarget{_logger_8cpp_a4797c25846dfad4c8fa6976d8034370e}\label{_logger_8cpp_a4797c25846dfad4c8fa6976d8034370e}} 
+\index{Logger.cpp@{Logger.cpp}!severityFilter@{severityFilter}}
+\index{severityFilter@{severityFilter}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{severityFilter}{severityFilter}}
+{\footnotesize\ttfamily volatile \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{G\+General\+::\+Logger\+::\+Severity}} severity\+Filter = \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a939ce1f859bb4372ed1201611a770e0d}{G\+General\+::\+Logger\+::\+Severity\+::\+S\+\_\+\+M\+SG}}}
+
+\mbox{\Hypertarget{_logger_8cpp_aed4efe0325cf1c39a818f7dc33efaa9e}\label{_logger_8cpp_aed4efe0325cf1c39a818f7dc33efaa9e}} 
+\index{Logger.cpp@{Logger.cpp}!shouldThreadTerminate@{shouldThreadTerminate}}
+\index{shouldThreadTerminate@{shouldThreadTerminate}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{shouldThreadTerminate}{shouldThreadTerminate}}
+{\footnotesize\ttfamily volatile bool should\+Thread\+Terminate = false}
+
+\mbox{\Hypertarget{_logger_8cpp_ad9fdaaec67b9e400242cf74641ab5cdf}\label{_logger_8cpp_ad9fdaaec67b9e400242cf74641ab5cdf}} 
+\index{Logger.cpp@{Logger.cpp}!shouldThreadWork@{shouldThreadWork}}
+\index{shouldThreadWork@{shouldThreadWork}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{shouldThreadWork}{shouldThreadWork}}
+{\footnotesize\ttfamily volatile bool should\+Thread\+Work = true}
+
+\mbox{\Hypertarget{_logger_8cpp_a3fa59aaccf6c22244886425042e71b5e}\label{_logger_8cpp_a3fa59aaccf6c22244886425042e71b5e}} 
+\index{Logger.cpp@{Logger.cpp}!threadBufferClearLock@{threadBufferClearLock}}
+\index{threadBufferClearLock@{threadBufferClearLock}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{threadBufferClearLock}{threadBufferClearLock}}
+{\footnotesize\ttfamily volatile bool thread\+Buffer\+Clear\+Lock = false}
+
+\mbox{\Hypertarget{_logger_8cpp_a689502f36d5d7fda990097ac7c43ab71}\label{_logger_8cpp_a689502f36d5d7fda990097ac7c43ab71}} 
+\index{Logger.cpp@{Logger.cpp}!userNames@{userNames}}
+\index{userNames@{userNames}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{userNames}{userNames}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ user\+Names}
+
+\mbox{\Hypertarget{_logger_8cpp_a57674dfadc38f9f7a6db3e274c28e806}\label{_logger_8cpp_a57674dfadc38f9f7a6db3e274c28e806}} 
+\index{Logger.cpp@{Logger.cpp}!workerThread@{workerThread}}
+\index{workerThread@{workerThread}!Logger.cpp@{Logger.cpp}}
+\doxysubsubsection{\texorpdfstring{workerThread}{workerThread}}
+{\footnotesize\ttfamily std\+::thread worker\+Thread}
+

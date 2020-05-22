@@ -4,6 +4,8 @@
 
 int main() {
 	GGeneral::Logger::init();
-	GGeneral::Logger::printMessage("test", GGeneral::Logger::Severity::S_MSG, -1);
-	std::cin.get();
+	auto something = GGeneral::Logger::addUserName("heyo");
+	GGeneral::Logger::printMessage("test", GGeneral::Logger::Severity::S_MSG, something);
+	GGeneral::Logger::wait();
+	GGeneral::Logger::terminateThread();
 }

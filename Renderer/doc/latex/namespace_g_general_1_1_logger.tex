@@ -1,0 +1,170 @@
+\hypertarget{namespace_g_general_1_1_logger}{}\doxysection{G\+General\+::Logger Namespace Reference}
+\label{namespace_g_general_1_1_logger}\index{GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{Message}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}} \{ \newline
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a939ce1f859bb4372ed1201611a770e0d}{Severity\+::\+S\+\_\+\+M\+SG}}, 
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac238793326fae17afcc849e96b96e8e7}{Severity\+::\+S\+\_\+\+I\+N\+FO}}, 
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a9d5c7c40cac771659ff51dccb7518e4d}{Severity\+::\+S\+\_\+\+S\+U\+C\+C\+E\+SS}}, 
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a4aee6034ce9dbc2b5c36f27c80abe021}{Severity\+::\+S\+\_\+\+W\+A\+R\+N\+I\+NG}}, 
+\newline
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7aac04e40d3b2f54f1f517d49594eb7849}{Severity\+::\+S\+\_\+\+E\+R\+R\+OR}}, 
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac90b5a22c7659cc99e7a6d919a14b660}{Severity\+::\+S\+\_\+\+F\+A\+T\+AL}}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{namespace_g_general_1_1_logger_ad86520bba91afcfbd42e612ff4b9e4dc}{init}} ()
+\item 
+void \mbox{\hyperlink{namespace_g_general_1_1_logger_a48322ad38e1e62c584b406f220f6f3d2}{print\+Message}} (\mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{Message}} in)
+\item 
+{\footnotesize template$<$typename T\+\_\+T $>$ }\\void \mbox{\hyperlink{namespace_g_general_1_1_logger_aaacb5d14afcde7853402e2e0cada6840}{print\+Message}} (T\+\_\+T message, \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}} sev, int ID)
+\item 
+int \mbox{\hyperlink{namespace_g_general_1_1_logger_abacd844f5edc1bd2954a864449173712}{add\+User\+Name}} (std\+::string name)
+\item 
+void \mbox{\hyperlink{namespace_g_general_1_1_logger_af87680823b7730e926c8bd8b24586f8f}{set\+Severity\+Filter}} (\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}} filter)
+\item 
+\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}} \mbox{\hyperlink{namespace_g_general_1_1_logger_a9eef9cb5ed0a522d9034bafa1310fb89}{get\+Severity\+Filter}} ()
+\item 
+void \mbox{\hyperlink{namespace_g_general_1_1_logger_af74f90b2d97a6e38253042a51ad1a489}{wait}} ()
+\item 
+void \mbox{\hyperlink{namespace_g_general_1_1_logger_a07a7330c321094ccdcb99eaa8f16d9ec}{terminate\+Thread}} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This \mbox{\hyperlink{namespace_g_general_1_1_logger}{Logger}} class needs to be initialized manually before calling the \mbox{\hyperlink{namespace_g_general_1_1_logger_a48322ad38e1e62c584b406f220f6f3d2}{print\+Message()}} function. The class is multi threaded meaning that there is a buffer all messages will go into. All message in the buffer thread are being read from the worker thread, formatted and in the end printed to the console. You can set the maximum size of the buffer via set\+Max\+Buffer\+Size variable. If you try to send a message into the buffer, while the buffer size is larger or the same size as the maximum buffer size, the program will halt until there is enough free space to add new message Before the normal program termination you should always call \mbox{\hyperlink{namespace_g_general_1_1_logger_a07a7330c321094ccdcb99eaa8f16d9ec}{terminate\+Thread()}} to end the worker thread correctly. If you font want to use multi threading you can deactivate it by defining L\+O\+G\+G\+E\+R\+\_\+\+N\+O\+\_\+\+M\+U\+L\+T\+I\+T\+H\+R\+E\+AD (W\+IP). N\+O\+TE\+: There is a really small chance that a message will get deleted 
+
+\doxysubsection{Enumeration Type Documentation}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!Severity@{Severity}}
+\index{Severity@{Severity}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{Severity}{Severity}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{G\+General\+::\+Logger\+::\+Severity}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+The Severity is an Enum that can indicate how important a message sent to the message buffer may be. \begin{DoxyEnumFields}{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_MSG@{S\_MSG}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_MSG@{S\_MSG}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a939ce1f859bb4372ed1201611a770e0d}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a939ce1f859bb4372ed1201611a770e0d}} 
+S\+\_\+\+M\+SG&A plain message in gray. Used for unimportant messages \\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_INFO@{S\_INFO}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_INFO@{S\_INFO}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac238793326fae17afcc849e96b96e8e7}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac238793326fae17afcc849e96b96e8e7}} 
+S\+\_\+\+I\+N\+FO&A info message in blue. Should be used for somewhat important messages \\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_SUCCESS@{S\_SUCCESS}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_SUCCESS@{S\_SUCCESS}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a9d5c7c40cac771659ff51dccb7518e4d}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a9d5c7c40cac771659ff51dccb7518e4d}} 
+S\+\_\+\+S\+U\+C\+C\+E\+SS&A success message in green. Should be used to indicate that some process with somewhat importance was successful \\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_WARNING@{S\_WARNING}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_WARNING@{S\_WARNING}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a4aee6034ce9dbc2b5c36f27c80abe021}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7a4aee6034ce9dbc2b5c36f27c80abe021}} 
+S\+\_\+\+W\+A\+R\+N\+I\+NG&A warning message in yellow/orange. Should be used to warn the people \\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_ERROR@{S\_ERROR}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_ERROR@{S\_ERROR}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7aac04e40d3b2f54f1f517d49594eb7849}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7aac04e40d3b2f54f1f517d49594eb7849}} 
+S\+\_\+\+E\+R\+R\+OR&A error message in red. Should be used to indicate that something went wrong \\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{S\_FATAL@{S\_FATAL}!GGeneral::Logger@{GGeneral::Logger}}\index{GGeneral::Logger@{GGeneral::Logger}!S\_FATAL@{S\_FATAL}}}\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac90b5a22c7659cc99e7a6d919a14b660}\label{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7ac90b5a22c7659cc99e7a6d919a14b660}} 
+S\+\_\+\+F\+A\+T\+AL&A fatal error message in background red. Should be used to indicate that something really went wrong \\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_abacd844f5edc1bd2954a864449173712}\label{namespace_g_general_1_1_logger_abacd844f5edc1bd2954a864449173712}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!addUserName@{addUserName}}
+\index{addUserName@{addUserName}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{addUserName()}{addUserName()}}
+{\footnotesize\ttfamily int G\+General\+::\+Logger\+::add\+User\+Name (\begin{DoxyParamCaption}\item[{std\+::string}]{name }\end{DoxyParamCaption})}
+
+Adds a new user name to the \mbox{\hyperlink{namespace_g_general_1_1_logger}{Logger}}. The int can be used in the \mbox{\hyperlink{namespace_g_general_1_1_logger_a48322ad38e1e62c584b406f220f6f3d2}{print\+Message()}} function to print the user name given. Every thread can use any User ID. there is no checking.
+
+\begin{DoxyReturn}{Returns}
+The ID of the name 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_a9eef9cb5ed0a522d9034bafa1310fb89}\label{namespace_g_general_1_1_logger_a9eef9cb5ed0a522d9034bafa1310fb89}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!getSeverityFilter@{getSeverityFilter}}
+\index{getSeverityFilter@{getSeverityFilter}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{getSeverityFilter()}{getSeverityFilter()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{G\+General\+::\+Logger\+::\+Severity}} G\+General\+::\+Logger\+::get\+Severity\+Filter (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Will return the current used filter level
+
+\begin{DoxyReturn}{Returns}
+The current filter 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_ad86520bba91afcfbd42e612ff4b9e4dc}\label{namespace_g_general_1_1_logger_ad86520bba91afcfbd42e612ff4b9e4dc}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!init@{init}}
+\index{init@{init}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{init()}{init()}}
+{\footnotesize\ttfamily bool G\+General\+::\+Logger\+::init (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Needs to be called before sending any messages to the message buffer. It will create a worker thread that will print all messages from the buffer.
+
+\begin{DoxyReturn}{Returns}
+A bool indicating if the initialization was successful 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_a48322ad38e1e62c584b406f220f6f3d2}\label{namespace_g_general_1_1_logger_a48322ad38e1e62c584b406f220f6f3d2}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!printMessage@{printMessage}}
+\index{printMessage@{printMessage}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{printMessage()}{printMessage()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void G\+General\+::\+Logger\+::print\+Message (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{Message}}}]{in }\end{DoxyParamCaption})}
+
+Will add the given message to the buffer to be printed in the console when the thread is ready
+
+
+\begin{DoxyParams}{Parameters}
+{\em in} & -\/ The \mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{Message}} to print \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_aaacb5d14afcde7853402e2e0cada6840}\label{namespace_g_general_1_1_logger_aaacb5d14afcde7853402e2e0cada6840}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!printMessage@{printMessage}}
+\index{printMessage@{printMessage}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{printMessage()}{printMessage()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+T $>$ \\
+void G\+General\+::\+Logger\+::print\+Message (\begin{DoxyParamCaption}\item[{T\+\_\+T}]{message,  }\item[{\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}}}]{sev,  }\item[{int}]{ID }\end{DoxyParamCaption})}
+
+Will create a new \mbox{\hyperlink{struct_g_general_1_1_logger_1_1_message}{Message}} and then add it to the message buffer
+
+
+\begin{DoxyParams}{Parameters}
+{\em message} & -\/ The message to print \\
+\hline
+{\em sev} & -\/ The severity of the message \\
+\hline
+{\em ID} & -\/ the user ID to be printed with the message \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_af87680823b7730e926c8bd8b24586f8f}\label{namespace_g_general_1_1_logger_af87680823b7730e926c8bd8b24586f8f}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!setSeverityFilter@{setSeverityFilter}}
+\index{setSeverityFilter@{setSeverityFilter}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{setSeverityFilter()}{setSeverityFilter()}}
+{\footnotesize\ttfamily void G\+General\+::\+Logger\+::set\+Severity\+Filter (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespace_g_general_1_1_logger_a9de7729ef34053379a45395c34cf84e7}{Severity}}}]{filter }\end{DoxyParamCaption})}
+
+Sets the Severity\+Filter to the given filter. All message that have a lower value of the filter will be discarded.
+
+
+\begin{DoxyParams}{Parameters}
+{\em filter} & -\/ The new filter level \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespace_g_general_1_1_logger_a07a7330c321094ccdcb99eaa8f16d9ec}\label{namespace_g_general_1_1_logger_a07a7330c321094ccdcb99eaa8f16d9ec}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!terminateThread@{terminateThread}}
+\index{terminateThread@{terminateThread}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{terminateThread()}{terminateThread()}}
+{\footnotesize\ttfamily void G\+General\+::\+Logger\+::terminate\+Thread (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Will try to terminate the thread as early as possible. The message buffer will be cleared and the init function needs to be called if one wants to log messages again. \mbox{\Hypertarget{namespace_g_general_1_1_logger_af74f90b2d97a6e38253042a51ad1a489}\label{namespace_g_general_1_1_logger_af74f90b2d97a6e38253042a51ad1a489}} 
+\index{GGeneral::Logger@{GGeneral::Logger}!wait@{wait}}
+\index{wait@{wait}!GGeneral::Logger@{GGeneral::Logger}}
+\doxysubsubsection{\texorpdfstring{wait()}{wait()}}
+{\footnotesize\ttfamily void G\+General\+::\+Logger\+::wait (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Will halt the thread that called that function until all message from the message buffer have been printed to the console. 

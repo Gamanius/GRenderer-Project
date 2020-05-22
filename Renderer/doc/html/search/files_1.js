@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['grenderer_2eh_13',['GRenderer.h',['../_g_renderer_8h.html',1,'']]]
+  ['logger_2ecpp_44',['Logger.cpp',['../_logger_8cpp.html',1,'']]]
 ];

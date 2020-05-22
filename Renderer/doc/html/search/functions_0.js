@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['dummy_15',['dummy',['../namespace_g_renderer.html#a36ffa784cce6ebf3007d94e96e340ffc',1,'GRenderer']]]
+  ['addusername_45',['addUserName',['../namespace_g_general_1_1_logger.html#abacd844f5edc1bd2954a864449173712',1,'GGeneral::Logger']]]
 ];

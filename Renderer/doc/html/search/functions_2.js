@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['test_17',['test',['../_g_renderer_8h.html#ae1a3968e7947464bee7714f6d43b7002',1,'GRenderer.h']]]
+  ['getseverityfilter_47',['getSeverityFilter',['../namespace_g_general_1_1_logger.html#a9eef9cb5ed0a522d9034bafa1310fb89',1,'GGeneral::Logger']]],
+  ['getsystemtime_48',['getSystemTime',['../_logger_8cpp.html#aa161283497578df553a28c8eb192aa99',1,'Logger.cpp']]]
 ];

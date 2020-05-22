@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['dummy_1',['dummy',['../namespace_g_renderer.html#a36ffa784cce6ebf3007d94e96e340ffc',1,'GRenderer']]]
+  ['discardallmsg_1',['discardAllMsg',['../_logger_8cpp.html#a9abaf98f8d49870714163fd63bf492bb',1,'Logger.cpp']]]
 ];
