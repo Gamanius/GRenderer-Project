@@ -102,9 +102,106 @@ namespace GGeneral {
 		 */
 		void terminateThread();
 	};
+
+	/**
+	 * A struct containing tow values representing the dimension of anything in 2D.
+	 */
+	template<typename T>
+	struct Dimension {
+		/*! The width component of the Dimension */
+		T width;
+		/*! The height component of the Dimension */
+		T height;
+		/*! Creates a new Dimension with the given width and height. The type is up to the user but floats and doubles are recommended. Default values are 0 */
+		Dimension(T w = 0, T h = 0) : width(w), height(h) {}
+
+		/**
+		 * @return A string with the current values of the Dimension struct
+		 */
+		virtual const std::string toString() const {
+			std::stringstream s;
+			s << "[Width: " << width << ", height: " << height << "]";
+			return s.str();
+		}
+	};
+
+	template<typename T>
+	struct Dimension3D : public Dimension<T> {
+		/*! The depth component of the Dimension */
+		T depth;
+		/*! Creates a new Dimension with the given width, depth and height. The type is up to the user but floats and doubles are recommended. Default values are 0 */
+		Dimension3D(T w = 0, T h = 0, T d = 0) : depth(d) {
+			this->width = w;
+			this->height = h;
+		}
+
+		/**
+		 * @return A string with the current values of the Point struct
+		 */
+		const std::string toString() const override {
+			std::stringstream s;
+			s << "[width: " << this->width << ", height: " << this->height << ", depth: " << depth << "]";
+			return s.str();
+		}
+	};
+
+	/**
+	 * A struct containing two values representing a point in 2D space.
+	 */
+	template<typename T>
+	struct Point {
+		/*! The x coordinate*/
+		T x;
+		/*! The y coordinate*/
+		T y;
+		/*! Creates a new Point with the given coordinates. The type is up to the user but floats and doubles are recommended. Default values are 0*/
+		Point(T x = 0, T y = 0) : x(x), y(y) {}
+
+		/**
+		 * @return A string with the current values of the Point struct
+		 */
+		virtual const std::string toString() const {
+			std::stringstream s;
+			s << "[x: " << x << ", y: " << y << "]";
+			return s.str();
+		}
+	};
+
+	/**
+	 * A struct extending the Point struct. This struct adds one more coordinate to define Points in 3D space.
+	 */
+	template<typename T>
+	struct Point3D : public Point<T> {
+		/*! The z coordinate*/
+		T z;
+		/*! Creates a new Point with the given coordinates. The type is up to the user but floats and doubles are recommended. Default values are 0*/
+		Point3D(T x = 0, T y = 0, T z = 0) : z(z) {
+			this->x = x;
+			this->y = y;
+		}
+
+		/**
+		 * @return A string with the current values of the Point struct
+		 */
+		const std::string toString() const override {
+			std::stringstream s;
+			s << "[x: " << this->x << ", y: " << this->y << ", z: " << z << "]";
+			return s.str();
+		}
+	};
 }
 
 namespace GRenderer {
+}
+
+namespace GWindow {
+	class Window {
+	public:
+		Window() : Window("G-Renderer Window Instance", { 50, 50 }, { 1280,  720 }) {}
+		Window(std::string name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
+
+		void static init();
+	};
 }
 
 /**
@@ -135,4 +232,16 @@ namespace GEnumString {
 
 		return "UNKNOWN ENUM";
 	}
+}
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const GGeneral::Dimension<T>& p) {
+	os << p.toString();
+	return os;
+}
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const GGeneral::Point<T>& p) {
+	os << p.toString();
+	return os;
 }
