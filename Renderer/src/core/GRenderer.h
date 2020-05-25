@@ -120,7 +120,7 @@ namespace GGeneral {
 		 */
 		virtual const std::string toString() const {
 			std::stringstream s;
-			s << "[Width: " << width << ", height: " << height << "]";
+			s << "[width: " << width << ", height: " << height << "]";
 			return s.str();
 		}
 	};
@@ -202,6 +202,77 @@ namespace GWindow {
 
 		void static init();
 	};
+
+	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
+	namespace Monitor {
+		/*! A struct containing all informations of a virtual monitor*/
+		struct Screen {
+			//Name of the screen
+			std::string screenName;
+			//The digital Position of the Screen relative to the primary Monitor
+			GGeneral::Point<int> digitalPosition;
+			//The Resolution of the Monitor
+			GGeneral::Dimension<int> screenDimension;
+			//The size the digital coordinate system.
+			GGeneral::Dimension<int> workDimension;
+
+			/**
+			 * Creates a new Screen struct with given values
+			 * @param name - The screenName
+			 * @param pos - The digitalPosition
+			 * @param sdim - The screenDimension
+			 * @param wdim - The workDimension
+			 */
+			Screen(std::string name = "", GGeneral::Point<int> pos = {}, GGeneral::Dimension<int> sdim = {}, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
+
+			/**
+			 * @return A string representing the Screen struct
+			 */
+			const std::string toString() const {
+				return "[name: '" + screenName + "', digitalPos: " + digitalPosition.toString() + ", resolution: " + screenDimension.toString() + ", workDimension " + workDimension.toString() + "]";
+			}
+		};
+
+		/**
+		 * Fetches all Monitor Informations. Needs to be called before calling any other functions
+		 *
+		 * @return True if no error occurs
+		 * @return False if an error occurs
+		 */
+		bool init();
+
+		/**
+		 * Returns a bool
+		 *
+		 * @return True if the information is already fetched
+		 * @return False if the information is not fetched or an error occurred
+		 */
+		const bool isInit();
+
+		/*
+		 * Returns a screen struct with the information of the primary Monitor
+		 *
+		 * @returns a Screen struct
+		 */
+		Screen const* getPrimaryMonitorInformation();
+
+		/**
+		 * @return an integer with the amount of virtual monitors
+		 */
+		const unsigned int getAmountOfMonitors();
+
+		/**
+		 * @return the index of the primary monitor
+		 */
+		const unsigned int getPrimaryMonitorIndex();
+
+		/**
+		 * Will return the information of the monitor with the given index.
+		 *
+		 * @return a monitor struct
+		 */
+		Screen const* getMonitorInformation(unsigned int i);
+	}
 }
 
 /**
@@ -242,6 +313,11 @@ inline std::ostream& operator<<(std::ostream& os, const GGeneral::Dimension<T>& 
 
 template<typename T>
 inline std::ostream& operator<<(std::ostream& os, const GGeneral::Point<T>& p) {
+	os << p.toString();
+	return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const GWindow::Monitor::Screen& p) {
 	os << p.toString();
 	return os;
 }
