@@ -68,11 +68,13 @@ void t_process() {
 			it++;
 			msgBuffer.erase(msgBuffer.begin());
 		}
-
+		//Maybe fix...this function may discard messages sometimes
+		/*
 		//Clear the buffer if everything is done and noone is adding to it
 		//Technically useless
 		if (!threadBufferClearLock)
 			msgBuffer.clear();
+			*/
 	}
 }
 
