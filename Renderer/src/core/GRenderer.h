@@ -42,6 +42,13 @@ typedef unsigned char byte;
   * very untidy.
   */
 namespace GGeneral {
+	namespace Time {
+		struct Timer {
+			unsigned long long int startTime;
+			Timer();
+			unsigned long long int stop() const;
+		};
+}
 	/**
 	 * This Logger class needs to be initialized manually before calling the printMessage() function.
 	 * The class is multi threaded meaning that there is a buffer all messages will go into. All message in the buffer thread are being read from the worker thread, formatted and in the end printed to the console.

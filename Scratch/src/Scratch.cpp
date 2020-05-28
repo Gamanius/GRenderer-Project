@@ -15,13 +15,15 @@ unsigned int index[] = {
 
 int main() {
 	GGeneral::Logger::init();
+	GGeneral::Time::Timer t;
 
 	GWindow::Window w;
 	w.setState(GWindow::WindowState::NORMAL);
 	LOG(w.initOpenGLContext());
 	w.setOpenGLContextActive(true);
+	LOG(glewInit());
+	LOGI(t.stop());
 
-	glewInit();
 
 	GRenderer::Primitives::VertexBuffer v(vertices, 9);
 	GRenderer::Primitives::IndexBuffer i(index, 3);
