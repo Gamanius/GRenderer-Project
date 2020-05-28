@@ -12,6 +12,7 @@
 //WinAPI specific variables
 static MSG msg;
 HINSTANCE hInstance = GetModuleHandle(0);
+HGLRC hglrc;
 
 struct WindowClass {
 	//General Stuff
@@ -372,6 +373,45 @@ GWindow::Window::Window(std::string name, GGeneral::Point<int> pos, GGeneral::Di
 	EnableWindow(hWnd, true);
 }
 
+bool GWindow::Window::initOpenGLContext() {
+	PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    // Flags
+		PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
+		32,                   // Colordepth of the framebuffer.
+		0, 0, 0, 0, 0, 0,
+		0,
+		0,
+		0,
+		0, 0, 0, 0,
+		24,                   // Number of bits for the depthbuffer
+		8,                    // Number of bits for the stencilbuffer
+		0,                    // Number of Aux buffers in the framebuffer.
+		PFD_MAIN_PLANE,
+		0,
+		0, 0, 0
+	};
+	//Set pixel format
+	auto iPixelFormat = ChoosePixelFormat(THIS_INSTANCE.hdc, &pfd);
+	SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd);
+
+	hglrc = wglCreateContext(THIS_INSTANCE.hdc);
+	//TODO: do the extended opengl context creation
+	if (hglrc == NULL) return false;
+
+	return true;
+}
+
+void GWindow::Window::setOpenGLContextActive(bool b) {
+	wglMakeCurrent(b ? THIS_INSTANCE.hdc : NULL, b ? hglrc : NULL);
+}
+
+void GWindow::Window::swapBuffers() {
+	SwapBuffers(THIS_INSTANCE.hdc);
+}
+
 void GWindow::Window::setState(GWindow::WindowState state) {
 	int nCmdShow = 0;
 	switch (state) {
@@ -396,4 +436,8 @@ void GWindow::Window::fetchEvents() {
 
 const bool GWindow::Window::getCloseRequest() const {
 	return THIS_INSTANCE.closeRequest;
+}
+
+void GWindow::Window::forceCloseRequest() {
+	SendMessage(THIS_INSTANCE.hWnd, WM_CLOSE, 0, 0);
 }

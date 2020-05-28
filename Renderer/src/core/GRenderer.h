@@ -1,7 +1,10 @@
 #pragma once
+#pragma comment(lib, "opengl32.lib")
 
 #include <string>
 #include <sstream>
+#include <initializer_list>
+#include <vector>
 
 #ifndef _WIN32
 #error Only Windows is Supported!
@@ -25,6 +28,8 @@
 #define ULOGE(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_ERROR, y);
 #define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
+
+typedef unsigned char byte;
 
 //Documentation can be created using doxygen
 
@@ -93,8 +98,8 @@ namespace GGeneral {
 		 * @param sev - The severity of the message
 		 * @param ID - the user ID to be printed with the message
 		 */
-		template<typename T_T>
-		void printMessage(T_T message, Severity sev, int ID) {
+		template<typename T_TYPE>
+		void printMessage(T_TYPE message, Severity sev, int ID) {
 			std::ostringstream stream;
 			stream << message;
 			printMessage({ stream.str(), sev, ID });
@@ -221,6 +226,63 @@ namespace GGeneral {
 }
 
 namespace GRenderer {
+	namespace Primitives {
+		enum class VertexTypes {
+			BYTE, SHORT, INT
+		};
+		struct IndexBuffer {
+		private:
+			unsigned int amount;
+			VertexTypes element;
+		public:
+			unsigned int ID;
+
+			IndexBuffer(unsigned int data[], unsigned int amount);
+			~IndexBuffer();
+
+			void bind();
+			void unbind();
+			friend struct VertexArray;
+		};
+
+		struct VertexBuffer {
+			unsigned int ID;
+
+			VertexBuffer(float data[], unsigned int amount);
+			~VertexBuffer();
+
+			void bind();
+			void unbind();
+		};
+
+		struct VertexArray {
+			struct VertexArrayLayout {
+			private:
+				std::vector<byte> layout;
+				VertexTypes type;
+			public:
+				VertexArrayLayout(std::initializer_list<byte> data, VertexTypes type);
+
+				const unsigned int getStride() const;
+				const unsigned int getOffset(const unsigned int index) const;
+				friend struct VertexArray;
+			};
+			unsigned int ID;
+			bool isOnlyVertexBuffer = false;
+			unsigned int amount;
+			VertexTypes type;
+
+			VertexArray() {
+				ID = 0;
+				amount = 0;
+				type = VertexTypes::INT;
+			}
+			VertexArray(VertexBuffer vertex, IndexBuffer index, VertexArrayLayout layout);
+
+			void bind();
+			void unbind();
+		};
+	}
 }
 
 typedef void(*GWindowCallback)(int);
@@ -231,7 +293,7 @@ namespace GWindow {
 		HIDDEN /*! The Window is not visible by the user nor is it in the taskbar*/
 		, MAXIMIZED /*! The Window is maximized and visible*/
 		, MINIMIZED /*! The Window is not visible by the user but the icon can be seen on the taskbar*/
-		, NORMAL /*! The Window is visible but not maximzed*/
+		, NORMAL /*! The Window is visible but not maximized*/
 	};
 
 	/*! These are all Keys that the event system is tracking. All other keys that are pressed will be discarded*/
@@ -269,12 +331,22 @@ namespace GWindow {
 		 */
 		Window(std::string name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
 
-		[[deprecated]]
+		/**
+		 * TODO
+		 */
 		void static init();
 
+		/**
+		 * TODO
+		 */
 		bool initOpenGLContext();
 
+		/**
+		 * TODO
+		 */
 		void setOpenGLContextActive(bool b);
+
+		void swapBuffers();
 
 		/**
 		 * Set the extended window state of the window instance. Is used to change the visibility of the window.
@@ -293,12 +365,30 @@ namespace GWindow {
 		 */
 		const bool getCloseRequest() const;
 
+		/**
+		 * Will immediately sent a close request to the Window and wait until it processed it.
+		 */
 		void forceCloseRequest();
 
+		/**
+		 * TODO
+		 * Will set the Mouse capture flag to true or false. If the mouse is captured, it cannot exit the window while the window has the focus. The mouse itself will be invisible and in a virtual window space
+		 * @param capture - Set the capture
+		 */
 		void setCaptureMouseMode(bool capture);
 
+		/**
+		 * TODO
+		 * Will fetch the current window state and return it
+		 *
+		 * @return The current Window state of the window
+		 */
 		WindowState getCurrentWindowState() const;
 
+		/**
+		 * TODO
+		 *
+		 */
 		void addCallbackFunction(GWindowCallback fun);
 	};
 

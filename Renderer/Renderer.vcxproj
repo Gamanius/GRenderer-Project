@@ -57,7 +57,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,7 +73,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,15 +81,32 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <Lib>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\core\GRenderer.h" />
+    <ClInclude Include="src\dependencies\GLEW\include\GL\eglew.h" />
+    <ClInclude Include="src\dependencies\GLEW\include\GL\glew.h" />
+    <ClInclude Include="src\dependencies\GLEW\include\GL\glxew.h" />
+    <ClInclude Include="src\dependencies\GLEW\include\GL\wglew.h" />
     <ClInclude Include="src\dependencies\header\wglext.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\general\Logger.cpp" />
+    <ClCompile Include="src\core\primitves\Indexbuffer.cpp" />
+    <ClCompile Include="src\core\primitves\Vertexarray.cpp" />
+    <ClCompile Include="src\core\primitves\Vertexbuffer.cpp" />
     <ClCompile Include="src\core\window\Monitor.cpp" />
     <ClCompile Include="src\core\window\Window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
