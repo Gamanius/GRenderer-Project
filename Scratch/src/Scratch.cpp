@@ -20,8 +20,8 @@ int main() {
 	w.setState(GWindow::WindowState::NORMAL);
 	LOG(w.initOpenGLContext());
 	w.setOpenGLContextActive(true);
+	LOG(glewInit());
 
-	glewInit();
 
 	GRenderer::Primitives::VertexBuffer v(vertices, 9);
 	GRenderer::Primitives::IndexBuffer i(index, 3);
