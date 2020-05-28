@@ -44,7 +44,9 @@ typedef unsigned char byte;
 namespace GGeneral {
 	namespace Time {
 		struct Timer {
-
+			unsigned long long int startTime;
+			Timer();
+			unsigned long long int stop() const;
 		};
 }
 	/**
