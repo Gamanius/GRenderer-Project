@@ -6,7 +6,6 @@
 #include <vector>
 #include <sstream>
 #include <Windows.h>
-#include <WinUser.h>
 #include <array>
 
 //Some general Vars

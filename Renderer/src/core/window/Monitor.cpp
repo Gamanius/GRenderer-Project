@@ -7,6 +7,7 @@ bool informationFetched = false;
 
 unsigned int primaryMonitorIndex = 0;
 unsigned int indexCounter = 0;
+unsigned int maxAmountOfMonitors = 0;
 
 std::vector<GWindow::Monitor::Screen*> allScreens;
 
@@ -19,7 +20,13 @@ BOOL CALLBACK lpfnEnum(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LP
 		primaryMonitorIndex = indexCounter;
 	}
 
-	s->screenName = std::to_string(*info.szDevice);
+	DISPLAY_DEVICEA device;
+	device.cb = sizeof(DISPLAY_DEVICEA);
+	EnumDisplayDevicesA(0, allScreens.size(), &device, EDD_GET_DEVICE_INTERFACE_NAME);
+	DISPLAY_DEVICEA device1;
+	device1.cb = sizeof(DISPLAY_DEVICEA);
+	EnumDisplayDevicesA(device.DeviceName, 0, &device1, EDD_GET_DEVICE_INTERFACE_NAME);
+	s->screenName = std::string(device1.DeviceString);
 
 	s->digitalPosition.x = info.rcMonitor.left;
 	s->digitalPosition.y = info.rcMonitor.top;
@@ -39,6 +46,12 @@ BOOL CALLBACK lpfnEnum(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LP
 bool GWindow::Monitor::init() {
 	int succesfull = EnumDisplayMonitors(0, 0, lpfnEnum, 0);
 	if (succesfull == 0) return false;
+
+	DISPLAY_DEVICEA device;
+	device.cb = sizeof(DISPLAY_DEVICEA);
+	while (EnumDisplayDevicesA(0, maxAmountOfMonitors, &device, EDD_GET_DEVICE_INTERFACE_NAME))
+		maxAmountOfMonitors++;
+
 	informationFetched = true;
 	return true;
 }
@@ -70,4 +83,10 @@ GWindow::Monitor::Screen const* GWindow::Monitor::getMonitorInformation(unsigned
 	if (!isInit())
 		return nullptr;
 	return allScreens[i];
+}
+
+const unsigned int GWindow::Monitor::getSupportedAmountOfMonitorDevices() {
+	if (!isInit())
+		return 0;
+	return maxAmountOfMonitors;
 }

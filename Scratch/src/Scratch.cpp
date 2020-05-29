@@ -9,25 +9,29 @@ float vertices[] = {
 		 0.0f,  0.5f, 0.0f  // top
 };
 
-unsigned int index[] = {
+unsigned short index[] = {
 	0, 1, 2
 };
 
 int main() {
 	GGeneral::Logger::init();
-	GGeneral::Time::Timer t;
 
 	GWindow::Window w;
-	w.setState(GWindow::WindowState::NORMAL);
-	LOG(w.initOpenGLContext());
-	w.setOpenGLContextActive(true);
-	LOG(glewInit());
-	LOGI(t.stop());
+	GWindow::Monitor::init();
 
+	w.setState(GWindow::WindowState::NORMAL);
+	w.initOpenGLContext();
+	w.setOpenGLContextActive(true);
+	glewInit();
+
+	LOG(*GWindow::Monitor::getPrimaryMonitorInformation());
+	LOG(*GWindow::Monitor::getMonitorInformation(0));
+	LOG(GWindow::Monitor::getSupportedAmountOfMonitorDevices());
+	LOG(GWindow::Monitor::getAmountOfMonitors());
 
 	GRenderer::Primitives::VertexBuffer v(vertices, 9);
 	GRenderer::Primitives::IndexBuffer i(index, 3);
-	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3 }, GRenderer::Primitives::VertexTypes::INT);
+	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3 }, GRenderer::Primitives::VertexTypes::FLOAT);
 	GRenderer::Primitives::VertexArray vertex(v, i, l);
 
 	vertex.bind();
@@ -36,12 +40,10 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		//glBindVertexArray(VAO);
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, nullptr);
 		GWindow::Window::fetchEvents();
 		w.swapBuffers();
 	}
 	GGeneral::Logger::wait();
 	GGeneral::Logger::terminateThread();
-
-	return 0;
 }

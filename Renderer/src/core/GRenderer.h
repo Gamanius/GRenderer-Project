@@ -48,7 +48,8 @@ namespace GGeneral {
 			Timer();
 			unsigned long long int stop() const;
 		};
-}
+	}
+
 	/**
 	 * This Logger class needs to be initialized manually before calling the printMessage() function.
 	 * The class is multi threaded meaning that there is a buffer all messages will go into. All message in the buffer thread are being read from the worker thread, formatted and in the end printed to the console.
@@ -234,60 +235,198 @@ namespace GGeneral {
 
 namespace GRenderer {
 	namespace Primitives {
-		enum class VertexTypes {
-			BYTE, SHORT, INT
+		/**
+		 * The type used by the IndexBuffer. No other types are allowed
+		 */
+		enum class IndexTypes {
+			UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT
 		};
+
+		/**
+		 * The type used of the VertexBuffer. Other types can be used if the size of the type is the same like one of the given onces
+		 */
+		enum class VertexTypes {
+			BYTE, SHORT, INT, FLOAT, DOUBLE
+		};
+
+		/**
+		 * Class wrapper for the OpenGL IndexBuffer
+		 */
 		struct IndexBuffer {
 		private:
 			unsigned int amount;
-			VertexTypes element;
-		public:
+			IndexTypes element;
+			/**
+			 * Internal OpenGL ID
+			 */
 			unsigned int ID;
+		public:
+			IndexBuffer() = default;
 
+			/**
+			 * Creates a new IndexBuffer
+			 * @param data - The indexes
+			 * @param amount - The amount of indexes given
+			 */
 			IndexBuffer(unsigned int data[], unsigned int amount);
+			/**
+			 * Creates a new IndexBuffer
+			 * @param data - The indexes
+			 * @param amount - The amount of indexes given
+			 */
+			IndexBuffer(byte data[], unsigned int amount);
+			/**
+			 * Creates a new IndexBuffer
+			 * @param data - The indexes
+			 * @param amount - The amount of indexes given
+			 */
+			IndexBuffer(unsigned short data[], unsigned int amount);
+
+			/**
+			 * Deletes the IndexBuffer
+			 */
 			~IndexBuffer();
 
+			/**
+			 * Binds the current IndexBuffer
+			 */
 			void bind();
+			/**
+			 * Unbind the current IndexBuffer
+			 */
 			void unbind();
+
 			friend struct VertexArray;
 		};
 
+		/**
+		 * Class wrapper for the OpenGL VertexBuffer
+		 */
 		struct VertexBuffer {
+		private:
+			/**
+			 * Internal OpenGL ID
+			 */
 			unsigned int ID;
 
+		public:
+			VertexBuffer() = default;
+			/**
+			 * Creates a new VertexBuffer
+			 * @param data - All vertexes
+			 * @param amount - The amount of vertexes to be used
+			 */
+			VertexBuffer(char data[], unsigned int amount);
+			/**
+			 * Creates a new VertexBuffer
+			 * @param data - All vertexes
+			 * @param amount - The amount of vertexes to be used
+			 */
+			VertexBuffer(short data[], unsigned int amount);
+			/**
+			 * Creates a new VertexBuffer
+			 * @param data - All vertexes
+			 * @param amount - The amount of vertexes to be used
+			 */
+			VertexBuffer(int data[], unsigned int amount);
+			/**
+			 * Creates a new VertexBuffer
+			 * @param data - All vertexes
+			 * @param amount - The amount of vertexes to be used
+			 */
 			VertexBuffer(float data[], unsigned int amount);
+			/**
+			 * Creates a new VertexBuffer
+			 * @param data - All vertexes
+			 * @param amount - The amount of vertexes to be used
+			 */
+			VertexBuffer(double data[], unsigned int amount);
+			/**
+			 * Deletes the VertexBuffer
+			 */
 			~VertexBuffer();
 
+			/**
+			 * Binds the current VertexBuffer
+			 */
 			void bind();
+			/**
+			 * Unbinds the curernt VertexBuffer
+			 */
 			void unbind();
 		};
 
+		/**
+		 * Class wrapper and manager for the OpenGL VertexArray class
+		 */
 		struct VertexArray {
+			/**
+			 * A struct that hold the information about the layout of any VertexBuffer. Is most likely needed for the VertexArray construction
+			 */
 			struct VertexArrayLayout {
 			private:
 				std::vector<byte> layout;
-				VertexTypes type;
+				byte size;
 			public:
+				VertexArrayLayout() = default;
+				/**
+				 * Creates a new VertexArrayLayout. This is used for the VertexArray to identify how big the VertexBuffer is and how many elements it has
+				 * @param data - All elements e.g.: {3, 2, 1}
+				 * @param type - The type of the VertexBuffer used
+				 */
 				VertexArrayLayout(std::initializer_list<byte> data, VertexTypes type);
 
+				/**
+				 * Calculates the Stride
+				 * @return The stride
+				 */
 				const unsigned int getStride() const;
+
+				/**
+				 * Calculates the offset of the given element index
+				 * @param index - The element
+				 * @return The offset
+				 */
 				const unsigned int getOffset(const unsigned int index) const;
+
 				friend struct VertexArray;
 			};
-			unsigned int ID;
+		private:
 			bool isOnlyVertexBuffer = false;
 			unsigned int amount;
-			VertexTypes type;
+			IndexTypes type;
+			/**
+			 * Internal OpenGL ID
+			 */
+			unsigned int ID;
 
-			VertexArray() {
-				ID = 0;
-				amount = 0;
-				type = VertexTypes::INT;
-			}
+		public:
+			VertexArray() = default;
+			/**
+			 * Creates a new VertexArray Object.
+			 * @param vertex - The vertexes used by the VertexArray
+			 * @param index - The indexes used by the VertexArray
+			 * @param layout - The layout of the VertexBuffer
+			 */
 			VertexArray(VertexBuffer vertex, IndexBuffer index, VertexArrayLayout layout);
 
+			/**
+			 * Binds the current VertexArray
+			 */
 			void bind();
+			/**
+			 * Unbinds the current VertexArray
+			 */
 			void unbind();
+		};
+
+		class Shader {
+		private:
+			/**
+			 * Internal OpenGL ID
+			 */
+			unsigned int ID;
+		public:
 		};
 	}
 }
@@ -403,13 +542,13 @@ namespace GWindow {
 	namespace Monitor {
 		/*! A struct containing all informations of a virtual monitor*/
 		struct Screen {
-			//Name of the screen
+			/*!Name of the screen*/
 			std::string screenName;
-			//The digital Position of the Screen relative to the primary Monitor
+			/*!The digital Position of the Screen relative to the primary Monitor*/
 			GGeneral::Point<int> digitalPosition;
-			//The Resolution of the Monitor
+			/*!The Resolution of the Monitor*/
 			GGeneral::Dimension<int> screenDimension;
-			//The size the digital coordinate system.
+			/*!The size the digital coordinate system.*/
 			GGeneral::Dimension<int> workDimension;
 
 			/**
@@ -468,11 +607,13 @@ namespace GWindow {
 		 * @return a monitor struct
 		 */
 		Screen const* getMonitorInformation(unsigned int i);
-	}
 
-	/*! This namespace can be used to change some OS depending options */
-	namespace OS {
-		void moveMouse(GGeneral::Point<int> pos);
+		/**
+		 * Will return the maximum amount of supported Monitor devices
+		 *
+		 * @return The amount of monitors supported by the users GPU
+		 */
+		const unsigned int getSupportedAmountOfMonitorDevices();
 	}
 }
 

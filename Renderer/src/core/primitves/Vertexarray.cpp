@@ -1,21 +1,27 @@
 #include "../GRenderer.h"
 #include <GL/glew.h>
 
-byte getSize(GRenderer::Primitives::VertexTypes t) {
+byte getSize(GRenderer::Primitives::IndexTypes t) {
 	switch (t) {
-	case GRenderer::Primitives::VertexTypes::BYTE: return sizeof(byte);
-		break;
-	case GRenderer::Primitives::VertexTypes::SHORT: return sizeof(short);
-		break;
-	case GRenderer::Primitives::VertexTypes::INT: return sizeof(int);
-		break;
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:  return sizeof(byte);
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT: return sizeof(unsigned short);
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:   return sizeof(unsigned int);
 	}
 	return 0;
 }
 
-GRenderer::Primitives::VertexArray::VertexArrayLayout::VertexArrayLayout(std::initializer_list< byte> data, VertexTypes type) : type(type) {
+GRenderer::Primitives::VertexArray::VertexArrayLayout::VertexArrayLayout(std::initializer_list<byte> data, GRenderer::Primitives::VertexTypes type) {
 	for (auto l : data) {
 		this->layout.push_back(l);
+	}
+
+	switch (type) {
+	case GRenderer::Primitives::VertexTypes::BYTE:	 size = sizeof(byte);   break;
+	case GRenderer::Primitives::VertexTypes::SHORT:	 size = sizeof(short);  break;
+	case GRenderer::Primitives::VertexTypes::INT:	 size = sizeof(int);    break;
+	case GRenderer::Primitives::VertexTypes::FLOAT:	 size = sizeof(float);  break;
+	case GRenderer::Primitives::VertexTypes::DOUBLE: size = sizeof(double); break;
+	default:                                         size = 0;
 	}
 }
 
@@ -24,7 +30,7 @@ const unsigned int GRenderer::Primitives::VertexArray::VertexArrayLayout::getStr
 	for (unsigned int i = 0; i < layout.size(); i++) {
 		stride += layout[i];
 	}
-	return stride * getSize(type);
+	return stride * size;
 }
 
 const unsigned int GRenderer::Primitives::VertexArray::VertexArrayLayout::getOffset(const unsigned int index) const {
@@ -32,7 +38,7 @@ const unsigned int GRenderer::Primitives::VertexArray::VertexArrayLayout::getOff
 		return 0;
 	int offset = 0;
 	for (unsigned int i = 0; i < index; i++) {
-		offset += layout[i] * getSize(type);
+		offset += layout[i] * size;
 	}
 	return offset;
 }
