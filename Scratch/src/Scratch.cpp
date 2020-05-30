@@ -20,14 +20,12 @@ int main() {
 	GWindow::Monitor::init();
 
 	w.setState(GWindow::WindowState::NORMAL);
-	w.initOpenGLContext();
+	LOG(w.initOpenGLContext());
 	w.setOpenGLContextActive(true);
-	glewInit();
-
-	LOG(*GWindow::Monitor::getPrimaryMonitorInformation());
-	LOG(*GWindow::Monitor::getMonitorInformation(0));
-	LOG(GWindow::Monitor::getSupportedAmountOfMonitorDevices());
-	LOG(GWindow::Monitor::getAmountOfMonitors());
+	LOG(glewInit());
+	LOG(glGetString(GL_VERSION));
+	GGeneral::Logger::wait();
+	LOG(GGeneral::OS::getUserName());
 
 	GRenderer::Primitives::VertexBuffer v(vertices, 9);
 	GRenderer::Primitives::IndexBuffer i(index, 3);

@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], unsigned int amount) {
-	glCreateBuffers(1, &ID);
+	glGenBuffers(1, &ID);
 	bind();
 
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
@@ -21,7 +21,7 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(short data[], unsigned int amo
 }
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(int data[], unsigned int amount) {
-	glCreateBuffers(1, &ID);
+	glGenBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
 }

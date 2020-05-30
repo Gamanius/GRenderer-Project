@@ -29,6 +29,7 @@
 #define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
 
+/*! Just a typedef so the code is better to read */
 typedef unsigned char byte;
 
 //Documentation can be created using doxygen
@@ -231,6 +232,12 @@ namespace GGeneral {
 			return s.str();
 		}
 	};
+
+	namespace OS {
+		std::string getComputerName();
+		std::string getUserName();
+		void moveMouse(GGeneral::Point<int> newPos);
+	}
 }
 
 namespace GRenderer {

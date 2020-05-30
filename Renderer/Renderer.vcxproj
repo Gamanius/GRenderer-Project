@@ -101,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\general\Logger.cpp" />
+    <ClCompile Include="src\core\general\os.cpp" />
     <ClCompile Include="src\core\general\Time.cpp" />
     <ClCompile Include="src\core\primitves\Indexbuffer.cpp" />
     <ClCompile Include="src\core\primitves\Vertexarray.cpp" />

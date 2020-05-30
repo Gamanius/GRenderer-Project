@@ -18,7 +18,7 @@ GRenderer::Primitives::IndexBuffer::IndexBuffer(byte data[], unsigned int amount
 }
 
 GRenderer::Primitives::IndexBuffer::IndexBuffer(unsigned short data[], unsigned int amount) : amount(amount) {
-	glCreateBuffers(1, &ID);
+	glGenBuffers(1, &ID);
 	bind();
 
 	element = IndexTypes::UNSIGNED_SHORT;
