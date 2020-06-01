@@ -174,6 +174,10 @@
   <ItemGroup>
     <Library Include="src\GLEW\lib\glew32s.lib" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="rsc\shader\frag.frag" />
+    <None Include="rsc\shader\vert.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1,10 +1,11 @@
 #pragma once
 #pragma comment(lib, "opengl32.lib")
 
-#include <string>
 #include <sstream>
 #include <initializer_list>
 #include <vector>
+
+#include "GMath.h"
 
 #ifndef _WIN32
 #error Only Windows is Supported!
@@ -43,6 +44,28 @@ typedef unsigned char byte;
   * very untidy.
   */
 namespace GGeneral {
+
+	template<typename T>
+	std::string toString(T arg) {
+		std::stringstream stream;
+		stream << arg;
+		return stream.str();
+	}
+
+	/**
+	 * Will try to convert given arguments using stringstream into a string 
+	 * @param arg - The first needed argument
+	 * @param ...args - More arguments
+	 * @return A combined string of all arguments
+	 */
+	template<typename T_FIRST, typename... T_MORE>
+	std::string toString(T_FIRST arg, T_MORE... args) {
+		std::string returnValue;
+		returnValue += toString(arg);
+		returnValue += toString(args...);
+		return returnValue;
+	}
+
 	namespace Time {
 		struct Timer {
 			unsigned long long int startTime;
@@ -241,6 +264,8 @@ namespace GGeneral {
 }
 
 namespace GRenderer {
+	//definition for shaderprogram so friendships work
+	class ShaderProgram;
 	namespace Primitives {
 		/**
 		 * The type used by the IndexBuffer. No other types are allowed
@@ -427,15 +452,56 @@ namespace GRenderer {
 			void unbind();
 		};
 
+		enum class ShaderTypes {
+			COMPUTE_SHADER, 
+			VERTEX_SHADER, 
+			TESS_CONTROL_SHADER, 
+			TESS_EVALUATION_SHADER, 
+			GEOMETRY_SHADER, 
+			FRAGMENT_SHADER, 
+			UNKOWN_SHADER
+		};
+
 		class Shader {
 		private:
-			/**
-			 * Internal OpenGL ID
+			/** 
+			 * Internal OpenGL ID 
 			 */
 			unsigned int ID;
+			std::string sourceCode;
+			ShaderTypes type = ShaderTypes::UNKOWN_SHADER;
+			bool fail = true;
 		public:
+			Shader() = default;
+			Shader(std::string filepath);
+			Shader(std::string filepath, ShaderTypes type);
+			~Shader();
+
+			bool loadShader(std::string filepath);
+			bool compileShader();
+			bool failed() const;
+			std::string getInfoMessage();
+
+			friend class GRenderer::ShaderProgram;
 		};
 	}
+
+	class ShaderProgram {
+	private:
+		unsigned int ID;
+		std::vector<unsigned int*> shaderIDs;
+		bool fail = true;
+	public:
+		ShaderProgram() = default;
+		ShaderProgram(std::initializer_list<Primitives::Shader*> shaders);
+
+		bool link();
+
+		std::string getInfoMessage();
+
+		void bind();
+		void unbind();
+	};
 }
 
 typedef void(*GWindowCallback)(int);

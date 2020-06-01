@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "../../GRenderer.h"
 #include <GL/glew.h>
 
 byte getSize(GRenderer::Primitives::IndexTypes t) {

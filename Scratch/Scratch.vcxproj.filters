@@ -36,4 +36,8 @@
   <ItemGroup>
     <Library Include="src\GLEW\lib\glew32s.lib" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="rsc\shader\vert.vert" />
+    <None Include="rsc\shader\frag.frag" />
+  </ItemGroup>
 </Project>

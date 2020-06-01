@@ -23,9 +23,16 @@ int main() {
 	LOG(w.initOpenGLContext());
 	w.setOpenGLContextActive(true);
 	LOG(glewInit());
-	LOG(glGetString(GL_VERSION));
+	LOG(GGeneral::toString("OpenGL Version: ", glGetString(GL_VERSION)));
 	GGeneral::Logger::wait();
 	LOG(GGeneral::OS::getUserName());
+
+	GRenderer::Primitives::Shader frag("rsc/shader/frag.frag");
+	GRenderer::Primitives::Shader vert("rsc/shader/vert.vert");
+
+	GRenderer::ShaderProgram program({ &frag, &vert });
+	program.link();
+	LOG(program.getInfoMessage());
 
 	GRenderer::Primitives::VertexBuffer v(vertices, 9);
 	GRenderer::Primitives::IndexBuffer i(index, 3);
@@ -34,10 +41,9 @@ int main() {
 
 	vertex.bind();
 	while (!w.getCloseRequest()) {
+		program.bind();
 		glClearColor(0.5, 0.5, 0.5, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
-		//glBindVertexArray(VAO);
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, nullptr);
 		GWindow::Window::fetchEvents();
 		w.swapBuffers();
