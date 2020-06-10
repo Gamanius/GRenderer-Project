@@ -10,7 +10,7 @@ std::string GRenderer::getCurentOpenGLVersion() {
 	return r;
 }
 
-void GRenderer::clear(GGeneral::Color color) {
+void GRenderer::clear(GGeneral::Color& color) {
 	glClearColor(((float)color[0]) / 255, ((float)color[1]) / 255, ((float)color[2]) / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 }

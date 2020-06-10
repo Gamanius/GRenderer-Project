@@ -101,6 +101,8 @@
     <ClInclude Include="src\dependencies\header\wglext.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\file\File.cpp" />
+    <ClCompile Include="src\core\general\Color.cpp" />
     <ClCompile Include="src\core\general\Logger.cpp" />
     <ClCompile Include="src\core\general\os.cpp" />
     <ClCompile Include="src\core\general\Time.cpp" />
@@ -108,6 +110,8 @@
     <ClCompile Include="src\core\renderer\primitves\Shader.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Vertexarray.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Vertexbuffer.cpp" />
+    <ClCompile Include="src\core\renderer\Renderer.cpp" />
+    <ClCompile Include="src\core\renderer\Texture.cpp" />
     <ClCompile Include="src\core\renderer\ShaderProgram.cpp" />
     <ClCompile Include="src\core\window\Monitor.cpp" />
     <ClCompile Include="src\core\window\Window.cpp" />

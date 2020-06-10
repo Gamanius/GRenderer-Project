@@ -40,4 +40,15 @@
     <None Include="rsc\shader\vert.vert" />
     <None Include="rsc\shader\frag.frag" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="rsc\img\a.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="rsc\img\b.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="rsc\img\color.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

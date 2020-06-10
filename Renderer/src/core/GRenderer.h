@@ -30,8 +30,6 @@
 #define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
 
-/*! Just a typedef so the code is better to read */
-typedef unsigned char byte;
 
 //Documentation can be created using doxygen
 
@@ -51,6 +49,15 @@ namespace GGeneral {
 		stream << arg;
 		return stream.str();
 	}
+
+	struct Color {
+		byte red;
+		byte green;
+		byte blue;
+
+		Color(byte red, byte green, byte blue);
+		byte operator[](byte i);
+	};
 
 	/**
 	 * Will try to convert given arguments using stringstream into a string 
@@ -263,7 +270,39 @@ namespace GGeneral {
 	}
 }
 
+namespace GIO {
+	struct File {
+		byte* data = nullptr;
+		unsigned long long int size = 0;
+
+		virtual byte operator[](unsigned int i) {
+			return data[i];
+		}
+
+		~File() { delete data; }
+	};
+
+	unsigned long long int getFileSize(std::string& filepath);
+	File* loadFile(std::string filepath);
+
+	std::string getWorkingDirectionary();
+
+	namespace Graphics {
+		struct Image : public File {
+			GGeneral::Dimension<unsigned int> dim;
+			bool hasAlpha = false;
+		};
+		bool isParseble(std::string& filepath);
+		bool isParseble(byte* data);
+
+		Image* loadImage(std::string filepath);
+	}
+}
+
 namespace GRenderer {
+	std::string getCurentOpenGLVersion();
+	void clear(GGeneral::Color& color);
+
 	//definition for shaderprogram so friendships work
 	class ShaderProgram;
 	namespace Primitives {
@@ -345,32 +384,32 @@ namespace GRenderer {
 			VertexBuffer() = default;
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All vertexes
-			 * @param amount - The amount of vertexes to be used
+			 * @param data - All the data
+			 * @param amount - The amount of values to be used
 			 */
 			VertexBuffer(char data[], unsigned int amount);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All vertexes
-			 * @param amount - The amount of vertexes to be used
+			 * @param data - All data
+			 * @param amount - The amount of values to be used
 			 */
 			VertexBuffer(short data[], unsigned int amount);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All vertexes
-			 * @param amount - The amount of vertexes to be used
+			 * @param data - All data
+			 * @param amount - The amount of value to be used
 			 */
 			VertexBuffer(int data[], unsigned int amount);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All vertexes
-			 * @param amount - The amount of vertexes to be used
+			 * @param data - All data
+			 * @param amount - The amount of value to be used
 			 */
 			VertexBuffer(float data[], unsigned int amount);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All vertexes
-			 * @param amount - The amount of vertexes to be used
+			 * @param data - All data
+			 * @param amount - The amount of value to be used
 			 */
 			VertexBuffer(double data[], unsigned int amount);
 			/**
@@ -486,6 +525,20 @@ namespace GRenderer {
 		};
 	}
 
+	class Texture {
+		unsigned int ID;
+		unsigned int textureSlot = 0;
+
+	public:
+		Texture() = default;
+		Texture(GIO::Graphics::Image& i);
+
+		~Texture();
+
+		void bind(unsigned int slot = 0);
+		void unbind();
+	};
+
 	class ShaderProgram {
 	private:
 		unsigned int ID;
@@ -498,9 +551,12 @@ namespace GRenderer {
 		bool link();
 
 		std::string getInfoMessage();
+		const unsigned int getUniformLocation(const std::string& name) const;
 
 		void bind();
 		void unbind();
+
+		unsigned int getID() const { return ID; }
 	};
 }
 

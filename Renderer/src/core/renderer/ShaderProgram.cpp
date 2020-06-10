@@ -37,3 +37,7 @@ std::string GRenderer::ShaderProgram::getInfoMessage() {
 	glGetProgramInfoLog(ID, length, NULL, infolog);
 	return std::string(infolog);
 }
+
+const unsigned int GRenderer::ShaderProgram::getUniformLocation(const std::string& name) const {
+	return glGetUniformLocation(ID, name.c_str());
+}
