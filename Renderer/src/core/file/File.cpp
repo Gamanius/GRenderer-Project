@@ -45,7 +45,7 @@ bool GIO::Graphics::isParseble(std::string& filepath) {
 
 static byte BMPSig[] = { 0x42, 0x4d };
 bool GIO::Graphics::isParseble(byte* data) {
-	if (data[0] == BMPSig[0] && data[1] == BMPSig[1]) 
+	if (data[0] == BMPSig[0] && data[1] == BMPSig[1])
 		return true;
 	return false;
 }

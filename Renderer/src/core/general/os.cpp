@@ -9,7 +9,7 @@ std::string GGeneral::OS::getComputerName() {
 	return std::string(computerName);
 }
 
-std::string GGeneral::OS::getUserName(){
+std::string GGeneral::OS::getUserName() {
 	char userName[UNLEN + 1];
 	DWORD length = UNLEN + 1;
 	GetUserNameA(userName, &length);

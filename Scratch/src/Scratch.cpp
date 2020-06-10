@@ -11,15 +11,15 @@ float vertices[] = {
 };
 
 float cube[] = {
-	// positions // colors // texture coords 
-	0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 
-	// top right 
-	0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 
- // bottom right
- -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 
- // bottom left 
- -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f 
- // top left 
+	// positions // colors // texture coords
+	0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+	// top right
+	0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+	// bottom right
+	-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+	// bottom left
+	-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f
+	// top left
 };
 
 unsigned short index[] = {
@@ -36,7 +36,7 @@ int main() {
 	w.setState(GWindow::WindowState::NORMAL);
 	LOG(w.initOpenGLContext());
 	w.setOpenGLContextActive(true);
-	LOG(glewInit()); 
+	LOG(glewInit());
 	LOG(GGeneral::toString("OpenGL Version: ", glGetString(GL_VERSION)));
 	GGeneral::Logger::wait();
 	LOG(GGeneral::OS::getUserName());
@@ -58,7 +58,7 @@ int main() {
 	GRenderer::Texture t(*img);
 	t.bind();
 	//location = program.getUniformLocation("img");
-	
+
 	GRenderer::Primitives::VertexBuffer v(cube, 32);
 	GRenderer::Primitives::IndexBuffer i(index, 6);
 	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3, 3, 2 }, GRenderer::Primitives::VertexTypes::FLOAT);

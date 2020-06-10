@@ -30,7 +30,6 @@
 #define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
 
-
 //Documentation can be created using doxygen
 
 /** \mainpage <strong>The SREP </strong>
@@ -42,7 +41,11 @@
   * very untidy.
   */
 namespace GGeneral {
-
+	/**
+	 * Will try to convert given argument into a string using stringstream
+	 * @param arg - The argument to convert
+	 * @return A string
+	 */
 	template<typename T>
 	std::string toString(T arg) {
 		std::stringstream stream;
@@ -50,17 +53,8 @@ namespace GGeneral {
 		return stream.str();
 	}
 
-	struct Color {
-		byte red;
-		byte green;
-		byte blue;
-
-		Color(byte red, byte green, byte blue);
-		byte operator[](byte i);
-	};
-
 	/**
-	 * Will try to convert given arguments using stringstream into a string 
+	 * Will try to convert given arguments using stringstream into a string
 	 * @param arg - The first needed argument
 	 * @param ...args - More arguments
 	 * @return A combined string of all arguments
@@ -72,6 +66,36 @@ namespace GGeneral {
 		returnValue += toString(args...);
 		return returnValue;
 	}
+
+	/**
+	 * A struct containing Red Green and Blue values
+	 */
+	struct Color {
+		/** The red component */
+		byte red;
+		/** The green component */
+		byte green;
+		/** The blue component */
+		byte blue;
+
+		/**
+		 * Creates a new Color struct with given values
+		 * @param red - The red value
+		 * @param green - The green value
+		 * @param blue - The blue value
+		 */
+		Color(byte red, byte green, byte blue);
+
+		/** Creates a new Color struct with all values being 0 */
+		Color() : Color(0, 0, 0) {}
+
+		/**
+		 * Returns the red, green or blue color values depending on the given index. Index may not be higher than 2 nor lower than 0
+		 * @param i - The index
+		 * @return A color value
+		 */
+		byte operator[](byte i);
+	};
 
 	namespace Time {
 		struct Timer {
@@ -263,44 +287,126 @@ namespace GGeneral {
 		}
 	};
 
+	/**
+	 * This namespace contains some Win32 API calls that dont fit the GWindow namespace.
+	 */
 	namespace OS {
+		/**
+		 * Will fetch the current computer name and return it
+		 * @returns The computer name
+		 */
 		std::string getComputerName();
+
+		/**
+		 * Will fetch the current user name and return it
+		 * @returns The user name
+		 */
 		std::string getUserName();
+
+		/**
+		 * Will move the mouse cursor to the given screen space coordinates. Please note that the cursor is a shared recourse.
+		 * @param newPos - The new position of the cursor
+		 */
 		void moveMouse(GGeneral::Point<int> newPos);
 	}
 }
 
+/**
+ * A namespace containing all function around file loading and reading.
+ */
 namespace GIO {
+	/**
+	 * A struct containing the most important information about a file. All classes that are loading in files should derive from it
+	 */
 	struct File {
+		/**
+		 * The data of the file
+		 */
 		byte* data = nullptr;
-		unsigned long long int size = 0;
+		/**
+		 * The size of data in bytes
+		 */
+		unsigned int size = 0;
 
+		/**
+		 * Returns the data of the given index. The index may not be higher than the size nor lower than 0
+		 * @param i -  The index
+		 * @return The data
+		 */
 		virtual byte operator[](unsigned int i) {
 			return data[i];
 		}
 
+		/** Deletes all data allocated */
 		~File() { delete data; }
 	};
 
+	/**
+	 * Loads in the file and return the file size. If an error occurs the returned value is 0
+	 * @returns The file size in bytes
+	 */
 	unsigned long long int getFileSize(std::string& filepath);
+
+	/**
+	 * Will create a file, load and allocated the memory for the data. If an error occurs the returned value will be a nullptr
+	 * @returns A Pointer to a file struct
+	 */
 	File* loadFile(std::string filepath);
 
+	/**
+	 * Fetches and returns the filepath of the executable
+	 * @returns The file path of the .exe file
+	 */
 	std::string getWorkingDirectionary();
 
+	/**
+	 * This namespace contains all functions to load in images
+	 */
 	namespace Graphics {
+		/**
+		 * A struct containing information about a image. The data will always be:
+		 * RED, GREEN, BLUE, (if available) ALPHA
+		 */
 		struct Image : public File {
+			/**
+			 * The size of the image
+			 */
 			GGeneral::Dimension<unsigned int> dim;
+			/**
+			 * Does the image contain alpha values
+			 */
 			bool hasAlpha = false;
 		};
+		/**
+		 * Check if there is an implementation to load the image. Will return false if an error occurs
+		 * @return true - The image can be parsed
+		 * @return false - An error occurred and/or the image cannot be parsed
+		 */
 		bool isParseble(std::string& filepath);
+		/**
+		 * Check if there is an implementation to load the image. Will return false if an error occurs
+		 * @return true - The image can be parsed
+		 * @return false - An error occurred and/or the image cannot be parsed
+		 */
 		bool isParseble(byte* data);
 
+		/**
+		 * Will check if the image can be parsed. If the image can be parse it will load in the image, parse it and return a pointer to a created image struct with all information about the image
+		 * @returns If successful a image struct
+		 */
 		Image* loadImage(std::string filepath);
 	}
 }
 
 namespace GRenderer {
+	/**
+	 * Fetches the current OpenGL Version
+	 */
 	std::string getCurentOpenGLVersion();
+
+	/**
+	 * Clears the current active OpenGL context with the given color
+	 */
 	void clear(GGeneral::Color& color);
 
 	//definition for shaderprogram so friendships work
@@ -491,71 +597,171 @@ namespace GRenderer {
 			void unbind();
 		};
 
+		/**
+		 * All possible shaders
+		 */
 		enum class ShaderTypes {
-			COMPUTE_SHADER, 
-			VERTEX_SHADER, 
-			TESS_CONTROL_SHADER, 
-			TESS_EVALUATION_SHADER, 
-			GEOMETRY_SHADER, 
-			FRAGMENT_SHADER, 
-			UNKOWN_SHADER
+			COMPUTE_SHADER,          /*! A COMPUTE_SHADER*/
+			VERTEX_SHADER,			 /*! A VERTEX_SHADER*/
+			TESS_CONTROL_SHADER,	 /*! A TESS_CONTROL_SHADER*/
+			TESS_EVALUATION_SHADER,	 /*! A TESS_EVALUATION_SHADER*/
+			GEOMETRY_SHADER,		 /*! A GEOMETRY_SHADER*/
+			FRAGMENT_SHADER,		 /*! A FRAGMENT_SHADER*/
+			UNKOWN_SHADER			 /*! If the shader is unknown or cannot be parsed it is an UNKOWN_SHADER*/
 		};
 
+		/**
+		 * A class wrapper for an shader
+		 */
 		class Shader {
 		private:
-			/** 
-			 * Internal OpenGL ID 
+			/**
+			 * Internal OpenGL ID
 			 */
 			unsigned int ID;
+			/**
+			 * The source code
+			 */
 			std::string sourceCode;
 			ShaderTypes type = ShaderTypes::UNKOWN_SHADER;
 			bool fail = true;
 		public:
+			/**
+			 * Will create an invalid shader
+			 */
 			Shader() = default;
+
+			/**
+			 * Will try to guess the Shader and load it in
+			 * @param filepath - The filepath to the shader
+			 */
 			Shader(std::string filepath);
+
+			/**
+			 * Will load in the shader and set the shader type
+			 * @param filepath - The filepath to the shader
+			 * @param type - The type of the shader
+			 */
 			Shader(std::string filepath, ShaderTypes type);
+
 			~Shader();
 
+			/**
+			 * Will load in the shader and try to guess it's type
+			 * @param filepath - The filepath to the shader
+			 * @return true If successful and no errors occurred
+			 * @return false If an error occurred
+			 */
 			bool loadShader(std::string filepath);
+
+			/**
+			 * Will try to compile the shader
+			 * @return true If the shader compilation was successful
+			 * @return false If the shader type is not know or and error occurred while trying to compile it
+			 */
 			bool compileShader();
+
+			/**
+			 * @return true If no errors occurred
+			 * @return false If an error occurred and the fail bit is set to true
+			 */
 			bool failed() const;
+
+			/**
+			 * Returns an info message of the shader if any errors occurred
+			 * @return A string of the info message
+			 */
 			std::string getInfoMessage();
 
 			friend class GRenderer::ShaderProgram;
 		};
 	}
 
+	/**
+	 * A class wrapper for OpenGL textures
+	 */
 	class Texture {
 		unsigned int ID;
 		unsigned int textureSlot = 0;
 
 	public:
+		/**
+		 * Default constructor. The texture is invalid
+		 */
 		Texture() = default;
+
+		/**
+		 * Will create a new Texture with the given image
+		 * @param i
+		 */
 		Texture(GIO::Graphics::Image& i);
 
 		~Texture();
 
+		/**
+		 * Will bind the texture to the given texture slot
+		 * @param slot - The texture slot to bind to
+		 */
 		void bind(unsigned int slot = 0);
+
+		/**
+		 * Will unbind the current texture from the texture slot
+		 */
 		void unbind();
 	};
 
+	/**
+	 * A class wrapper for a Shader program
+	 */
 	class ShaderProgram {
 	private:
 		unsigned int ID;
 		std::vector<unsigned int*> shaderIDs;
 		bool fail = true;
 	public:
+		/**
+		 * Default shader program constructor. The program is invalid
+		 */
 		ShaderProgram() = default;
+		/**
+		 * Will try to link all given shaders and create a shader program
+		 * @param shaders - All shaders to bind
+		 */
 		ShaderProgram(std::initializer_list<Primitives::Shader*> shaders);
 
+		/**
+		 * Will link the shaders
+		 * @return true - If linking was successful
+		 * @return false - If an error occured while linking
+		 */
 		bool link();
 
+		/**
+		 * Returns an info message of the shader program if any errors occurred
+		 * @return A string of the info message
+		 */
 		std::string getInfoMessage();
+
+		/**
+		 * Will fetch the uniform location.
+		 * @param name - The name of the uniform
+		 * @return If successful the location of the uniform
+		 */
 		const unsigned int getUniformLocation(const std::string& name) const;
 
+		/**
+		 * Will bind the shader program
+		 */
 		void bind();
+
+		/**
+		 * Will unbind the shader program
+		 */
 		void unbind();
 
+		/**
+		 * @return The internal OpenGL Shaderprogram ID
+		 */
 		unsigned int getID() const { return ID; }
 	};
 }

@@ -37,13 +37,13 @@ GLenum ShaderTypeToGLenum(GRenderer::Primitives::ShaderTypes s) {
 }
 
 GRenderer::Primitives::Shader::Shader(std::string filepath) {
-	if (!loadShader(filepath)) 
+	if (!loadShader(filepath))
 		return;
-	
+
 	if (type == GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER)
 		return;
 
-	if(!compileShader())
+	if (!compileShader())
 		return;
 
 	fail = false;
@@ -53,7 +53,7 @@ GRenderer::Primitives::Shader::Shader(std::string filepath, ShaderTypes type) : 
 	if (!loadShader(filepath))
 		return;
 
-	if(!compileShader())
+	if (!compileShader())
 		return;
 
 	fail = false;
@@ -82,6 +82,8 @@ bool GRenderer::Primitives::Shader::loadShader(std::string filepath) {
 }
 
 bool GRenderer::Primitives::Shader::compileShader() {
+	if (type == ShaderTypes::UNKOWN_SHADER)
+		return false;
 	ID = glCreateShader(ShaderTypeToGLenum(type));
 	const char* shaderSourceCopy = sourceCode.c_str();
 	glShaderSource(ID, 1, &shaderSourceCopy, NULL);
