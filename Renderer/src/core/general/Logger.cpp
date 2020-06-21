@@ -111,7 +111,10 @@ bool GGeneral::Logger::init() {
 }
 
 void GGeneral::Logger::wait() {
-	while (msgBuffer.size() != 0);
+	static volatile unsigned int s = msgBuffer.size();
+	while (s != 0) {
+		s = msgBuffer.size();
+	}
 }
 
 void GGeneral::Logger::terminateThread() {

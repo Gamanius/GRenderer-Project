@@ -92,6 +92,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\Defines.h" />
     <ClInclude Include="src\core\GMath.h" />
     <ClInclude Include="src\core\GRenderer.h" />
     <ClInclude Include="src\dependencies\GLEW\include\GL\eglew.h" />

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Defines.h"
+
 #include <cmath>
 
 /*! Just a typedef so the code is better to read */
@@ -19,17 +21,9 @@ type <T> operator op (const type <T>& a) { \
 }
 
 /**
- * The approx value of Pi used in this renderer
+ * This namespace includes the most important OpenGL math functions needed. It can be also used outside the engine and/or without OpenGL.
+ * The Renderer doesn't need to be initialized to use the functions
  */
-#define G_PI 3.14159265359f;
-
-#define TO_RAD(deg) deg * (G_PI / 180.0f)
-#define TO_DEG(rad) rad * (180.0f / G_PI);
-
- /**
-  * This namespace includes the most important OpenGL math functions needed. It can be also used outside the engine and/or without OpenGL.
-  * The Renderer doesn't need to be initialized to use the functions
-  */
 namespace GMath {
 	//Some definitions
 	template<typename T>

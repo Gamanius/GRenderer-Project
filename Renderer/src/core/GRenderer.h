@@ -7,30 +7,9 @@
 
 #include "GMath.h"
 
-#ifndef _WIN32
-#error Only Windows is Supported!
-#elif _WIN64
-#error There is no 64x support!
-#endif
+#define OBJ : public GGeneral::BaseObject
 
-#ifndef NO_LOGGER_DEF
-//Logger macros
-#define LOG(x)      GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_MSG, -1);
-#define LOGI(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_INFO, -1);
-#define LOGS(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_SUCCESS, -1);
-#define LOGW(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_WARNING, -1);
-#define LOGE(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_ERROR, -1);
-#define LOGF(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, -1);
-
-#define ULOG(x, y)  GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_MSG, y);
-#define ULOGI(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_INFO, y);
-#define ULOGS(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_SUCCESS, y);
-#define ULOGW(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_WARNING, y);
-#define ULOGE(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_ERROR, y);
-#define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
-#endif //NO_LOGGER_DEF
-
-//Documentation can be created using doxygen
+//Documentation can be (and is) created using doxygen
 
 /** \mainpage <strong>The SREP </strong>
  *  <p> This project is just a simple a try to create a Renderer that can, given the right data, make some beautiful pictures.The hope is that it can be used to create simple games and visualizations.The Renderer can only be used on Windows machines because of the inclusion of the <em>Win32</em> API. </p>
@@ -49,6 +28,7 @@ namespace GGeneral {
 	template<typename T>
 	std::string toString(T arg) {
 		std::stringstream stream;
+
 		stream << arg;
 		return stream.str();
 	}
@@ -67,10 +47,14 @@ namespace GGeneral {
 		return returnValue;
 	}
 
+	struct BaseObject {
+		virtual std::string toString() const = 0;
+	};
+
 	/**
 	 * A struct containing Red Green and Blue values
 	 */
-	struct Color {
+	struct Color OBJ {
 		/** The red component */
 		byte red;
 		/** The green component */
@@ -95,9 +79,37 @@ namespace GGeneral {
 		 * @return A color value
 		 */
 		byte operator[](byte i);
+
+		std::string toString() const override {
+			return PRINT_VAR(red, green, blue);
+		}
 	};
 
 	namespace Time {
+		struct TimePoint OBJ {
+			unsigned long long int timepoint = 0;
+			unsigned int year = 0;
+			byte month = 0;
+			byte day = 0;
+			byte hour = 0;
+			byte minute = 0;
+			byte seconds = 0;
+			unsigned int millisecond = 0;
+			unsigned int microsecond = 0;
+			unsigned int nanosecond = 0;
+
+			operator unsigned long long int() {
+				return timepoint;
+			}
+
+			std::string toString() const override {
+				return PRINT_VAR(timepoint, year, month, day, hour, minute, seconds, millisecond, microsecond, nanosecond);
+			}
+		};
+
+		const bool isLeapYear(TimePoint& point);
+		const bool isLeapYear(const unsigned int year);
+
 		struct Timer {
 			unsigned long long int startTime;
 			Timer();
@@ -204,7 +216,7 @@ namespace GGeneral {
 	 * A struct containing tow values representing the dimension of anything in 2D.
 	 */
 	template<typename T>
-	struct Dimension {
+	struct Dimension OBJ {
 		/*! The width component of the Dimension */
 		T width;
 		/*! The height component of the Dimension */
@@ -215,10 +227,8 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Dimension struct
 		 */
-		virtual const std::string toString() const {
-			std::stringstream s;
-			s << "[width: " << width << ", height: " << height << "]";
-			return s.str();
+		std::string toString() const override {
+			return PRINT_VAR(width, height);
 		}
 	};
 
@@ -235,10 +245,8 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		const std::string toString() const override {
-			std::stringstream s;
-			s << "[width: " << this->width << ", height: " << this->height << ", depth: " << depth << "]";
-			return s.str();
+		std::string toString() const override {
+			return PRINT_VAR(this->width, this->height, depth);
 		}
 	};
 
@@ -246,7 +254,7 @@ namespace GGeneral {
 	 * A struct containing two values representing a point in 2D space.
 	 */
 	template<typename T>
-	struct Point {
+	struct Point OBJ {
 		/*! The x coordinate*/
 		T x;
 		/*! The y coordinate*/
@@ -257,10 +265,8 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		virtual const std::string toString() const {
-			std::stringstream s;
-			s << "[x: " << x << ", y: " << y << "]";
-			return s.str();
+		std::string toString() const override {
+			return PRINT_VAR(x, y);
 		}
 	};
 
@@ -280,10 +286,8 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		const std::string toString() const override {
-			std::stringstream s;
-			s << "[x: " << this->x << ", y: " << this->y << ", z: " << z << "]";
-			return s.str();
+		std::string toString() const override {
+			return PRINT_VAR(this->x, this->y, z);
 		}
 	};
 
@@ -318,7 +322,7 @@ namespace GIO {
 	/**
 	 * A struct containing the most important information about a file. All classes that are loading in files should derive from it
 	 */
-	struct File {
+	struct File OBJ {
 		/**
 		 * The data of the file
 		 */
@@ -335,6 +339,10 @@ namespace GIO {
 		 */
 		virtual byte operator[](unsigned int i) {
 			return data[i];
+		}
+
+		std::string toString() const override {
+			return PRINT_VAR(size);
 		}
 
 		/** Deletes all data allocated */
@@ -375,6 +383,10 @@ namespace GIO {
 			/**
 			 * Does the image contain alpha values
 			 */
+
+			std::string toString() const override {
+				return PRINT_VAR(this->size, dim);
+			}
 			bool hasAlpha = false;
 		};
 		/**
@@ -485,13 +497,15 @@ namespace GRenderer {
 			 * Internal OpenGL ID
 			 */
 			unsigned int ID;
+			unsigned int amount = 0;
 
 		public:
 			VertexBuffer() = default;
+			//TODO: correct documentation
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - All the data
-			 * @param amount - The amount of values to be used
+			 * @param amount - !PLEASE CHECK THIS IS NOT CORRECT! The amount of values to be used
 			 */
 			VertexBuffer(char data[], unsigned int amount);
 			/**
@@ -531,6 +545,8 @@ namespace GRenderer {
 			 * Unbinds the curernt VertexBuffer
 			 */
 			void unbind();
+
+			friend struct VertexArray;
 		};
 
 		/**
@@ -586,6 +602,8 @@ namespace GRenderer {
 			 * @param layout - The layout of the VertexBuffer
 			 */
 			VertexArray(VertexBuffer vertex, IndexBuffer index, VertexArrayLayout layout);
+
+			VertexArray(VertexBuffer vertex, VertexArrayLayout layout);
 
 			/**
 			 * Binds the current VertexArray
@@ -695,6 +713,13 @@ namespace GRenderer {
 		 * @param i
 		 */
 		Texture(GIO::Graphics::Image& i);
+
+		/**
+		 * Will create the shader
+		 * @param i - The Image to convert to a texture
+		 * @return Always true
+		 */
+		const bool createShader(GIO::Graphics::Image& i);
 
 		~Texture();
 
@@ -876,7 +901,7 @@ namespace GWindow {
 	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
 	namespace Monitor {
 		/*! A struct containing all informations of a virtual monitor*/
-		struct Screen {
+		struct Screen OBJ {
 			/*!Name of the screen*/
 			std::string screenName;
 			/*!The digital Position of the Screen relative to the primary Monitor*/
@@ -898,8 +923,8 @@ namespace GWindow {
 			/**
 			 * @return A string representing the Screen struct
 			 */
-			const std::string toString() const {
-				return "[name: '" + screenName + "', digitalPos: " + digitalPosition.toString() + ", resolution: " + screenDimension.toString() + ", workDimension " + workDimension.toString() + "]";
+			std::string toString() const override {
+				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
 			}
 		};
 
@@ -1139,19 +1164,7 @@ namespace GEnumString {
 	}
 }
 
-template<typename T>
-inline std::ostream& operator<<(std::ostream& os, const GGeneral::Dimension<T>& p) {
-	os << p.toString();
-	return os;
-}
-
-template<typename T>
-inline std::ostream& operator<<(std::ostream& os, const GGeneral::Point<T>& p) {
-	os << p.toString();
-	return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const GWindow::Monitor::Screen& p) {
-	os << p.toString();
+inline std::ostream& operator<<(std::ostream& os, const GGeneral::BaseObject& obj) {
+	os << obj.toString();
 	return os;
 }

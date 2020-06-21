@@ -2,6 +2,10 @@
 #include <GL/glew.h>
 
 GRenderer::Texture::Texture(GIO::Graphics::Image& i) {
+	createShader(i);
+}
+
+const bool GRenderer::Texture::createShader(GIO::Graphics::Image& i) {
 	glGenTextures(1, &ID);
 	bind();
 
@@ -17,6 +21,7 @@ GRenderer::Texture::Texture(GIO::Graphics::Image& i) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, i.dim.width, i.dim.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, i.data);
 	}
 	glGenerateMipmap(GL_IMAGE_2D);
+	return true;
 }
 
 void GRenderer::Texture::bind(unsigned int slot) {

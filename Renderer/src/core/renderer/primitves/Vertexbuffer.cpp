@@ -6,30 +6,40 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], unsigned int amo
 	bind();
 
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
+
+	this->amount = amount;
 }
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(char data[], unsigned int amount) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
+
+	this->amount = amount;
 }
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(short data[], unsigned int amount) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
+
+	this->amount = amount;
 }
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(int data[], unsigned int amount) {
 	glGenBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
+
+	this->amount = amount;
 }
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(double data[], unsigned int amount) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
+
+	this->amount = amount;
 }
 
 GRenderer::Primitives::VertexBuffer::~VertexBuffer() {

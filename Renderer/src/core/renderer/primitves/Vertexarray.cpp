@@ -63,6 +63,22 @@ GRenderer::Primitives::VertexArray::VertexArray(VertexBuffer vertex, IndexBuffer
 	vertex.unbind();
 }
 
+GRenderer::Primitives::VertexArray::VertexArray(VertexBuffer vertex, VertexArrayLayout layout) {
+	glGenVertexArrays(1, &ID);
+	bind();
+	vertex.bind();
+	amount = vertex.amount;
+	isOnlyVertexBuffer = true;
+
+	for (unsigned int i = 0; i < layout.layout.size(); i++) {
+		glVertexAttribPointer(i, layout.layout[i], GL_FLOAT, GL_FALSE, layout.getStride(), (void*)layout.getOffset(i));
+		glEnableVertexAttribArray(i);
+	}
+
+	unbind();
+	vertex.unbind();
+}
+
 void GRenderer::Primitives::VertexArray::bind() {
 	glBindVertexArray(ID);
 }
