@@ -11,7 +11,7 @@ out vec3 vcol;
 uniform mat4 mat;
 
 void main() {
-	gl_Position =  vec4(pos, 1);
+	gl_Position =  mat * vec4(pos, 1);
 	tex = texc;
 	vcol = col; 
 }

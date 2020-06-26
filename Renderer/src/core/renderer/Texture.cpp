@@ -2,10 +2,10 @@
 #include <GL/glew.h>
 
 GRenderer::Texture::Texture(GIO::Graphics::Image& i) {
-	createShader(i);
+	createTexture(i);
 }
 
-const bool GRenderer::Texture::createShader(GIO::Graphics::Image& i) {
+const bool GRenderer::Texture::createTexture(GIO::Graphics::Image& i) {
 	glGenTextures(1, &ID);
 	bind();
 
@@ -15,7 +15,7 @@ const bool GRenderer::Texture::createShader(GIO::Graphics::Image& i) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
 	if (!i.hasAlpha) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, i.dim.width, i.dim.height, 0, GL_RGB, GL_UNSIGNED_BYTE, i.data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, i.dim.width, i.dim.height, 0, GL_BGR, GL_UNSIGNED_BYTE, i.data);
 	}
 	else {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, i.dim.width, i.dim.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, i.data);

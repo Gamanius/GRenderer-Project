@@ -24,7 +24,7 @@ GIO::File* GIO::loadFile(std::string relativeFilepath) {
 	auto size = file.tellg();
 	file.seekg(0, 0);
 
-	char* buffer = new char[static_cast<unsigned int>(size)];
+	char* buffer = static_cast<char*>(MALLOC(size));// new char[static_cast<unsigned int>(size)];
 	file.read(buffer, size);
 	file.close();
 	returnValue->size = size;
@@ -55,36 +55,40 @@ GIO::Graphics::Image* doBMP(GIO::File* f) {
 	Image* returnValue = new Image;
 	//Check for header
 	//only support for 32 and 24 bit BMP's
-	int height = reinterpret_cast<int*>(&f->data[0x12])[0];
+	int height = reinterpret_cast<int*>(&f->data[0x16])[0];
 	returnValue->dim.height = height;
-	int width = reinterpret_cast<int*>(&f->data[0x16])[0];
+	int width = reinterpret_cast<int*>(&f->data[0x12])[0];
 	returnValue->dim.width = width;
 	unsigned short bpp = reinterpret_cast<unsigned short*>(&f->data[0x1c])[0];
 	//ONLY 32bit and 24bit support for now
 	if (bpp != 24 && bpp != 32)
 		return nullptr;
 	//Unused
-	unsigned int compression = reinterpret_cast<unsigned int*>(&f->data[0x1e])[0];
+	//unsigned int compression = reinterpret_cast<unsigned int*>(&f->data[0x1e])[0];
 
 	unsigned int pixelStart = reinterpret_cast<unsigned int*>(&f->data[0xa])[0];
 	unsigned long readBytes = height * width * (bpp == 24 ? 3 : 4);
-	returnValue->data = static_cast<byte*>(malloc(readBytes));
+	returnValue->data = static_cast<byte*>(MALLOC(readBytes));
 	memcpy(returnValue->data, &f->data[pixelStart], readBytes);
 	returnValue->size = readBytes;
 	returnValue->hasAlpha = bpp == 32;
 
+	delete f;
 	return returnValue;
 }
 
 GIO::Graphics::Image* GIO::Graphics::loadImage(std::string filepath) {
-	auto file = *loadFile(filepath);
-	if (file.data == nullptr)
+	auto file = loadFile(filepath);
+	if (file->data == nullptr) {
+		delete file;
 		return nullptr;
-	if (!isParseble(file.data))
+	}	if (!isParseble(file->data)) {
+		delete file;
 		return nullptr;
-	if (file[0] == BMPSig[0] && file[1] == BMPSig[1]) {
-		return doBMP(&file);
 	}
-
+	if (file->operator[](0) == BMPSig[0] && file->operator[](1) == BMPSig[1]) {
+		return doBMP(file);
+	}
+	delete file;
 	return nullptr;
 }

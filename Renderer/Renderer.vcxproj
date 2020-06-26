@@ -100,6 +100,7 @@
     <ClInclude Include="src\dependencies\GLEW\include\GL\glxew.h" />
     <ClInclude Include="src\dependencies\GLEW\include\GL\wglew.h" />
     <ClInclude Include="src\dependencies\header\wglext.h" />
+    <ClInclude Include="src\core\GMemory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\file\File.cpp" />

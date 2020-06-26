@@ -286,16 +286,18 @@
 #ifndef NO_LOGGER_DEF
  //Logger macros
 #define LOG(...)      GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_MSG, -1);
-#define LOGI(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_INFO, -1);
-#define LOGS(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_SUCCESS, -1);
-#define LOGW(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_WARNING, -1);
-#define LOGE(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_ERROR, -1);
-#define LOGF(x)     GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, -1);
+#define LOGI(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_INFO, -1);
+#define LOGS(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_SUCCESS, -1);
+#define LOGW(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_WARNING, -1);
+#define LOGE(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_ERROR, -1);
+#define LOGF(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL, -1);
 
-#define ULOG(x, y)  GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_MSG, y);
-#define ULOGI(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_INFO, y);
-#define ULOGS(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_SUCCESS, y);
-#define ULOGW(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_WARNING, y);
-#define ULOGE(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_ERROR, y);
-#define ULOGF(x, y) GGeneral::Logger::printMessage(x, GGeneral::Logger::Severity::S_FATAL, y);
+#define ULOG(x, ...)  GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_MSG, y);
+#define ULOGI(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_INFO, y);
+#define ULOGS(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_SUCCESS, y);
+#define ULOGW(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_WARNING, y);
+#define ULOGE(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_ERROR, y);
+#define ULOGF(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
+
+#define G_RENDERER

@@ -79,6 +79,10 @@ GRenderer::Primitives::VertexArray::VertexArray(VertexBuffer vertex, VertexArray
 	vertex.unbind();
 }
 
+GRenderer::Primitives::VertexArray::~VertexArray() {
+	glDeleteVertexArrays(1, &ID);
+}
+
 void GRenderer::Primitives::VertexArray::bind() {
 	glBindVertexArray(ID);
 }

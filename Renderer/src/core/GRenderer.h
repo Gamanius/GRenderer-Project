@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "GMath.h"
+#include "GMemory.h"
 
-#define OBJ : public GGeneral::BaseObject
+#define MALLOC(x) GMemory::alloc(x)
+#define FREE(x, y) GMemory::dele(x, y)
 
 //Documentation can be (and is) created using doxygen
 
@@ -54,7 +56,7 @@ namespace GGeneral {
 	/**
 	 * A struct containing Red Green and Blue values
 	 */
-	struct Color OBJ {
+	struct Color : public GGeneral::BaseObject {
 		/** The red component */
 		byte red;
 		/** The green component */
@@ -86,7 +88,7 @@ namespace GGeneral {
 	};
 
 	namespace Time {
-		struct TimePoint OBJ {
+		struct TimePoint : public GGeneral::BaseObject {
 			unsigned long long int timepoint = 0;
 			unsigned int year = 0;
 			byte month = 0;
@@ -216,7 +218,7 @@ namespace GGeneral {
 	 * A struct containing tow values representing the dimension of anything in 2D.
 	 */
 	template<typename T>
-	struct Dimension OBJ {
+	struct Dimension : public GGeneral::BaseObject {
 		/*! The width component of the Dimension */
 		T width;
 		/*! The height component of the Dimension */
@@ -254,7 +256,7 @@ namespace GGeneral {
 	 * A struct containing two values representing a point in 2D space.
 	 */
 	template<typename T>
-	struct Point OBJ {
+	struct Point : public GGeneral::BaseObject {
 		/*! The x coordinate*/
 		T x;
 		/*! The y coordinate*/
@@ -322,7 +324,7 @@ namespace GIO {
 	/**
 	 * A struct containing the most important information about a file. All classes that are loading in files should derive from it
 	 */
-	struct File OBJ {
+	struct File : public GGeneral::BaseObject {
 		/**
 		 * The data of the file
 		 */
@@ -331,6 +333,10 @@ namespace GIO {
 		 * The size of data in bytes
 		 */
 		unsigned int size = 0;
+
+		File() {}
+
+		File(byte* data, unsigned int size) : data(data), size(size) {}
 
 		/**
 		 * Returns the data of the given index. The index may not be higher than the size nor lower than 0
@@ -346,7 +352,7 @@ namespace GIO {
 		}
 
 		/** Deletes all data allocated */
-		~File() { delete data; }
+		~File() { FREE(data, size); }
 	};
 
 	/**
@@ -411,6 +417,10 @@ namespace GIO {
 }
 
 namespace GRenderer {
+	/**
+	 * Will initialize the renderer
+	 */
+	const bool init();
 	/**
 	 * Fetches the current OpenGL Version
 	 */
@@ -605,6 +615,8 @@ namespace GRenderer {
 
 			VertexArray(VertexBuffer vertex, VertexArrayLayout layout);
 
+			~VertexArray();
+
 			/**
 			 * Binds the current VertexArray
 			 */
@@ -719,7 +731,7 @@ namespace GRenderer {
 		 * @param i - The Image to convert to a texture
 		 * @return Always true
 		 */
-		const bool createShader(GIO::Graphics::Image& i);
+		const bool createTexture(GIO::Graphics::Image& i);
 
 		~Texture();
 
@@ -754,6 +766,8 @@ namespace GRenderer {
 		 */
 		ShaderProgram(std::initializer_list<Primitives::Shader*> shaders);
 
+		~ShaderProgram();
+
 		/**
 		 * Will link the shaders
 		 * @return true - If linking was successful
@@ -773,6 +787,8 @@ namespace GRenderer {
 		 * @return If successful the location of the uniform
 		 */
 		const unsigned int getUniformLocation(const std::string& name) const;
+
+		//TODO: setter
 
 		/**
 		 * Will bind the shader program
@@ -836,6 +852,8 @@ namespace GWindow {
 		 * @param dim - The dimension of the whole window
 		 */
 		Window(std::string name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
+
+		~Window();
 
 		/**
 		 * TODO
@@ -901,7 +919,7 @@ namespace GWindow {
 	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
 	namespace Monitor {
 		/*! A struct containing all informations of a virtual monitor*/
-		struct Screen OBJ {
+		struct Screen : public GGeneral::BaseObject {
 			/*!Name of the screen*/
 			std::string screenName;
 			/*!The digital Position of the Screen relative to the primary Monitor*/

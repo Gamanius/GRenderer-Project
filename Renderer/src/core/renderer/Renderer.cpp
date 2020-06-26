@@ -1,6 +1,12 @@
 #include "../GRenderer.h"
 #include <GL/glew.h>
 
+const bool GRenderer::init() {
+	GGeneral::Logger::init();
+	GWindow::Monitor::init();
+	return true;
+}
+
 std::string GRenderer::getCurentOpenGLVersion() {
 	auto c = glGetString(GL_VERSION);
 	std::string r;

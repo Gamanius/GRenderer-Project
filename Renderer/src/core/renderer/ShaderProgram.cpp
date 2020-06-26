@@ -6,6 +6,10 @@ GRenderer::ShaderProgram::ShaderProgram(std::initializer_list<Primitives::Shader
 		shaderIDs.push_back(&s->ID);
 }
 
+GRenderer::ShaderProgram::~ShaderProgram() {
+	glDeleteProgram(ID);
+}
+
 bool GRenderer::ShaderProgram::link() {
 	ID = glCreateProgram();
 	bind();
@@ -33,7 +37,7 @@ std::string GRenderer::ShaderProgram::getInfoMessage() {
 	glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &length);
 	if (length == 0)
 		return "";
-	char* infolog = (char*)malloc(sizeof(char) * length);
+	char* infolog = static_cast<char*>(MALLOC(sizeof(char) * length));
 	glGetProgramInfoLog(ID, length, NULL, infolog);
 	return std::string(infolog);
 }

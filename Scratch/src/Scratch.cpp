@@ -1,5 +1,5 @@
-#include <GRenderer.h>
 #include <iostream>
+#include <GRenderer.h>
 #include <Windows.h>
 #include "GLEW/include/GL/glew.h"
 
@@ -23,55 +23,67 @@ unsigned short index[] = {
 	1, 2, 3
 };
 
+void memtest() {
+	GMemory mem;
+	auto img = GIO::Graphics::loadImage("rsc/img/color.bmp");
+	std::cout << mem.stop() << "\n";
+	delete img;
+	std::cout << mem.stop() << "\n";
+}
+
 int main() {
-	GGeneral::Logger::init();
+	memtest();
+	std::cout << GMemory::getMemory() << "\n";
+}/*
+	GRenderer::init();
+	GWindow::Window w;
 
-	//GWindow::Window w;
-	//GWindow::Monitor::init();
-	//
-	//w.setState(GWindow::WindowState::NORMAL);
-	//w.initOpenGLContext();
-	//w.setOpenGLContextActive(true);
-	//glewInit();
-	//LOGS("Everything initialized");
-	//LOG(GGeneral::toString("OpenGL Version: ", glGetString(GL_VERSION)));
-	//GGeneral::Logger::wait();
-	//
-	//GRenderer::Primitives::Shader frag("rsc/shader/frag.frag");
-	//GRenderer::Primitives::Shader vert("rsc/shader/vert.vert");
-	//
-	//GRenderer::ShaderProgram program({ &frag, &vert });
-	//program.link();
-	//
-	//GGeneral::Time::Timer timer;
-	//auto img = GIO::Graphics::loadImage("rsc/img/color.bmp");
-	//LOG(timer.stop());
-	//GGeneral::Logger::wait();
-	//GRenderer::Texture t(*img);
-	//t.bind();
-	////location = program.getUniformLocation("img");
-	////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	//
-	//GRenderer::Primitives::VertexBuffer v(cube, 36);
-	//GRenderer::Primitives::IndexBuffer i(index, 6);
-	//GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3, 3 , 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
-	//GRenderer::Primitives::VertexArray vertex(v, i, l);
-	//
-	//vertex.bind();
-	//GGeneral::Color c(50, 50, 50);
-	//while (!w.getCloseRequest()) {
-	//	program.bind();
-	//	GRenderer::clear(c);
-	//	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
-	//	//glDrawArrays(GL_TRIANGLES, 0, 3);
-	//	GWindow::Window::fetchEvents();
-	//	w.swapBuffers();
-	//}
+	w.setState(GWindow::WindowState::NORMAL);
+	w.initOpenGLContext();
+	w.setOpenGLContextActive(true);
+	glewInit();
+	LOGS("Everything initialized");
+	LOG(GGeneral::toString("OpenGL Version: ", glGetString(GL_VERSION)));
+	GGeneral::Logger::wait();
 
-	GGeneral::Point3D<unsigned int>p(2, 3);
-	GGeneral::Dimension3D<int> d(1);
-	LOG(p, d);
+	GRenderer::Primitives::Shader frag("rsc/shader/frag.frag");
+	GRenderer::Primitives::Shader vert("rsc/shader/vert.vert");
+
+	GRenderer::ShaderProgram program({ &frag, &vert });
+	program.link();
+
+	auto img = GIO::Graphics::loadImage("rsc/img/color.bmp");
+	auto img2 = GIO::Graphics::loadImage("rsc/img/smile.bmp");
 
 	GGeneral::Logger::wait();
+	GRenderer::Texture t2(*img2);
+	t2.bind();
+
+	auto mat = GMath::mat4x4Identity<float>();
+	//mat.translate(GMath::vec3(1, 0, 0));
+	double angle = G_PI;
+	mat[0][0] = cos(angle);
+	mat[0][1] = -sin(angle);
+	mat[1][0] = sin(angle);
+	mat[1][1] = cos(angle);
+
+	GRenderer::Primitives::VertexBuffer v(cube, 36);
+	GRenderer::Primitives::IndexBuffer i(index, 6);
+	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3, 3 , 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
+	GRenderer::Primitives::VertexArray vertex(v, i, l);
+
+	vertex.bind();
+	program.bind();
+	auto d = program.getUniformLocation("mat");
+	glUniformMatrix4fv(d, 1, false, mat.memadd());
+	GGeneral::Color c(50, 50, 50);
+	while (!w.getCloseRequest()) {
+		GRenderer::clear(c);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr);
+		//glDrawArrays(GL_TRIANGLES, 0, 3);
+		GWindow::Window::fetchEvents();
+		w.swapBuffers();
+	}
+	GGeneral::Logger::wait();
 	GGeneral::Logger::terminateThread();
-}
+}*/

@@ -21,6 +21,8 @@ struct WindowClass {
 	HDC hdc;
 	HWND hWnd;
 	WNDCLASS wc;
+
+	bool isFree = false;
 };
 
 //All window classes
@@ -339,7 +341,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		//Window press event
 		auto key = getVirtualKeyCode(wParam);
-		LOG(GEnumString::enumToString(key));
+		//LOG(GEnumString::enumToString(key));
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
@@ -367,10 +369,21 @@ GWindow::Window::Window(std::string name, GGeneral::Point<int> pos, GGeneral::Di
 
 	HWND hWnd = CreateWindow(wc.lpszClassName, name.c_str(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
 	HDC hdc = GetDC(hWnd);
+	for (size_t i = 0; i < allWindowsInstances.size(); i++) {
+		if (allWindowsInstances[i].isFree) {
+			this->WindowID = i;
+			allWindowsInstances[i] = { false, hdc, hWnd, wc, false };
+			goto DONE;
+		}
+	}
 	this->WindowID = allWindowsInstances.size();
-	allWindowsInstances.push_back({ false, hdc, hWnd, wc });
-
+	allWindowsInstances.push_back({ false, hdc, hWnd, wc, false });
+DONE:
 	EnableWindow(hWnd, true);
+}
+
+GWindow::Window::~Window() {
+	THIS_INSTANCE.isFree = true;
 }
 
 bool GWindow::Window::initOpenGLContext() {

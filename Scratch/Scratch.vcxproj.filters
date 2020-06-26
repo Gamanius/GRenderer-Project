@@ -50,5 +50,8 @@
     <Image Include="rsc\img\color.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="rsc\img\smile.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
