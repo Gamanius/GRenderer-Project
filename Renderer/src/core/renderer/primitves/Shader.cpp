@@ -6,19 +6,19 @@
 #include <vector>
 #include <string>
 
-GRenderer::Primitives::ShaderTypes getTypeFromComment(std::string s) {
+GRenderer::Primitives::ShaderTypes getTypeFromComment(GGeneral::String s) {
 	using namespace GRenderer::Primitives;
-	if (s.find("frag") != std::string::npos || s.find("Frag") != std::string::npos)
+	if (s.find("frag") != GGeneral::String::npos || s.find("Frag") != GGeneral::String::npos)
 		return ShaderTypes::FRAGMENT_SHADER;
-	if (s.find("comp") != std::string::npos || s.find("Comp") != std::string::npos)
+	if (s.find("comp") != GGeneral::String::npos || s.find("Comp") != GGeneral::String::npos)
 		return ShaderTypes::COMPUTE_SHADER;
-	if (s.find("vert") != std::string::npos || s.find("Vert") != std::string::npos)
+	if (s.find("vert") != GGeneral::String::npos || s.find("Vert") != GGeneral::String::npos)
 		return ShaderTypes::VERTEX_SHADER;
-	if (s.find("geo") != std::string::npos || s.find("Geo") != std::string::npos)
+	if (s.find("geo") != GGeneral::String::npos || s.find("Geo") != GGeneral::String::npos)
 		return ShaderTypes::GEOMETRY_SHADER;
-	if (s.find("cont") != std::string::npos || s.find("Cont") != std::string::npos)
+	if (s.find("cont") != GGeneral::String::npos || s.find("Cont") != GGeneral::String::npos)
 		return ShaderTypes::TESS_CONTROL_SHADER;
-	if (s.find("eval") != std::string::npos || s.find("Eval") != std::string::npos)
+	if (s.find("eval") != GGeneral::String::npos || s.find("Eval") != GGeneral::String::npos)
 		return ShaderTypes::TESS_EVALUATION_SHADER;
 	return ShaderTypes::UNKOWN_SHADER;
 }
@@ -36,7 +36,7 @@ GLenum ShaderTypeToGLenum(GRenderer::Primitives::ShaderTypes s) {
 	return -1;
 }
 
-GRenderer::Primitives::Shader::Shader(std::string filepath) {
+GRenderer::Primitives::Shader::Shader(GGeneral::String filepath) {
 	if (!loadShader(filepath))
 		return;
 
@@ -49,7 +49,7 @@ GRenderer::Primitives::Shader::Shader(std::string filepath) {
 	fail = false;
 }
 
-GRenderer::Primitives::Shader::Shader(std::string filepath, ShaderTypes type) : type(type) {
+GRenderer::Primitives::Shader::Shader(GGeneral::String filepath, ShaderTypes type) : type(type) {
 	if (!loadShader(filepath))
 		return;
 
@@ -63,20 +63,22 @@ GRenderer::Primitives::Shader::~Shader() {
 	glDeleteShader(ID);
 }
 
-bool GRenderer::Primitives::Shader::loadShader(std::string filepath) {
+bool GRenderer::Primitives::Shader::loadShader(GGeneral::String filepath) {
 	std::ifstream fileIn(filepath);
 	if (fileIn.fail()) {
 		fail = true;
 		return false;
 	}
-
+	//TODO FIX THIS...MIGHT BE PERFOMANCE HEAVY
 	std::string stringIn;
 	while (getline(fileIn, stringIn)) {
 		if (stringIn.find("#shader") != std::string::npos) {
-			type = getTypeFromComment(stringIn);
+			type = getTypeFromComment(stringIn.c_str());
 		}
-		else
-			sourceCode += stringIn + "\n";
+		else {
+			sourceCode += stringIn.c_str();
+			sourceCode += "\n";
+		}
 	}
 	return true;
 }
@@ -85,7 +87,7 @@ bool GRenderer::Primitives::Shader::compileShader() {
 	if (type == ShaderTypes::UNKOWN_SHADER)
 		return false;
 	ID = glCreateShader(ShaderTypeToGLenum(type));
-	const char* shaderSourceCopy = sourceCode.c_str();
+	const char* shaderSourceCopy = sourceCode.cStr();
 	glShaderSource(ID, 1, &shaderSourceCopy, NULL);
 	glCompileShader(ID);
 
@@ -98,14 +100,14 @@ bool GRenderer::Primitives::Shader::compileShader() {
 	return true;
 }
 
-std::string GRenderer::Primitives::Shader::getInfoMessage() {
+GGeneral::String GRenderer::Primitives::Shader::getInfoMessage() {
 	int length;
 	glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &length);
 	if (length == 0)
 		return "";
 	char* infolog = static_cast<char*>(MALLOC(sizeof(char) * length));
 	glGetShaderInfoLog(ID, length, NULL, infolog);
-	return std::string(infolog);
+	return GGeneral::String(infolog);
 }
 
 bool GRenderer::Primitives::Shader::failed() const {

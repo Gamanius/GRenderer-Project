@@ -355,19 +355,19 @@ void GWindow::Window::init() {
 	//TODO Load functions with getprocadress and do some attrib stuff
 }
 
-GWindow::Window::Window(std::string name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim) {
+GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim) {
 	//Initialize the toilet
 	WNDCLASS wc = {};
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = (WNDPROC)Callback;
 	wc.hInstance = hInstance;
 	wc.hbrBackground = CreateSolidBrush(3289650); //Some wonderfull gray shade!
-	std::string s = "G-Renderer Instance" + std::to_string(allWindowsInstances.size());
-	wc.lpszClassName = s.c_str();
+	GGeneral::String s = "G-Renderer Instance" + allWindowsInstances.size();
+	wc.lpszClassName = s.cStr();
 
 	if (!RegisterClass(&wc)) LOGF("An error occurred while creating the window");
 
-	HWND hWnd = CreateWindow(wc.lpszClassName, name.c_str(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
+	HWND hWnd = CreateWindow(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
 	HDC hdc = GetDC(hWnd);
 	for (size_t i = 0; i < allWindowsInstances.size(); i++) {
 		if (allWindowsInstances[i].isFree) {

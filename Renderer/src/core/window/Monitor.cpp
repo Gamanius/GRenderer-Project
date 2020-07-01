@@ -26,7 +26,7 @@ BOOL CALLBACK lpfnEnum(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LP
 	DISPLAY_DEVICEA device1;
 	device1.cb = sizeof(DISPLAY_DEVICEA);
 	EnumDisplayDevicesA(device.DeviceName, 0, &device1, EDD_GET_DEVICE_INTERFACE_NAME);
-	s->screenName = std::string(device1.DeviceString);
+	s->screenName = GGeneral::String(device1.DeviceString);
 
 	s->digitalPosition.x = info.rcMonitor.left;
 	s->digitalPosition.y = info.rcMonitor.top;

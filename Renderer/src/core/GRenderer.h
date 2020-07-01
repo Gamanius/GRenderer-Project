@@ -9,6 +9,7 @@
 #include "GMemory.h"
 
 #define MALLOC(x) GMemory::alloc(x)
+#define TMALLOC(x, y) static_cast<x>(MALLOC(y))
 #define FREE(x, y) GMemory::dele(x, y)
 
 //Documentation can be (and is) created using doxygen
@@ -22,17 +23,72 @@
   * very untidy.
   */
 namespace GGeneral {
+	struct BaseObject;
+	class String {
+	private:
+		size_t size;
+		size_t bytesize;
+		char* buffer;
+		bool precise = false;
+	public:
+		//TODO fix this
+		static const size_t npos = SIZE_MAX;
+
+		String();
+		String(const char* c);
+		String(const unsigned char* c);
+		String(size_t size);
+		String(String&& other) noexcept;
+		String(const String& other);
+
+		String& append(const char* c);
+		String& append(BaseObject& obj);
+
+		char operator[](size_t i);
+		String operator=(const String& s);
+
+		friend String operator+(const String& s, const String& s2);
+		friend String operator+(const String& s, const char* c);
+		friend String operator+(const char* c, const String& s);
+		String& operator+=(const char* c);
+
+		String& operator<< (const char* c);
+		String& operator<< (const String& s);
+		String& operator<< (const BaseObject& obj);
+		String& operator<< (const byte b);
+		String& operator<< (const int i);
+		String& operator<< (uint64_t ui64);
+		String& operator<< (uint32_t ui32);
+		String& operator<< (uint16_t ui16);
+
+		void setPrecise(const bool b);
+
+		size_t find(const char* c);
+		bool compare(const char* c);
+		String& erase(size_t begining, size_t offset);
+
+		const char* cStr() const;
+		const size_t getSize() const;
+
+		operator const char* () const;
+		const char operator[] (size_t i) const;
+
+		~String() {
+			if (bytesize > 0 && buffer != nullptr)
+				FREE(buffer, bytesize);
+		}
+	};
 	/**
 	 * Will try to convert given argument into a string using stringstream
 	 * @param arg - The argument to convert
 	 * @return A string
 	 */
 	template<typename T>
-	std::string toString(T arg) {
-		std::stringstream stream;
+	String toString(T arg) {
+		String s;
+		s << arg;
 
-		stream << arg;
-		return stream.str();
+		return s;
 	}
 
 	/**
@@ -42,15 +98,15 @@ namespace GGeneral {
 	 * @return A combined string of all arguments
 	 */
 	template<typename T_FIRST, typename... T_MORE>
-	std::string toString(T_FIRST arg, T_MORE... args) {
-		std::string returnValue;
+	String toString(T_FIRST arg, T_MORE... args) {
+		String returnValue;
 		returnValue += toString(arg);
 		returnValue += toString(args...);
 		return returnValue;
 	}
 
 	struct BaseObject {
-		virtual std::string toString() const = 0;
+		virtual GGeneral::String toString() const = 0;
 	};
 
 	/**
@@ -70,10 +126,7 @@ namespace GGeneral {
 		 * @param green - The green value
 		 * @param blue - The blue value
 		 */
-		Color(byte red, byte green, byte blue);
-
-		/** Creates a new Color struct with all values being 0 */
-		Color() : Color(0, 0, 0) {}
+		Color(byte red = 0, byte green = 0, byte blue = 0);
 
 		/**
 		 * Returns the red, green or blue color values depending on the given index. Index may not be higher than 2 nor lower than 0
@@ -82,7 +135,7 @@ namespace GGeneral {
 		 */
 		byte operator[](byte i);
 
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(red, green, blue);
 		}
 	};
@@ -104,7 +157,7 @@ namespace GGeneral {
 				return timepoint;
 			}
 
-			std::string toString() const override {
+			GGeneral::String toString() const override {
 				return PRINT_VAR(timepoint, year, month, day, hour, minute, seconds, millisecond, microsecond, nanosecond);
 			}
 		};
@@ -149,7 +202,7 @@ namespace GGeneral {
 		 * A struct that holds all informations of a Message used in the worker thread-
 		 */
 		struct Message {
-			std::string msg;
+			GGeneral::String msg;
 			Severity sev;
 			int ID;
 		};
@@ -177,9 +230,9 @@ namespace GGeneral {
 		 */
 		template<typename T_TYPE>
 		void printMessage(T_TYPE message, Severity sev, int ID) {
-			std::ostringstream stream;
-			stream << message;
-			printMessage({ stream.str(), sev, ID });
+			String s;
+			s << message;
+			printMessage({ s, sev, ID });
 		}
 
 		/**
@@ -187,7 +240,7 @@ namespace GGeneral {
 		 *
 		 * @return The ID of the name
 		 */
-		int addUserName(std::string name);
+		int addUserName(GGeneral::String name);
 
 		/**
 		 * Sets the SeverityFilter to the given filter. All message that have a lower value of the filter will be discarded.
@@ -229,7 +282,7 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Dimension struct
 		 */
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(width, height);
 		}
 	};
@@ -247,7 +300,7 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(this->width, this->height, depth);
 		}
 	};
@@ -267,7 +320,7 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(x, y);
 		}
 	};
@@ -288,7 +341,7 @@ namespace GGeneral {
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(this->x, this->y, z);
 		}
 	};
@@ -301,13 +354,13 @@ namespace GGeneral {
 		 * Will fetch the current computer name and return it
 		 * @returns The computer name
 		 */
-		std::string getComputerName();
+		GGeneral::String getComputerName();
 
 		/**
 		 * Will fetch the current user name and return it
 		 * @returns The user name
 		 */
-		std::string getUserName();
+		GGeneral::String getUserName();
 
 		/**
 		 * Will move the mouse cursor to the given screen space coordinates. Please note that the cursor is a shared recourse.
@@ -347,7 +400,7 @@ namespace GIO {
 			return data[i];
 		}
 
-		std::string toString() const override {
+		GGeneral::String toString() const override {
 			return PRINT_VAR(size);
 		}
 
@@ -359,19 +412,19 @@ namespace GIO {
 	 * Loads in the file and return the file size. If an error occurs the returned value is 0
 	 * @returns The file size in bytes
 	 */
-	unsigned long long int getFileSize(std::string& filepath);
+	unsigned long long int getFileSize(GGeneral::String& filepath);
 
 	/**
 	 * Will create a file, load and allocated the memory for the data. If an error occurs the returned value will be a nullptr
 	 * @returns A Pointer to a file struct
 	 */
-	File* loadFile(std::string filepath);
+	File* loadFile(GGeneral::String filepath);
 
 	/**
 	 * Fetches and returns the filepath of the executable
 	 * @returns The file path of the .exe file
 	 */
-	std::string getWorkingDirectionary();
+	GGeneral::String getWorkingDirectionary();
 
 	/**
 	 * This namespace contains all functions to load in images
@@ -390,7 +443,7 @@ namespace GIO {
 			 * Does the image contain alpha values
 			 */
 
-			std::string toString() const override {
+			GGeneral::String toString() const override {
 				return PRINT_VAR(this->size, dim);
 			}
 			bool hasAlpha = false;
@@ -400,7 +453,7 @@ namespace GIO {
 		 * @return true - The image can be parsed
 		 * @return false - An error occurred and/or the image cannot be parsed
 		 */
-		bool isParseble(std::string& filepath);
+		bool isParseble(GGeneral::String& filepath);
 		/**
 		 * Check if there is an implementation to load the image. Will return false if an error occurs
 		 * @return true - The image can be parsed
@@ -412,7 +465,7 @@ namespace GIO {
 		 * Will check if the image can be parsed. If the image can be parse it will load in the image, parse it and return a pointer to a created image struct with all information about the image
 		 * @returns If successful a image struct
 		 */
-		Image* loadImage(std::string filepath);
+		Image* loadImage(GGeneral::String filepath);
 	}
 }
 
@@ -424,7 +477,7 @@ namespace GRenderer {
 	/**
 	 * Fetches the current OpenGL Version
 	 */
-	std::string getCurentOpenGLVersion();
+	GGeneral::String getCurentOpenGLVersion();
 
 	/**
 	 * Clears the current active OpenGL context with the given color
@@ -652,7 +705,7 @@ namespace GRenderer {
 			/**
 			 * The source code
 			 */
-			std::string sourceCode;
+			GGeneral::String sourceCode;
 			ShaderTypes type = ShaderTypes::UNKOWN_SHADER;
 			bool fail = true;
 		public:
@@ -665,14 +718,14 @@ namespace GRenderer {
 			 * Will try to guess the Shader and load it in
 			 * @param filepath - The filepath to the shader
 			 */
-			Shader(std::string filepath);
+			Shader(GGeneral::String filepath);
 
 			/**
 			 * Will load in the shader and set the shader type
 			 * @param filepath - The filepath to the shader
 			 * @param type - The type of the shader
 			 */
-			Shader(std::string filepath, ShaderTypes type);
+			Shader(GGeneral::String filepath, ShaderTypes type);
 
 			~Shader();
 
@@ -682,7 +735,7 @@ namespace GRenderer {
 			 * @return true If successful and no errors occurred
 			 * @return false If an error occurred
 			 */
-			bool loadShader(std::string filepath);
+			bool loadShader(GGeneral::String filepath);
 
 			/**
 			 * Will try to compile the shader
@@ -701,7 +754,7 @@ namespace GRenderer {
 			 * Returns an info message of the shader if any errors occurred
 			 * @return A string of the info message
 			 */
-			std::string getInfoMessage();
+			GGeneral::String getInfoMessage();
 
 			friend class GRenderer::ShaderProgram;
 		};
@@ -779,14 +832,14 @@ namespace GRenderer {
 		 * Returns an info message of the shader program if any errors occurred
 		 * @return A string of the info message
 		 */
-		std::string getInfoMessage();
+		GGeneral::String getInfoMessage();
 
 		/**
 		 * Will fetch the uniform location.
 		 * @param name - The name of the uniform
 		 * @return If successful the location of the uniform
 		 */
-		const unsigned int getUniformLocation(const std::string& name) const;
+		const unsigned int getUniformLocation(const GGeneral::String& name) const;
 
 		//TODO: setter
 
@@ -851,7 +904,7 @@ namespace GWindow {
 		 * @param pos - The Position in screen space of the upper left corner
 		 * @param dim - The dimension of the whole window
 		 */
-		Window(std::string name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
+		Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
 
 		~Window();
 
@@ -921,7 +974,7 @@ namespace GWindow {
 		/*! A struct containing all informations of a virtual monitor*/
 		struct Screen : public GGeneral::BaseObject {
 			/*!Name of the screen*/
-			std::string screenName;
+			GGeneral::String screenName;
 			/*!The digital Position of the Screen relative to the primary Monitor*/
 			GGeneral::Point<int> digitalPosition;
 			/*!The Resolution of the Monitor*/
@@ -936,12 +989,12 @@ namespace GWindow {
 			 * @param sdim - The screenDimension
 			 * @param wdim - The workDimension
 			 */
-			Screen(std::string name = "", GGeneral::Point<int> pos = { 0,0 }, GGeneral::Dimension<int> sdim = { 0,0 }, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
+			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = { 0,0 }, GGeneral::Dimension<int> sdim = { 0,0 }, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
 
 			/**
 			 * @return A string representing the Screen struct
 			 */
-			std::string toString() const override {
+			GGeneral::String toString() const override {
 				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
 			}
 		};
@@ -1007,7 +1060,7 @@ namespace GEnumString {
 	 *  @return A string with the same name as the Enum
 	 */
 	template<typename E>
-	std::string enumToString(E GEnum) {
+	GGeneral::String enumToString(E GEnum) {
 		auto enumMember = (int)GEnum;
 
 		if (CHECK_ENUM(GGeneral::Logger::Severity)) {

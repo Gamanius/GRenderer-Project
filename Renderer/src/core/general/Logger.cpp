@@ -12,7 +12,7 @@
 std::list<GGeneral::Logger::Message> msgBuffer;
 std::thread workerThread;
 
-std::vector<std::string> userNames;
+std::vector<GGeneral::String> userNames;
 
 const std::array<unsigned int, 6> SeverityColors = { 8, 9, 10, 6, 4, 64 };
 
@@ -24,20 +24,22 @@ volatile bool shouldThreadTerminate = false;
 volatile bool threadBufferClearLock = false;
 volatile bool discardAllMsg = false;
 
-std::string getSystemTime() {
+GGeneral::String getSystemTime() {
 	//Outdateted...maybe use something better than ctime n0ob
 	struct tm currentTime;
 	time_t now = time(0);
 	localtime_s(&currentTime, &now);
-	std::string seconds = std::to_string(currentTime.tm_sec);
-	std::string minutes = std::to_string(currentTime.tm_min);
+	GGeneral::String seconds;
+	seconds << currentTime.tm_sec;
+	GGeneral::String minutes;
+	minutes << currentTime.tm_min;
 
-	if (seconds.size() == 1)
+	if (seconds.getSize() == 1)
 		seconds = "0" + seconds;
-	if (minutes.size() == 1)
+	if (minutes.getSize() == 1)
 		minutes = "0" + minutes;
 
-	return  std::to_string(currentTime.tm_hour) + ":" + minutes + ":" + seconds;
+	return currentTime.tm_hour + ":" + minutes + ":" + seconds;
 }
 
 void printmsg(GGeneral::Logger::Message msg) {
@@ -93,7 +95,7 @@ GGeneral::Logger::Severity GGeneral::Logger::getSeverityFilter() {
 	return severityFilter;
 }
 
-int GGeneral::Logger::addUserName(std::string name) {
+int GGeneral::Logger::addUserName(GGeneral::String name) {
 	for (unsigned int i = 0; i < userNames.size(); i++) {
 		if (userNames[i].compare(name) == 0)
 			return -1;

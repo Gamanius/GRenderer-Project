@@ -8,7 +8,7 @@
 class GMemory {
 private:
 	inline static size_t allocated = 0;
-	size_t allocatedStart = 0;
+	size_t allocatedStart = getMemory();
 public:
 	/**
 	 * Override for the new operator

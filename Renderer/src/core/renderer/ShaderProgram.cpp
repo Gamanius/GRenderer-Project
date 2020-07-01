@@ -32,16 +32,16 @@ void GRenderer::ShaderProgram::unbind() {
 	glUseProgram(0);
 }
 
-std::string GRenderer::ShaderProgram::getInfoMessage() {
+GGeneral::String GRenderer::ShaderProgram::getInfoMessage() {
 	int length;
 	glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &length);
 	if (length == 0)
 		return "";
 	char* infolog = static_cast<char*>(MALLOC(sizeof(char) * length));
 	glGetProgramInfoLog(ID, length, NULL, infolog);
-	return std::string(infolog);
+	return GGeneral::String(infolog);
 }
 
-const unsigned int GRenderer::ShaderProgram::getUniformLocation(const std::string& name) const {
-	return glGetUniformLocation(ID, name.c_str());
+const unsigned int GRenderer::ShaderProgram::getUniformLocation(const GGeneral::String& name) const {
+	return glGetUniformLocation(ID, name.cStr());
 }

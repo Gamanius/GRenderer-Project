@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-unsigned long long int GIO::getFileSize(std::string& relativeFilepath) {
+unsigned long long int GIO::getFileSize(GGeneral::String& relativeFilepath) {
 	File returnValue = {};
 	std::fstream file(relativeFilepath, std::ios_base::binary);
 	if (file.fail())
@@ -15,7 +15,7 @@ unsigned long long int GIO::getFileSize(std::string& relativeFilepath) {
 	return size;
 }
 
-GIO::File* GIO::loadFile(std::string relativeFilepath) {
+GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
 	File* returnValue = new File();
 	std::fstream file(relativeFilepath, std::ios_base::binary | std::ios_base::in);
 	if (file.fail())
@@ -32,13 +32,13 @@ GIO::File* GIO::loadFile(std::string relativeFilepath) {
 	return returnValue;
 }
 
-std::string GIO::getWorkingDirectionary() {
+GGeneral::String GIO::getWorkingDirectionary() {
 	char buffer[MAX_PATH];
 	GetModuleFileName(NULL, buffer, MAX_PATH);
-	return std::string(buffer);
+	return GGeneral::String(buffer);
 }
 
-bool GIO::Graphics::isParseble(std::string& filepath) {
+bool GIO::Graphics::isParseble(GGeneral::String& filepath) {
 	auto file = loadFile(filepath);
 	return isParseble(file->data);
 }
@@ -77,7 +77,7 @@ GIO::Graphics::Image* doBMP(GIO::File* f) {
 	return returnValue;
 }
 
-GIO::Graphics::Image* GIO::Graphics::loadImage(std::string filepath) {
+GIO::Graphics::Image* GIO::Graphics::loadImage(GGeneral::String filepath) {
 	auto file = loadFile(filepath);
 	if (file->data == nullptr) {
 		delete file;

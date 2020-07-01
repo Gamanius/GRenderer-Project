@@ -32,8 +32,12 @@ void memtest() {
 }
 
 int main() {
-	memtest();
-	std::cout << GMemory::getMemory() << "\n";
+	if (35) {
+		std::cout << "adw";
+	}
+	if (!0) {
+		std::cout << "adw";
+	}
 }/*
 	GRenderer::init();
 	GWindow::Window w;

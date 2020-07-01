@@ -3,8 +3,8 @@
 /** Var print define */
 #define MSVC_BUG(x, y) x y
 
-#define VAR_PRINT(x) (GGeneral::toString(#x).find("this->") != std::string::npos ? GGeneral::toString(#x).erase(GGeneral::toString(#x).find("this->"), 6) : GGeneral::toString(#x)) + " = " + GGeneral::toString(x) + ", "
-#define VAR_PRINTEND(x) (GGeneral::toString(#x).find("this->") != std::string::npos ? GGeneral::toString(#x).erase(GGeneral::toString(#x).find("this->"), 6) : GGeneral::toString(#x)) + " = " + GGeneral::toString(x)
+#define VAR_PRINT(x) GGeneral::toString(#x) + " = " + GGeneral::toString(x) + ", "
+#define VAR_PRINTEND(x) GGeneral::toString(#x) + " = " + GGeneral::toString(x)
 
 #define RETURN_ARG_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, _17_, _18_, _19_, _20_, _21_, _22_, _23_, _24_, _25_, _26_, _27_, _28_, _29_, _30_, _31_, _32_, _33_, _34_, _35_, _36_, _37_, _38_, _39_, _40_, _41_, _42_, _43_, _44_, _45_, _46_, _47_, _48_, _49_, _50_, _51_, _52_, _53_, _54_, _55_, _56_, _57_, _58_, _59_, _60_, _61_, _62_, _63_, _64_, _65_, _66_, _67_, _68_, _69_, _70_, _71_, _72_, _73_, _74_, _75_, _76_, _77_, _78_, _79_, _80_, _81_, _82_, _83_, _84_, _85_, _86_, _87_, _88_, _89_, _90_, _91_, _92_, _93_, _94_, _95_, _96_, _97_, _98_, _99_, _100_, _101_, _102_, _103_, _104_, _105_, _106_, _107_, _108_, _109_, _110_, _111_, _112_, _113_, _114_, _115_, _116_, _117_, _118_, _119_, _120_, _121_, _122_, _123_, _124_, _125_, count, ...) count
 #define EXPAND_ARGS(args) RETURN_ARG_COUNT args
@@ -266,7 +266,7 @@
 #define CHOOSER1(count) CHOOSER2(count)
 #define CHOOSER0(count) CHOOSER1(count)
 
-#define PRINT_VAR(...) "[" +  MSVC_BUG(CHOOSER0(COUNT_ARGS_MAX(__VA_ARGS__)), (__VA_ARGS__)) + "]"
+#define PRINT_VAR(...) GGeneral::String("[") +  MSVC_BUG(CHOOSER0(COUNT_ARGS_MAX(__VA_ARGS__)), (__VA_ARGS__)) + "]"
 
 /** Math stuff */
 /**

@@ -7,12 +7,8 @@ const bool GRenderer::init() {
 	return true;
 }
 
-std::string GRenderer::getCurentOpenGLVersion() {
-	auto c = glGetString(GL_VERSION);
-	std::string r;
-	for (unsigned int i = 0; c[i] != '\0'; i++) {
-		r += c[i];
-	}
+GGeneral::String GRenderer::getCurentOpenGLVersion() {
+	GGeneral::String r(glGetString(GL_VERSION));
 	return r;
 }
 

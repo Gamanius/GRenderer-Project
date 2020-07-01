@@ -107,6 +107,7 @@
     <ClCompile Include="src\core\general\Color.cpp" />
     <ClCompile Include="src\core\general\Logger.cpp" />
     <ClCompile Include="src\core\general\os.cpp" />
+    <ClCompile Include="src\core\general\String.cpp" />
     <ClCompile Include="src\core\general\Time.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Indexbuffer.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Shader.cpp" />
