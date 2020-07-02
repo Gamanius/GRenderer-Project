@@ -21,10 +21,10 @@ GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
 	if (file.fail())
 		return returnValue;
 	file.seekg(0, std::ios_base::end);
-	auto size = file.tellg();
+	unsigned int size = static_cast<unsigned int>(file.tellg());
 	file.seekg(0, 0);
 
-	char* buffer = static_cast<char*>(MALLOC(size));// new char[static_cast<unsigned int>(size)];
+	char* buffer = new char[size];//MALLOC new char[static_cast<unsigned int>(size)];
 	file.read(buffer, size);
 	file.close();
 	returnValue->size = size;
@@ -68,7 +68,7 @@ GIO::Graphics::Image* doBMP(GIO::File* f) {
 
 	unsigned int pixelStart = reinterpret_cast<unsigned int*>(&f->data[0xa])[0];
 	unsigned long readBytes = height * width * (bpp == 24 ? 3 : 4);
-	returnValue->data = static_cast<byte*>(MALLOC(readBytes));
+	returnValue->data = new byte[readBytes];// static_cast<byte*>(MALLOC(readBytes));
 	memcpy(returnValue->data, &f->data[pixelStart], readBytes);
 	returnValue->size = readBytes;
 	returnValue->hasAlpha = bpp == 32;

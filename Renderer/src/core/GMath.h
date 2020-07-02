@@ -1,7 +1,10 @@
 #pragma once
 
-#include "Defines.h"
+#ifndef G_MATH
+#define G_MATH
+#endif // !G_MATH
 
+#include "Defines.h"
 #include <cmath>
 
 /*! Just a typedef so the code is better to read */

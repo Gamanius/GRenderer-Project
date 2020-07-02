@@ -24,6 +24,11 @@ volatile bool shouldThreadTerminate = false;
 volatile bool threadBufferClearLock = false;
 volatile bool discardAllMsg = false;
 
+inline std::ostream& operator<<(std::ostream& os, const GGeneral::BaseObject& obj) {
+	os << obj.toString();
+	return os;
+}
+
 GGeneral::String getSystemTime() {
 	//Outdateted...maybe use something better than ctime n0ob
 	struct tm currentTime;

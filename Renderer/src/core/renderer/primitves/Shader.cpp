@@ -105,7 +105,7 @@ GGeneral::String GRenderer::Primitives::Shader::getInfoMessage() {
 	glGetShaderiv(ID, GL_INFO_LOG_LENGTH, &length);
 	if (length == 0)
 		return "";
-	char* infolog = static_cast<char*>(MALLOC(sizeof(char) * length));
+	char* infolog = new char[length];//static_cast<char*>(MALLOC(sizeof(char) * length));
 	glGetShaderInfoLog(ID, length, NULL, infolog);
 	return GGeneral::String(infolog);
 }

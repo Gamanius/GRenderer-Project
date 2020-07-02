@@ -299,5 +299,3 @@
 #define ULOGE(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_ERROR, y);
 #define ULOGF(x, ...) GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL, y);
 #endif //NO_LOGGER_DEF
-
-#define G_RENDERER

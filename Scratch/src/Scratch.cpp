@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <GRenderer.h>
 #include <Windows.h>
@@ -22,23 +24,7 @@ unsigned short index[] = {
 	0, 1, 3,
 	1, 2, 3
 };
-
-void memtest() {
-	GMemory mem;
-	auto img = GIO::Graphics::loadImage("rsc/img/color.bmp");
-	std::cout << mem.stop() << "\n";
-	delete img;
-	std::cout << mem.stop() << "\n";
-}
-
 int main() {
-	if (35) {
-		std::cout << "adw";
-	}
-	if (!0) {
-		std::cout << "adw";
-	}
-}/*
 	GRenderer::init();
 	GWindow::Window w;
 
@@ -90,4 +76,4 @@ int main() {
 	}
 	GGeneral::Logger::wait();
 	GGeneral::Logger::terminateThread();
-}*/
+}

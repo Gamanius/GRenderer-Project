@@ -1,88 +1,110 @@
-#include "GRenderer.h"
+//#include "GRenderer.h"
+#include <iostream>
 
-template<typename T>
-class ArrayList {
+//#define EXTENDED_MEMORYTRACKING
+class Memory {
 private:
-	T* buffer = nullptr;
-	size_t size = 0;
+	inline static size_t memoryUsage = 0;
+	inline static size_t allocations = 0, deallocations = 0;
+#ifndef EXTENDED_MEMORYTRACKING
 public:
-	ArrayList(size_t size = 0) {
-		this->size = size;
-		if (size != 0)
-			buffer = TMALLOC(T*, size);
+	/**
+	 * Override for the new operator
+	 */
+	static void* alloc(size_t size) {
+		std::cout << "Allocated " << size << " bytes\n";
+		memoryUsage += size;
+		allocations++;
+		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
+		mem[0] = size;
+		mem++;
+		return (void*)mem;
 	}
 
-	void add(T obj) {
-		auto d = buffer;
-		buffer = static_cast<T*>(MALLOC((size + 1) * sizeof(T)));
-		if (d != nullptr)
-			memcpy(buffer, d, sizeof(T) * size);
-		buffer[size] = obj;
-		FREE(d, sizeof(T) * size);
-		size++;
+	/**
+	 * Override for the delete operator
+	 */
+	static void dele(void* p) {
+		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
+		std::cout << "Deleted " << size << " bytes\n";
+		memoryUsage -= size;
+		deallocations++;
+		auto del = reinterpret_cast<unsigned int*>(p) - 1;
+		free((void*)del);
 	}
-
-	size_t getSize() const { return size; }
-};
-
-class String {
+#else
+public:
+	struct AlloInfo {
+		void* address;
+		size_t size;
+		const char* fileName;
+		const char* functionSig;
+		unsigned int line;
+	};
 private:
-	size_t size;
-	size_t bytesize;
-	char* buffer;
-	bool precise = false;
-public:
-	String(const char* c) {
-		size = strlen(c);
-		buffer = TMALLOC(char*, size + 1);
-		memcpy(buffer, c, size + 1);
-		bytesize = size + 1;
-	}
-
-	String(const String& other) {
-		size = other.size;
-		buffer = TMALLOC(char*, size + 1);
-		memcpy(buffer, other.buffer, size + 1);
-		bytesize = size + 1;
-	}
-
-	String& append(const char* c) {
-		if (bytesize > size + strlen(c) + 1) {
-			memcpy(buffer + size, c, strlen(c) + 1);
+	inline static AlloInfo* extendedAllocations = nullptr;
+	static void add(void* address, size_t size, const char* file, const char* function, unsigned int line) {
+		auto allocaters = allocations - deallocations;
+		if (allocaters > 0 && extendedAllocations != nullptr) {
+			auto temp = extendedAllocations;
+			extendedAllocations = reinterpret_cast<AlloInfo*>(malloc((sizeof(AlloInfo) * allocaters) + 1));
+			memcpy(extendedAllocations, temp, (sizeof(AlloInfo) * allocaters) + 1);
+			extendedAllocations[allocaters] = { address, size, file, function, line };
 		}
 		else {
-			auto temp = buffer;
-			auto lastbytesize = bytesize;
-			bytesize = size + strlen(c);
-			if (!precise)
-				bytesize *= 2;
-			buffer = TMALLOC(char*, bytesize);
-
-			memcpy(buffer, temp, size);
-			memcpy(buffer + size, c, strlen(c) + 1);
-
-			FREE(temp, lastbytesize);
+			extendedAllocations = reinterpret_cast<AlloInfo*>(malloc(sizeof(AlloInfo)));
+			extendedAllocations[0] = { address, size, file, function, line };
 		}
-		size += strlen(c);
-		return *this;
+	}
+public:
+	/**
+	 * Override for the new operator
+	 */
+	static void* alloc(size_t size, const char* file, const char* function, unsigned int line) {
+		std::cout << "Allocated " << size << " bytes\n";
+		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
+		mem[0] = size;
+		mem++;
+		add(mem, size, file, function, line);
+		memoryUsage += size;
+		allocations++;
+		return (void*)mem;
 	}
 
-	void setPrecise(const bool b) { precise = b; }
-	//
-	//const char* cStr() const { return buffer; }
-	//const size_t size() const { return size; }
-	//
-	//operator const char* () const { return cStr(); }
-	//const char operator[] (size_t i) const { return buffer[i]; }
-
-	~String() {
-		FREE(buffer, bytesize);
+	/**
+	 * Override for the delete operator
+	 */
+	static void dele(void* p) {
+		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
+		std::cout << "Deleted " << size << " bytes\n";
+		memoryUsage -= size;
+		deallocations++;
+		auto del = reinterpret_cast<unsigned int*>(p) - 1;
+		free((void*)del);
 	}
+
+	static const AlloInfo* const getAllAllocations() { return extendedAllocations; }
+#endif
 };
 
-int main() {
-	GGeneral::Logger::init();
+#ifndef EXTENDED_MEMORYTRACKING
+void* operator new(size_t size) {
+	return Memory::alloc(size);
+}
+#else
+void* operator new(size_t size, const char* file, const char* function, unsigned int line) {
+	return Memory::alloc(size, file, function, line);
+}
+#define new new(__FILE__,  __FUNCSIG__, __LINE__)
+#endif // !EXTENDED_MEMORYTRACKING
 
-	GGeneral::Logger::wait();
-	GGeneral::Logger::terminateThread();
+void operator delete(void* p) {
+	Memory::dele(p);
+}
+
+int main() {
+	auto i = new int[1000];
+	//const Memory::AlloInfo* a = Memory::getAllAllocations();
+	//std::cout << a[0].address;
+	delete[] i;
 }

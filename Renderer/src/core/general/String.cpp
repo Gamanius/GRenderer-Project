@@ -8,7 +8,7 @@ GGeneral::String::String() {
 
 GGeneral::String::String(const char* c) {
 	size = strlen(c);
-	buffer = TMALLOC(char*, size + 1);
+	buffer = new char[size + 1];//TMALLOC(char*, size + 1);
 	memcpy(buffer, c, size + 1);
 	bytesize = size + 1;
 }
@@ -16,9 +16,9 @@ GGeneral::String::String(const char* c) {
 GGeneral::String::String(const unsigned char* c) : String(reinterpret_cast<const char*>(c)) {}
 
 GGeneral::String::String(size_t size) {
-	size = 0;
+	this->size = 0;
 	bytesize = size;
-	buffer = TMALLOC(char*, size);
+	buffer = new char[size + 1];
 }
 
 GGeneral::String::String(String&& other) noexcept {
@@ -33,7 +33,7 @@ GGeneral::String::String(String&& other) noexcept {
 
 GGeneral::String::String(const String& other) {
 	size = other.size;
-	buffer = TMALLOC(char*, size + 1);
+	buffer = new char[size + 1];
 	memcpy(buffer, other.buffer, size + 1);
 	bytesize = size + 1;
 }
@@ -48,11 +48,11 @@ GGeneral::String& GGeneral::String::append(const char* c) {
 		bytesize = size + strlen(c);
 		if (!precise)
 			bytesize *= 2;
-		buffer = TMALLOC(char*, bytesize);
+		buffer = new char[bytesize + 1];
 
 		if (temp != nullptr) {
 			memcpy(buffer, temp, size);
-			FREE(temp, lastbytesize);
+			delete[] temp;
 		}
 		memcpy(buffer + size, c, strlen(c) + 1);
 	}
@@ -72,6 +72,21 @@ GGeneral::String GGeneral::String::operator=(const String& s) {
 	returnValue.size = s.size;
 	returnValue.bytesize = s.bytesize;
 	return returnValue;
+}
+
+GGeneral::String& GGeneral::String::operator=(String&& other) noexcept {
+	if (other.buffer == buffer)
+		return *this;
+	delete[] buffer;
+
+	buffer = other.buffer;
+	size = other.size;
+	bytesize = other.bytesize;
+
+	other.buffer = nullptr;
+	other.size = 0;
+	other.bytesize = 0;
+	return *this;
 }
 
 GGeneral::String GGeneral::operator+(const String& s, const String& s2) {
@@ -114,23 +129,23 @@ GGeneral::String& GGeneral::String::operator<<(const byte b) {
 
 GGeneral::String& GGeneral::String::operator<<(const int i) {
 	size_t size = _scprintf("%i", i);
-	char* c = TMALLOC(char*, size + 1);
+	char* c = new char[size + 1];//TMALLOC(char*, size + 1);
 	snprintf(c, size + 1, "%i", i);
 	this->append(c);
-	FREE(c, size + 1);
+	delete[] c;
 	return *this;
 }
 
 #define FORMAT(format, varname)\
 size_t size = _scprintf(format, varname) + 1;\
-char* c = TMALLOC(char*, size);\
+char* c = new char[size];/*TMALLOC(char*, size);*/\
 snprintf(c, size, format, varname);\
 this->append(c);\
-FREE(c, size);\
+delete[] c;\
 return *this;
 
 GGeneral::String& GGeneral::String::operator<<(uint64_t ui64) {
-	FORMAT("%u", ui64);
+	FORMAT("%I64u", ui64);
 }
 
 GGeneral::String& GGeneral::String::operator<<(uint32_t ui32) {
@@ -168,12 +183,12 @@ bool GGeneral::String::compare(const char* c) {
 
 GGeneral::String& GGeneral::String::erase(size_t begining, size_t offset) {
 	auto temp = buffer;
-	buffer = TMALLOC(char*, bytesize);
+	buffer = new char[bytesize];//TMALLOC(char*, bytesize);
 	if (begining > 0)
 		memcpy(buffer, temp, begining);
 	memcpy(buffer + begining, temp + offset + begining + 1, (size - (offset + begining)) + 1);
 	size -= offset + 1;
-	FREE(temp, bytesize);
+	delete[]temp;// (temp, bytesize);
 	return *this;
 }
 
@@ -182,3 +197,9 @@ const size_t GGeneral::String::getSize() const { return size; }
 
 GGeneral::String::operator const char* () const { return buffer; }
 const char GGeneral::String::operator[](size_t i) const { return buffer[i]; }
+
+GGeneral::String::~String() {
+	if (bytesize > 0 && buffer != nullptr)
+		delete[] buffer;
+	//FREE(buffer, bytesize);
+}

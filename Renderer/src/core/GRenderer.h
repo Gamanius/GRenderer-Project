@@ -1,16 +1,16 @@
 #pragma once
 #pragma comment(lib, "opengl32.lib")
 
-#include <sstream>
 #include <initializer_list>
 #include <vector>
 
 #include "GMath.h"
+#pragma warning(disable : 4595)
 #include "GMemory.h"
 
-#define MALLOC(x) GMemory::alloc(x)
-#define TMALLOC(x, y) static_cast<x>(MALLOC(y))
-#define FREE(x, y) GMemory::dele(x, y)
+#ifndef G_RENDERER
+#define G_RENDERER
+#endif // !G_RENDERER
 
 //Documentation can be (and is) created using doxygen
 
@@ -26,6 +26,7 @@ namespace GGeneral {
 	struct BaseObject;
 	class String {
 	private:
+		/** Amount of chars without \0!! */
 		size_t size;
 		size_t bytesize;
 		char* buffer;
@@ -34,49 +35,184 @@ namespace GGeneral {
 		//TODO fix this
 		static const size_t npos = SIZE_MAX;
 
+		/** Creates an empty string */
 		String();
+		/**
+		 * Will copy the const char* into an internal buffer.
+		 * @param c - The content of the String
+		 */
 		String(const char* c);
+		/**
+		 * Will copy the char* into an internal buffer
+		 * @param c - The content of the String
+		 */
 		String(const unsigned char* c);
+		/**
+		 * Will allocate memory with the given size. May be useful if know how much chars are going to be appended.
+		 * @param size - The size of the buffer
+		 */
 		String(size_t size);
+		/**
+		 * Move constructor
+		 * @param other - The other string
+		 */
 		String(String&& other) noexcept;
+		/**
+		 * Copy constructor. Will not copy the memory address. It will allocated the size of the other buffer!
+		 * @param other - The other string
+		 */
 		String(const String& other);
 
+		/**
+		 * Will append the chars given. If buffer is not big enough it will allocate a new one.
+		 * @param c - The chars to append
+		 * @return this string
+		 */
 		String& append(const char* c);
+		/**
+		 * Will call the toString() method and append the chars given. If buffer is not big enough it will allocate a new one.
+		 * @param obj - The object to append
+		 * @return this string
+		 */
 		String& append(BaseObject& obj);
 
+		/**
+		 * @param i - The index
+		 * @return The char at this position
+		 */
 		char operator[](size_t i);
+		/**
+		 * Will just copy the String
+		 * @param s - The other string
+		 * @return A copy of the other string
+		 */
 		String operator=(const String& s);
+		/**
+		 * Will just copy the String
+		 * @param s - The other string
+		 * @return A copy of the other string
+		 */
+		String& operator=(String&& other) noexcept;
 
+		/**
+		 * Will create a new String and append both of the parameters
+		 */
 		friend String operator+(const String& s, const String& s2);
+		/**
+		 * Will create a new String and append both of the parameters
+		 */
 		friend String operator+(const String& s, const char* c);
+		/**
+		 * Will create a new String and append both of the parameters
+		 */
 		friend String operator+(const char* c, const String& s);
+		/**
+		 * Will just call append
+		 * @param c - The chars to append
+		 * @return this string
+		 */
 		String& operator+=(const char* c);
 
+		/**
+		 * Will just call append
+		 * @param c - The chars to append
+		 * @return this string
+		 */
 		String& operator<< (const char* c);
+		/**
+		 * Will just call append
+		 * @param s - The string to append
+		 * @return this string
+		 */
 		String& operator<< (const String& s);
+		/**
+		 * Will just call append
+		 * @param c - The obj to append
+		 * @return this string
+		 */
 		String& operator<< (const BaseObject& obj);
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param b - The number to append
+		 * @return this string
+		 */
 		String& operator<< (const byte b);
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param i - The number to append
+		 * @return this string
+		 */
 		String& operator<< (const int i);
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param ui64 - The number to append
+		 * @return this string
+		 */
 		String& operator<< (uint64_t ui64);
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param ui32 - The number to append
+		 * @return this string
+		 */
 		String& operator<< (uint32_t ui32);
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param ui16 - The number to append
+		 * @return this string
+		 */
 		String& operator<< (uint16_t ui16);
 
+		/**
+		 * Will set the precise flag. If the precise flag is set to true the string will be the most memory efficient. Every time something is append the buffer will only allocate just enough space for the chars given.
+		 * If this flag is set to false the buffer will always allocate more space than needed for better performance.
+		 * @param b The new precise flag
+		 */
 		void setPrecise(const bool b);
 
+		/**
+		 * Will search for the first occurrence of the string
+		 * @param c - The string to search for
+		 * @return The index if find is successful or npos if nothing has been found
+		 */
 		size_t find(const char* c);
+		/**
+		 * Will compare both string
+		 * @param c - The char to compare with
+		 * @return true - If the comparison was successful
+		 * @return false - If the comparison was not successful
+		 */
 		bool compare(const char* c);
-		String& erase(size_t begining, size_t offset);
+		/**
+		 * Will erase part of the string.
+		 * @param beginning - The starting index
+		 * @param offset - The amount of chars to be deleted
+		 * @return this string
+		 */
+		String& erase(size_t beginning, size_t offset);
 
+		/**
+		 * Will return the memory address of this buffer
+		 * @return the memory address
+		 */
 		const char* cStr() const;
+		/**
+		 * Will return the size of the string without the null termination char
+		 * @return The size
+		 */
 		const size_t getSize() const;
 
+		/**
+		 * @return The memory address of the buffer
+		 */
 		operator const char* () const;
+		/**
+		 * @param i - The index
+		 * @return The char of the index
+		 */
 		const char operator[] (size_t i) const;
 
-		~String() {
-			if (bytesize > 0 && buffer != nullptr)
-				FREE(buffer, bytesize);
-		}
+		/** Will delete the buffer */
+		~String();
 	};
 	/**
 	 * Will try to convert given argument into a string using stringstream
@@ -105,6 +241,7 @@ namespace GGeneral {
 		return returnValue;
 	}
 
+	/** Every struct whose will inherit from this struct */
 	struct BaseObject {
 		virtual GGeneral::String toString() const = 0;
 	};
@@ -140,19 +277,35 @@ namespace GGeneral {
 		}
 	};
 
+	/** A namespace containing mostly time functions.*/
 	namespace Time {
+		/** This struct holds the information of any timepoint */
 		struct TimePoint : public GGeneral::BaseObject {
+			/** The time since 1980 in nanoseconds(?) */
 			unsigned long long int timepoint = 0;
+			/** Years since 0 */
 			unsigned int year = 0;
+			/** Amount of months */
 			byte month = 0;
+			/** Amount of days */
 			byte day = 0;
+			/** Amount of hours */
 			byte hour = 0;
+			/** Amount of minutes */
 			byte minute = 0;
+			/** Amount of seconds */
 			byte seconds = 0;
+			/** Amount of milliseconds */
 			unsigned int millisecond = 0;
+			/** Amount of microseconds */
 			unsigned int microsecond = 0;
+			/** Amount of nanoseconds */
 			unsigned int nanosecond = 0;
 
+			/**
+			 * Will return the current timepoint
+			 * @return The time since 1980
+			 */
 			operator unsigned long long int() {
 				return timepoint;
 			}
@@ -162,12 +315,21 @@ namespace GGeneral {
 			}
 		};
 
+		/** Will return true if the year was a leap year */
 		const bool isLeapYear(TimePoint& point);
+		/** Will return true if the year was a leap year */
 		const bool isLeapYear(const unsigned int year);
 
+		/** On construction it will start an internal timer. If the stop method is called the timer will return the time sice its construction */
 		struct Timer {
+			/** The time the Time was constructed in nanoseconds */
 			unsigned long long int startTime;
+			/** Will start the timer */
 			Timer();
+			/**
+			 * Will calculate the time since construction of this struct and return the time in nanoseconds
+			 * @return The time sice constuction in nanoseconds
+			 */
 			unsigned long long int stop() const;
 		};
 	}
@@ -230,9 +392,9 @@ namespace GGeneral {
 		 */
 		template<typename T_TYPE>
 		void printMessage(T_TYPE message, Severity sev, int ID) {
-			String s;
-			s << message;
-			printMessage({ s, sev, ID });
+			String* s = new String();
+			*s << message;
+			printMessage({ *s, sev, ID });
 		}
 
 		/**
@@ -405,7 +567,7 @@ namespace GIO {
 		}
 
 		/** Deletes all data allocated */
-		~File() { FREE(data, size); }
+		~File() { delete[] data; }
 	};
 
 	/**
@@ -1233,9 +1395,4 @@ namespace GEnumString {
 
 		return "UNKNOWN ENUM";
 	}
-}
-
-inline std::ostream& operator<<(std::ostream& os, const GGeneral::BaseObject& obj) {
-	os << obj.toString();
-	return os;
 }
