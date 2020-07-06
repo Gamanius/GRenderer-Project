@@ -55,18 +55,26 @@ private:
 	inline static List* extendedAllocations = nullptr;
 
 public:
+#define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
 	/**
-	 * Will return a pointer array of AllocInfo structs. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetched by getCurrentAllocationCount()
+	 * Will return a pointer array of AllocInfo structs and the amount of pointers. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetches by reading 4 bytes before of this pointer
+	 * or by using the GET_ALLOC_INFO_COUNT macro
 	 * @return An AllocInfo Pointer array
 	 */
 	static AllocInfo** getAllocInfo() {
-		AllocInfo** temp = reinterpret_cast<AllocInfo**>(malloc(getCurrentAllocationCount() * sizeof(AllocInfo**)));
+		auto temp = reinterpret_cast<unsigned int*>(malloc(getCurrentAllocationCount() * sizeof(AllocInfo**) + sizeof(unsigned int)));
 		auto add = extendedAllocations;
-		for (size_t i = 0; i < getCurrentAllocationCount(); i++) {
-			temp[i] = add->address;
+		temp++;
+		auto alloc = reinterpret_cast<AllocInfo**>(temp);
+
+		unsigned int amount = 0;
+		while (add->next != nullptr) {
+			alloc[amount] = add->address;
 			add = add->next;
+			amount++;
 		}
-		return temp;
+		temp[-1] = amount;
+		return alloc;
 	}
 
 	/**
@@ -110,16 +118,11 @@ public:
 
 		auto temp = extendedAllocations;
 		auto last = temp;
-		while (temp->address != p && temp->next != nullptr) {
+		while (temp->address->address != p && temp->next != nullptr) {
 			last = temp;
 			temp = temp->next;
 		}
-		if (temp->next != nullptr) {
-			last = temp->next;
-		}
-		else {
-			last->next = nullptr;
-		}
+		last->next = temp->next;
 
 		free(reinterpret_cast<void*>((reinterpret_cast<AllocInfo*>(p) - 1)));
 	}

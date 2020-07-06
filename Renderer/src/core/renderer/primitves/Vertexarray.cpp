@@ -43,6 +43,11 @@ const unsigned int GRenderer::Primitives::VertexArray::VertexArrayLayout::getOff
 	return offset;
 }
 
+GRenderer::Primitives::VertexArray::VertexArray() {
+	amount = 0;
+	ID = 0;
+}
+
 GRenderer::Primitives::VertexArray::VertexArray(VertexBuffer vertex, IndexBuffer index, VertexArrayLayout layout) {
 	glGenVertexArrays(1, &ID);
 	bind();

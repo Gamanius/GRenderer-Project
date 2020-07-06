@@ -86,7 +86,7 @@ namespace GGeneral {
 		 * @param s - The other string
 		 * @return A copy of the other string
 		 */
-		String operator=(const String& s);
+		String& operator=(const String& s);
 		/**
 		 * Will just copy the String
 		 * @param s - The other string
@@ -131,6 +131,7 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& operator<< (const BaseObject& obj);
+		String& operator<< (const void* adress);
 		/**
 		 * Will format the number into a char* and will then call append
 		 * @param b - The number to append
@@ -392,9 +393,9 @@ namespace GGeneral {
 		 */
 		template<typename T_TYPE>
 		void printMessage(T_TYPE message, Severity sev, int ID) {
-			String* s = new String();
-			*s << message;
-			printMessage({ *s, sev, ID });
+			String s;
+			s << message;
+			printMessage({ s, sev, ID });
 		}
 
 		/**
@@ -732,31 +733,31 @@ namespace GRenderer {
 			 * @param data - All the data
 			 * @param amount - !PLEASE CHECK THIS IS NOT CORRECT! The amount of values to be used
 			 */
-			VertexBuffer(char data[], unsigned int amount);
+			VertexBuffer(char data[], unsigned int amount, unsigned int count);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - All data
 			 * @param amount - The amount of values to be used
 			 */
-			VertexBuffer(short data[], unsigned int amount);
+			VertexBuffer(short data[], unsigned int amount, unsigned int count);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - All data
 			 * @param amount - The amount of value to be used
 			 */
-			VertexBuffer(int data[], unsigned int amount);
+			VertexBuffer(int data[], unsigned int amount, unsigned int count);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - All data
 			 * @param amount - The amount of value to be used
 			 */
-			VertexBuffer(float data[], unsigned int amount);
+			VertexBuffer(float data[], unsigned int amount, unsigned int count);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - All data
 			 * @param amount - The amount of value to be used
 			 */
-			VertexBuffer(double data[], unsigned int amount);
+			VertexBuffer(double data[], unsigned int amount, unsigned int count);
 			/**
 			 * Deletes the VertexBuffer
 			 */
@@ -812,14 +813,14 @@ namespace GRenderer {
 		private:
 			bool isOnlyVertexBuffer = false;
 			unsigned int amount;
-			IndexTypes type;
+			IndexTypes type = IndexTypes::UNSIGNED_BYTE;
 			/**
 			 * Internal OpenGL ID
 			 */
 			unsigned int ID;
 
 		public:
-			VertexArray() = default;
+			VertexArray();
 			/**
 			 * Creates a new VertexArray Object.
 			 * @param vertex - The vertexes used by the VertexArray
@@ -840,6 +841,18 @@ namespace GRenderer {
 			 * Unbinds the current VertexArray
 			 */
 			void unbind();
+
+			/**
+			 * @return True if there is no IndexBuffer in this VertexArray
+			 */
+			bool isOnlyVertex() const { return isOnlyVertexBuffer; }
+
+			/**
+			 * Will return the amount of indexes or the amount of vertexes (to be rendered). The return value will depend if there is an IndexBuffer in this VertexArray (see isOnlyVertex())
+			 */
+			unsigned int getAmount() const { return amount; }
+
+			IndexTypes getIndexType() const { return type; }
 		};
 
 		/**
@@ -935,11 +948,19 @@ namespace GRenderer {
 		 */
 		Texture() = default;
 
+		Texture(const Texture& t);
+
+		Texture(Texture&& t) noexcept;
+
 		/**
 		 * Will create a new Texture with the given image
 		 * @param i
 		 */
 		Texture(GIO::Graphics::Image& i);
+
+		Texture& operator=(const Texture& other);
+
+		Texture& operator=(Texture&& t) noexcept;
 
 		/**
 		 * Will create the shader
@@ -948,13 +969,23 @@ namespace GRenderer {
 		 */
 		const bool createTexture(GIO::Graphics::Image& i);
 
+		/**
+		 * Deconstructor
+		 */
 		~Texture();
 
 		/**
 		 * Will bind the texture to the given texture slot
 		 * @param slot - The texture slot to bind to
 		 */
-		void bind(unsigned int slot = 0);
+		void bind(unsigned int slot);
+
+		/**
+		 * Will bind the texture to the last texture slot given
+		 */
+		void bind();
+
+		void setTextureSlot(unsigned int slot);
 
 		/**
 		 * Will unbind the current texture from the texture slot
@@ -1020,6 +1051,13 @@ namespace GRenderer {
 		 */
 		unsigned int getID() const { return ID; }
 	};
+
+	struct Mesh {
+		Texture tex;
+		Primitives::VertexArray vertex;
+	};
+
+	void draw(Mesh& m);
 }
 
 typedef void(*GWindowCallback)(int);
@@ -1210,189 +1248,198 @@ namespace GWindow {
 	}
 }
 
-/**
- * This namespace holds just one function called enumToString. It's sole purpose is to take any Enum defined in the Renderer and return a string representing the name of the enum.
- */
-namespace GEnumString {
-#define CHECK_ENUM(x) typeid(decltype(GEnum)) == typeid(x)
-	/**
-	 * This function will take in any enum defined in the renderer and return its corresponding string. Note that this function is not type safe. If any other enums or values are passed in, it will just return "UNKNOWN ENUM"
-	 *
-	 *  @param GEnum - Any Enum defined in the renderer
-	 *  @return A string with the same name as the Enum
-	 */
-	template<typename E>
-	GGeneral::String enumToString(E GEnum) {
-		auto enumMember = (int)GEnum;
+inline GGeneral::String& operator<<(GGeneral::String& s, GGeneral::Logger::Severity e) {
+	switch (e) {
+	case GGeneral::Logger::Severity::S_MSG:                     return s.append("MESSAGE");
+	case GGeneral::Logger::Severity::S_INFO:                    return s.append("INFO");
+	case GGeneral::Logger::Severity::S_SUCCESS:                 return s.append("SUCCESS");
+	case GGeneral::Logger::Severity::S_WARNING:                 return s.append("WARNING");
+	case GGeneral::Logger::Severity::S_ERROR:	                return s.append("ERROR");
+	case GGeneral::Logger::Severity::S_FATAL:                   return s.append("FATAL");
+	default:													return s.append("UNKNOWN");
+	}
+}
 
-		if (CHECK_ENUM(GGeneral::Logger::Severity)) {
-			auto sev = (GGeneral::Logger::Severity) enumMember;
-			switch (sev) {
-			case GGeneral::Logger::Severity::S_MSG:                     return "MESSAGE";
-			case GGeneral::Logger::Severity::S_INFO:                    return "INFO";
-			case GGeneral::Logger::Severity::S_SUCCESS:                 return "SUCCESS";
-			case GGeneral::Logger::Severity::S_WARNING:                 return "WARNING";
-			case GGeneral::Logger::Severity::S_ERROR:	                return "ERROR";
-			case GGeneral::Logger::Severity::S_FATAL:                   return "FATAL";
-			}
-		}
+inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::IndexTypes e) {
+	switch (e) {
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:	 return s.append("UNSIGNED BYTE");
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	 return s.append("UNSIGNED SHORT");
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:	 return s.append("UNSIGNED INT");
+	}
+}
 
-		if (CHECK_ENUM(GWindow::WindowState)) {
-			auto sev = (GWindow::WindowState) enumMember;
-			switch (sev) {
-			case GWindow::WindowState::HIDDEN:                          return "HIDDEN";
-			case GWindow::WindowState::MAXIMIZED:						return "MAXIMIZED";
-			case GWindow::WindowState::MINIMIZED:						return "MINIMIZED";
-			case GWindow::WindowState::NORMAL:							return "NORMAL";
-			}
-		}
+inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::VertexTypes e) {
+	switch (e) {
+	case GRenderer::Primitives::VertexTypes::BYTE:		return s.append("BYTE");
+	case GRenderer::Primitives::VertexTypes::SHORT:		return s.append("SHORT");
+	case GRenderer::Primitives::VertexTypes::INT:		return s.append("INT");
+	case GRenderer::Primitives::VertexTypes::FLOAT:		return s.append("FLOAT");
+	case GRenderer::Primitives::VertexTypes::DOUBLE:	return s.append("DOUBLE");
+	}
+}
 
-		if (CHECK_ENUM(GWindow::VK)) {
-			auto vk = (GWindow::VK)enumMember;
-			switch (vk) {
-			case GWindow::VK::LEFT_MB:		           return "Left Mouse Button";
-			case GWindow::VK::RIGHT_MB:		           return "Right Mouse Button";
-			case GWindow::VK::CANCEL:		           return "Cancel Key";
-			case GWindow::VK::MIDDLE_MB:		       return "Middle Mouse Button";
-			case GWindow::VK::X1_MB:			       return "X1 Mouse Button";
-			case GWindow::VK::X2_MB:			       return "X2 Mouse Button";
-			case GWindow::VK::LEFT_SHIFT:	           return "Left Shift";
-			case GWindow::VK::RIGHT_SHIFT:	           return "Right Shift";
-			case GWindow::VK::LEFT_CONTROL:	           return "Left Control";
-			case GWindow::VK::RIGHT_CONTROL:	       return "Right Control";
-			case GWindow::VK::BACKSPACE:		       return "Backspace";
-			case GWindow::VK::TAB:			           return "Tab";
-			case GWindow::VK::ENTER:			       return "Enter";
-			case GWindow::VK::ALT:			           return "Alt";
-			case GWindow::VK::PAUSE:			       return "Pause";
-			case GWindow::VK::CAPSLOCK:		           return "Capslock";
-			case GWindow::VK::ESCAPE:		           return "Escape";
-			case GWindow::VK::SPACE:			       return "Space";
-			case GWindow::VK::PAGE_UP:		           return "Page Up";
-			case GWindow::VK::PAGE_DOWN:		       return "Page Down";
-			case GWindow::VK::END:			           return "End";
-			case GWindow::VK::HOME:			           return "Home";
-			case GWindow::VK::LEFTARROW:		       return "Left Arrow";
-			case GWindow::VK::UPARROW:		           return "Up Arrow";
-			case GWindow::VK::RIGHTARROW:	           return "Right Arrow";
-			case GWindow::VK::DOWNARROW:		       return "Down Arrow";
-			case GWindow::VK::SELECT:		           return "Select";
-			case GWindow::VK::PRINT:			       return "Print";
-			case GWindow::VK::EXECUTE:		           return "Execute";
-			case GWindow::VK::PRINT_SCREEN:	           return "Print Screen";
-			case GWindow::VK::INSERT:		           return "Insert";
-			case GWindow::VK::DEL:			           return "Delete";
-			case GWindow::VK::HELP:			           return "Help";
-			case GWindow::VK::KEY_0:			       return "0";
-			case GWindow::VK::KEY_1:			       return "1";
-			case GWindow::VK::KEY_2:			       return "2";
-			case GWindow::VK::KEY_3:			       return "3";
-			case GWindow::VK::KEY_4:			       return "4";
-			case GWindow::VK::KEY_5:			       return "5";
-			case GWindow::VK::KEY_6:			       return "6";
-			case GWindow::VK::KEY_7:			       return "7";
-			case GWindow::VK::KEY_8:			       return "8";
-			case GWindow::VK::KEY_9:			       return "9";
-			case GWindow::VK::A:				       return "A";
-			case GWindow::VK::B:				       return "B";
-			case GWindow::VK::C:				       return "C";
-			case GWindow::VK::D:				       return "D";
-			case GWindow::VK::E:				       return "E";
-			case GWindow::VK::F:				       return "F";
-			case GWindow::VK::G:				       return "G";
-			case GWindow::VK::H:				       return "H";
-			case GWindow::VK::I:				       return "I";
-			case GWindow::VK::J:				       return "J";
-			case GWindow::VK::K:				       return "K";
-			case GWindow::VK::L:				       return "L";
-			case GWindow::VK::M:				       return "M";
-			case GWindow::VK::N:				       return "N";
-			case GWindow::VK::O:				       return "O";
-			case GWindow::VK::P:				       return "P";
-			case GWindow::VK::Q:				       return "Q";
-			case GWindow::VK::R:				       return "R";
-			case GWindow::VK::S:				       return "S";
-			case GWindow::VK::T:				       return "T";
-			case GWindow::VK::U:				       return "U";
-			case GWindow::VK::V:				       return "V";
-			case GWindow::VK::W:				       return "W";
-			case GWindow::VK::X:				       return "X";
-			case GWindow::VK::Y:				       return "Y";
-			case GWindow::VK::Z:				       return "Z";
-			case GWindow::VK::LEFT_WINDOWS:	           return "Left Windows";
-			case GWindow::VK::RIGHT_WINDOWS:	       return "Right Windows";
-			case GWindow::VK::APPLICATION:	           return "Application";
-			case GWindow::VK::SLEEP:			       return "Sleep";
-			case GWindow::VK::SCROLL_LOCK:	           return "Scroll Lock";
-			case GWindow::VK::LEFT_MENU:		       return "Left Alt";
-			case GWindow::VK::RIGHT_MENU:	           return "Right Alt";
-			case GWindow::VK::VOLUME_MUTE:	           return "Volume Mute";
-			case GWindow::VK::VOLUME_DOWN:	           return "Volume Down";
-			case GWindow::VK::VOLUME_UP:		       return "Volume Up";
-			case GWindow::VK::MEDIA_NEXT:	           return "Media Next Track";
-			case GWindow::VK::MEDIA_LAST:	           return "Media Previous Track";
-			case GWindow::VK::MEDIA_STOP:	           return "Media Stop";
-			case GWindow::VK::MEDIA_PLAY_PAUSE:        return "Media Pause / Play";
-			case GWindow::VK::OEM_1:			       return "Oem 1";
-			case GWindow::VK::OEM_2:			       return "Oem 2";
-			case GWindow::VK::OEM_3:			       return "Oem 3";
-			case GWindow::VK::OEM_4:			       return "Oem 4";
-			case GWindow::VK::OEM_5:			       return "Oem 5";
-			case GWindow::VK::OEM_6:			       return "Oem 6";
-			case GWindow::VK::OEM_7:			       return "Oem 7";
-			case GWindow::VK::OEM_8:			       return "Oem 8";
-			case GWindow::VK::OEM_CLEAR:		       return "Clear";
-			case GWindow::VK::OEM_PLUS:		           return "Plus";
-			case GWindow::VK::OEM_COMMA:		       return "Comma";
-			case GWindow::VK::OEM_MINUS:		       return "Minus";
-			case GWindow::VK::OEM_PERIOD:	           return "Period";
-			case GWindow::VK::NUMPAD_0:		           return "Numpad 0";
-			case GWindow::VK::NUMPAD_1:		           return "Numpad 1";
-			case GWindow::VK::NUMPAD_2:		           return "Numpad 2";
-			case GWindow::VK::NUMPAD_3:		           return "Numpad 3";
-			case GWindow::VK::NUMPAD_4:		           return "Numpad 4";
-			case GWindow::VK::NUMPAD_5:		           return "Numpad 5";
-			case GWindow::VK::NUMPAD_6:		           return "Numpad 6";
-			case GWindow::VK::NUMPAD_7:		           return "Numpad 7";
-			case GWindow::VK::NUMPAD_8:		           return "Numpad 8";
-			case GWindow::VK::NUMPAD_9:		           return "Numpad 9";
-			case GWindow::VK::NUMPAD_MULTIPLY:         return "Numpad Multiply";
-			case GWindow::VK::NUMPAD_ADD:	           return "Numpad Add";
-			case GWindow::VK::NUMPAD_SEPERATOR:        return "Numpad Seperator";
-			case GWindow::VK::NUMPAD_SUBTRACT:         return "Numpad Subtract";
-			case GWindow::VK::NUMPAD_COMMA:	           return "Numpad Comma";
-			case GWindow::VK::NUMPAD_DIVIDE:	       return "Numpad Divide";
-			case GWindow::VK::NUMPAD_LOCK:	           return "Numpad Lock";
-			case GWindow::VK::F1:			           return "F1";
-			case GWindow::VK::F2:			           return "F2";
-			case GWindow::VK::F3:			           return "F3";
-			case GWindow::VK::F4:			           return "F4";
-			case GWindow::VK::F5:			           return "F5";
-			case GWindow::VK::F6:			           return "F6";
-			case GWindow::VK::F7:			           return "F7";
-			case GWindow::VK::F8:			           return "F8";
-			case GWindow::VK::F9:			           return "F9";
-			case GWindow::VK::F10:			           return "F10";
-			case GWindow::VK::F11:			           return "F11";
-			case GWindow::VK::F12:			           return "F12";
-			case GWindow::VK::F13:			           return "F13";
-			case GWindow::VK::F14:			           return "F14";
-			case GWindow::VK::F15:			           return "F15";
-			case GWindow::VK::F16:			           return "F16";
-			case GWindow::VK::F17:			           return "F17";
-			case GWindow::VK::F18:			           return "F18";
-			case GWindow::VK::F19:			           return "F19";
-			case GWindow::VK::F20:			           return "F20";
-			case GWindow::VK::F21:			           return "F21";
-			case GWindow::VK::F22:			           return "F22";
-			case GWindow::VK::F23:			           return "F23";
-			case GWindow::VK::F24:			           return "F24";
-			case GWindow::VK::PLAY:			           return "Play";
-			case GWindow::VK::ZOOM:			           return "Zoom";
-			case GWindow::VK::UNKWON:                  return "Unknown Key";
-			}
-		}
+inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::ShaderTypes e) {
+	switch (e) {
+	case GRenderer::Primitives::ShaderTypes::COMPUTE_SHADER:					return s.append("COMPUTE SHADER");
+	case GRenderer::Primitives::ShaderTypes::VERTEX_SHADER:						return s.append("VERTEX SHADER");
+	case GRenderer::Primitives::ShaderTypes::TESS_CONTROL_SHADER:				return s.append("TESS CONTROL SHADER");
+	case GRenderer::Primitives::ShaderTypes::TESS_EVALUATION_SHADER:			return s.append("TESS EVALUATION SHADER");
+	case GRenderer::Primitives::ShaderTypes::GEOMETRY_SHADER:					return s.append("GEOMETRY SHADER");
+	case GRenderer::Primitives::ShaderTypes::FRAGMENT_SHADER:					return s.append("FRAGMENT SHADER");
+	case GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER:						return s.append("UNKOWN SHADER");
+	}
+}
 
-		return "UNKNOWN ENUM";
+inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowState e) {
+	switch (e) {
+	case GWindow::WindowState::HIDDEN:                          return s.append("HIDDEN");
+	case GWindow::WindowState::MAXIMIZED:						return s.append("MAXIMIZED");
+	case GWindow::WindowState::MINIMIZED:						return s.append("MINIMIZED");
+	case GWindow::WindowState::NORMAL:							return s.append("NORMAL");
+	}
+}
+
+inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::VK e) {
+	switch (e) {
+	case GWindow::VK::LEFT_MB:		           return s.append("Left Mouse Button");
+	case GWindow::VK::RIGHT_MB:		           return s.append("Right Mouse Button");
+	case GWindow::VK::CANCEL:		           return s.append("Cancel Key");
+	case GWindow::VK::MIDDLE_MB:		       return s.append("Middle Mouse Button");
+	case GWindow::VK::X1_MB:			       return s.append("X1 Mouse Button");
+	case GWindow::VK::X2_MB:			       return s.append("X2 Mouse Button");
+	case GWindow::VK::LEFT_SHIFT:	           return s.append("Left Shift");
+	case GWindow::VK::RIGHT_SHIFT:	           return s.append("Right Shift");
+	case GWindow::VK::LEFT_CONTROL:	           return s.append("Left Control");
+	case GWindow::VK::RIGHT_CONTROL:	       return s.append("Right Control");
+	case GWindow::VK::BACKSPACE:		       return s.append("Backspace");
+	case GWindow::VK::TAB:			           return s.append("Tab");
+	case GWindow::VK::ENTER:			       return s.append("Enter");
+	case GWindow::VK::ALT:			           return s.append("Alt");
+	case GWindow::VK::PAUSE:			       return s.append("Pause");
+	case GWindow::VK::CAPSLOCK:		           return s.append("Capslock");
+	case GWindow::VK::ESCAPE:		           return s.append("Escape");
+	case GWindow::VK::SPACE:			       return s.append("Space");
+	case GWindow::VK::PAGE_UP:		           return s.append("Page Up");
+	case GWindow::VK::PAGE_DOWN:		       return s.append("Page Down");
+	case GWindow::VK::END:			           return s.append("End");
+	case GWindow::VK::HOME:			           return s.append("Home");
+	case GWindow::VK::LEFTARROW:		       return s.append("Left Arrow");
+	case GWindow::VK::UPARROW:		           return s.append("Up Arrow");
+	case GWindow::VK::RIGHTARROW:	           return s.append("Right Arrow");
+	case GWindow::VK::DOWNARROW:		       return s.append("Down Arrow");
+	case GWindow::VK::SELECT:		           return s.append("Select");
+	case GWindow::VK::PRINT:			       return s.append("Print");
+	case GWindow::VK::EXECUTE:		           return s.append("Execute");
+	case GWindow::VK::PRINT_SCREEN:	           return s.append("Print Screen");
+	case GWindow::VK::INSERT:		           return s.append("Insert");
+	case GWindow::VK::DEL:			           return s.append("Delete");
+	case GWindow::VK::HELP:			           return s.append("Help");
+	case GWindow::VK::KEY_0:			       return s.append("0");
+	case GWindow::VK::KEY_1:			       return s.append("1");
+	case GWindow::VK::KEY_2:			       return s.append("2");
+	case GWindow::VK::KEY_3:			       return s.append("3");
+	case GWindow::VK::KEY_4:			       return s.append("4");
+	case GWindow::VK::KEY_5:			       return s.append("5");
+	case GWindow::VK::KEY_6:			       return s.append("6");
+	case GWindow::VK::KEY_7:			       return s.append("7");
+	case GWindow::VK::KEY_8:			       return s.append("8");
+	case GWindow::VK::KEY_9:			       return s.append("9");
+	case GWindow::VK::A:				       return s.append("A");
+	case GWindow::VK::B:				       return s.append("B");
+	case GWindow::VK::C:				       return s.append("C");
+	case GWindow::VK::D:				       return s.append("D");
+	case GWindow::VK::E:				       return s.append("E");
+	case GWindow::VK::F:				       return s.append("F");
+	case GWindow::VK::G:				       return s.append("G");
+	case GWindow::VK::H:				       return s.append("H");
+	case GWindow::VK::I:				       return s.append("I");
+	case GWindow::VK::J:				       return s.append("J");
+	case GWindow::VK::K:				       return s.append("K");
+	case GWindow::VK::L:				       return s.append("L");
+	case GWindow::VK::M:				       return s.append("M");
+	case GWindow::VK::N:				       return s.append("N");
+	case GWindow::VK::O:				       return s.append("O");
+	case GWindow::VK::P:				       return s.append("P");
+	case GWindow::VK::Q:				       return s.append("Q");
+	case GWindow::VK::R:				       return s.append("R");
+	case GWindow::VK::S:				       return s.append("S");
+	case GWindow::VK::T:				       return s.append("T");
+	case GWindow::VK::U:				       return s.append("U");
+	case GWindow::VK::V:				       return s.append("V");
+	case GWindow::VK::W:				       return s.append("W");
+	case GWindow::VK::X:				       return s.append("X");
+	case GWindow::VK::Y:				       return s.append("Y");
+	case GWindow::VK::Z:				       return s.append("Z");
+	case GWindow::VK::LEFT_WINDOWS:	           return s.append("Left Windows");
+	case GWindow::VK::RIGHT_WINDOWS:	       return s.append("Right Windows");
+	case GWindow::VK::APPLICATION:	           return s.append("Application");
+	case GWindow::VK::SLEEP:			       return s.append("Sleep");
+	case GWindow::VK::SCROLL_LOCK:	           return s.append("Scroll Lock");
+	case GWindow::VK::LEFT_MENU:		       return s.append("Left Alt");
+	case GWindow::VK::RIGHT_MENU:	           return s.append("Right Alt");
+	case GWindow::VK::VOLUME_MUTE:	           return s.append("Volume Mute");
+	case GWindow::VK::VOLUME_DOWN:	           return s.append("Volume Down");
+	case GWindow::VK::VOLUME_UP:		       return s.append("Volume Up");
+	case GWindow::VK::MEDIA_NEXT:	           return s.append("Media Next Track");
+	case GWindow::VK::MEDIA_LAST:	           return s.append("Media Previous Track");
+	case GWindow::VK::MEDIA_STOP:	           return s.append("Media Stop");
+	case GWindow::VK::MEDIA_PLAY_PAUSE:        return s.append("Media Pause / Play");
+	case GWindow::VK::OEM_1:			       return s.append("Oem 1");
+	case GWindow::VK::OEM_2:			       return s.append("Oem 2");
+	case GWindow::VK::OEM_3:			       return s.append("Oem 3");
+	case GWindow::VK::OEM_4:			       return s.append("Oem 4");
+	case GWindow::VK::OEM_5:			       return s.append("Oem 5");
+	case GWindow::VK::OEM_6:			       return s.append("Oem 6");
+	case GWindow::VK::OEM_7:			       return s.append("Oem 7");
+	case GWindow::VK::OEM_8:			       return s.append("Oem 8");
+	case GWindow::VK::OEM_CLEAR:		       return s.append("Clear");
+	case GWindow::VK::OEM_PLUS:		           return s.append("Plus");
+	case GWindow::VK::OEM_COMMA:		       return s.append("Comma");
+	case GWindow::VK::OEM_MINUS:		       return s.append("Minus");
+	case GWindow::VK::OEM_PERIOD:	           return s.append("Period");
+	case GWindow::VK::NUMPAD_0:		           return s.append("Numpad 0");
+	case GWindow::VK::NUMPAD_1:		           return s.append("Numpad 1");
+	case GWindow::VK::NUMPAD_2:		           return s.append("Numpad 2");
+	case GWindow::VK::NUMPAD_3:		           return s.append("Numpad 3");
+	case GWindow::VK::NUMPAD_4:		           return s.append("Numpad 4");
+	case GWindow::VK::NUMPAD_5:		           return s.append("Numpad 5");
+	case GWindow::VK::NUMPAD_6:		           return s.append("Numpad 6");
+	case GWindow::VK::NUMPAD_7:		           return s.append("Numpad 7");
+	case GWindow::VK::NUMPAD_8:		           return s.append("Numpad 8");
+	case GWindow::VK::NUMPAD_9:		           return s.append("Numpad 9");
+	case GWindow::VK::NUMPAD_MULTIPLY:         return s.append("Numpad Multiply");
+	case GWindow::VK::NUMPAD_ADD:	           return s.append("Numpad Add");
+	case GWindow::VK::NUMPAD_SEPERATOR:        return s.append("Numpad Separator");
+	case GWindow::VK::NUMPAD_SUBTRACT:         return s.append("Numpad Subtract");
+	case GWindow::VK::NUMPAD_COMMA:	           return s.append("Numpad Comma");
+	case GWindow::VK::NUMPAD_DIVIDE:	       return s.append("Numpad Divide");
+	case GWindow::VK::NUMPAD_LOCK:	           return s.append("Numpad Lock");
+	case GWindow::VK::F1:			           return s.append("F1");
+	case GWindow::VK::F2:			           return s.append("F2");
+	case GWindow::VK::F3:			           return s.append("F3");
+	case GWindow::VK::F4:			           return s.append("F4");
+	case GWindow::VK::F5:			           return s.append("F5");
+	case GWindow::VK::F6:			           return s.append("F6");
+	case GWindow::VK::F7:			           return s.append("F7");
+	case GWindow::VK::F8:			           return s.append("F8");
+	case GWindow::VK::F9:			           return s.append("F9");
+	case GWindow::VK::F10:			           return s.append("F10");
+	case GWindow::VK::F11:			           return s.append("F11");
+	case GWindow::VK::F12:			           return s.append("F12");
+	case GWindow::VK::F13:			           return s.append("F13");
+	case GWindow::VK::F14:			           return s.append("F14");
+	case GWindow::VK::F15:			           return s.append("F15");
+	case GWindow::VK::F16:			           return s.append("F16");
+	case GWindow::VK::F17:			           return s.append("F17");
+	case GWindow::VK::F18:			           return s.append("F18");
+	case GWindow::VK::F19:			           return s.append("F19");
+	case GWindow::VK::F20:			           return s.append("F20");
+	case GWindow::VK::F21:			           return s.append("F21");
+	case GWindow::VK::F22:			           return s.append("F22");
+	case GWindow::VK::F23:			           return s.append("F23");
+	case GWindow::VK::F24:			           return s.append("F24");
+	case GWindow::VK::PLAY:			           return s.append("Play");
+	case GWindow::VK::ZOOM:			           return s.append("Zoom");
+	case GWindow::VK::UNKWON:                  return s.append("Unknown Key");
 	}
 }

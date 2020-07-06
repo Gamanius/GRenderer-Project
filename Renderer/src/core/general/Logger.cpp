@@ -38,23 +38,32 @@ GGeneral::String getSystemTime() {
 	seconds << currentTime.tm_sec;
 	GGeneral::String minutes;
 	minutes << currentTime.tm_min;
-
+	//TODO: use the (currently not implemented) time system
 	if (seconds.getSize() == 1)
 		seconds = "0" + seconds;
 	if (minutes.getSize() == 1)
 		minutes = "0" + minutes;
 
-	return currentTime.tm_hour + ":" + minutes + ":" + seconds;
+	return GGeneral::toString(currentTime.tm_hour) + ":" + minutes + ":" + seconds;
 }
 
 void printmsg(GGeneral::Logger::Message msg) {
 	if ((int)msg.sev >= (int)severityFilter) {
 		//Print everything
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), SeverityColors[(int)msg.sev]);
-		std::cout << "[" << getSystemTime() << "|" << GEnumString::enumToString(msg.sev);
+
+		std::cout << "[" << getSystemTime() << "|";
+		switch (msg.sev) {
+		case GGeneral::Logger::Severity::S_MSG:       std::cout << "MESSAGE";  break;
+		case GGeneral::Logger::Severity::S_INFO:      std::cout << "INFO";	   break;
+		case GGeneral::Logger::Severity::S_SUCCESS:   std::cout << "SUCCESS";  break;
+		case GGeneral::Logger::Severity::S_WARNING:   std::cout << "WARNING";  break;
+		case GGeneral::Logger::Severity::S_ERROR:	  std::cout << "ERROR";	   break;
+		case GGeneral::Logger::Severity::S_FATAL:     std::cout << "FATAL";	   break;
+		}
 		if (msg.ID != -1 && msg.ID < (int)userNames.size())
 			std::cout << "|" << userNames[msg.ID];
-		std::cout << "]: " << msg.msg << std::endl;
+		std::cout << "]: " << msg.msg << "\n";
 
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
 	}

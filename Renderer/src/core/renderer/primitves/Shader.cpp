@@ -72,7 +72,7 @@ bool GRenderer::Primitives::Shader::loadShader(GGeneral::String filepath) {
 	//TODO FIX THIS...MIGHT BE PERFOMANCE HEAVY
 	std::string stringIn;
 	while (getline(fileIn, stringIn)) {
-		if (stringIn.find("#shader") != std::string::npos) {
+		if (stringIn.find("#shader") != std::string::npos && type == ShaderTypes::UNKOWN_SHADER) {
 			type = getTypeFromComment(stringIn.c_str());
 		}
 		else {

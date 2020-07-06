@@ -12,6 +12,7 @@ uniform mat4 mat;
 
 void main() {
 	gl_Position =  mat * vec4(pos, 1);
+	
 	tex = texc;
 	vcol = col; 
 }

@@ -66,12 +66,11 @@ char GGeneral::String::operator[](size_t i) {
 	return buffer[i];
 }
 
-GGeneral::String GGeneral::String::operator=(const String& s) {
-	String returnValue;
-	returnValue.buffer = s.buffer;
-	returnValue.size = s.size;
-	returnValue.bytesize = s.bytesize;
-	return returnValue;
+GGeneral::String& GGeneral::String::operator=(const String& s) {
+	buffer = s.buffer;
+	size = s.size;
+	bytesize = s.bytesize;
+	return *this;
 }
 
 GGeneral::String& GGeneral::String::operator=(String&& other) noexcept {
@@ -123,6 +122,18 @@ GGeneral::String& GGeneral::String::operator<<(const BaseObject& obj) {
 	return this->append(obj.toString());
 }
 
+#define FORMAT(format, varname)\
+size_t size = _scprintf(format, varname) + 1;\
+char* c = new char[size];/*TMALLOC(char*, size);*/\
+snprintf(c, size, format, varname);\
+this->append(c);\
+delete[] c;\
+return *this;
+
+GGeneral::String& GGeneral::String::operator<<(const void* adress) {
+	FORMAT("%p", adress);
+}
+
 GGeneral::String& GGeneral::String::operator<<(const byte b) {
 	return this->operator<<((int)b);
 }
@@ -135,14 +146,6 @@ GGeneral::String& GGeneral::String::operator<<(const int i) {
 	delete[] c;
 	return *this;
 }
-
-#define FORMAT(format, varname)\
-size_t size = _scprintf(format, varname) + 1;\
-char* c = new char[size];/*TMALLOC(char*, size);*/\
-snprintf(c, size, format, varname);\
-this->append(c);\
-delete[] c;\
-return *this;
 
 GGeneral::String& GGeneral::String::operator<<(uint64_t ui64) {
 	FORMAT("%I64u", ui64);
@@ -160,7 +163,7 @@ void GGeneral::String::setPrecise(const bool b) { precise = b; }
 
 size_t GGeneral::String::find(const char* c) {
 	bool found = false;
-	for (size_t i = 0; i < size - strlen(c); i++) {
+	for (size_t i = 0; i < size - strlen(c) + 1; i++) {
 		for (size_t j = 0; j < strlen(c); j++) {
 			if (buffer[i + j] != c[j]) {
 				found = false;
