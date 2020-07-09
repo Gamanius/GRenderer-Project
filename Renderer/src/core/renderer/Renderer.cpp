@@ -3,7 +3,10 @@
 
 const bool GRenderer::init() {
 	GGeneral::Logger::init();
-	GWindow::Monitor::init();
+	if (!GWindow::init())
+		return false;
+	if (!GWindow::Monitor::init())
+		return false;
 	return true;
 }
 

@@ -224,13 +224,17 @@ namespace GMath {
 	};
 
 	/**
-	 * A 4x4 Matrix. Comloum Major
+	 * A 4x4 Matrix. Note that the matrices are all row major
 	 */
 	template<typename T>
 	struct mat4x4 {
+		/** First row */
 		vec4<T> x;
+		/** Second row */
 		vec4<T> y;
+		/** Third row */
 		vec4<T> z;
+		/** Fourth row */
 		vec4<T> w;
 
 		vec4<T>& operator[](byte i) {
@@ -280,6 +284,47 @@ namespace GMath {
 		returnValue[1][1] = 1;
 		returnValue[2][2] = 1;
 		returnValue[3][3] = 1;
+		return returnValue;
+	}
+
+	/**
+	 * Will create an orthographic projection matrix and return it
+	 * @param left - Left coordinate of the frustum
+	 * @param right - Right coordinate of the frustum
+	 * @param bottom - Bottom coordinate of the frustum
+	 * @param top - Top coordinate of the frustum
+	 * @param _near - The near plane frustum
+	 * @param _far - The far plane frustum
+	 * @return An mat4x4
+	 */
+	template<typename T>
+	mat4x4<T> ortho(T left, T right, T bottom, T top, T _near, T _far) {
+		auto returnValue = mat4x4Identity<T>();
+		returnValue[0][0] = 2 / (right - left);
+		returnValue[1][1] = 2 / (top - bottom);
+		returnValue[2][2] = -(2 / (_far - _near));
+		returnValue[0][3] = -((right + left) / (right - left));
+		returnValue[1][3] = -((top + bottom) / (top - bottom));
+		returnValue[2][3] = -((_far + _near) / (_far - _near));
+		return returnValue;
+	}
+
+	/**
+	 * Will create an perspective projection matrix and return it
+	 * @param FOV - The field of view in degrees
+	 * @param aspect - The aspect ratio
+	 * @param _near - Specifies the near plane frustum
+	 * @param _far - Specifies the far plane frustum
+	 * @return An mat4x4
+	 */
+	template<typename T>
+	mat4x4<T> perpective(float FOV, T aspect, T _near, T _far) {
+		mat4x4<T> returnValue;
+		returnValue[0][0] = 1 / (aspect * tan(TO_RAD(FOV) / 2));
+		returnValue[1][1] = 1 / (tan(TO_RAD(FOV) / 2));
+		returnValue[2][2] = -((_far + _near) / (_far - _near));
+		returnValue[3][2] = -1;
+		returnValue[2][3] = -((2 * _far * _near) / (_far - _near));
 		return returnValue;
 	}
 }

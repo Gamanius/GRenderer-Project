@@ -1,13 +1,27 @@
 #include "../GRenderer.h"
 #undef UNICODE
 #include <Windows.h>
-#include <gl/GL.h>
+#include <gl/glew.h>
+//#include "../../dependencies/header/wglext.h"
 //#include <wglext.h>
 
 #include <iostream>
 #include <vector>
 
 #define THIS_INSTANCE allWindowsInstances[this->WindowID]
+
+typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext,
+	const int* attribList);
+wglCreateContextAttribsARB_type* wglCreateContextAttribsARB;
+
+#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
+#define WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
 
 //WinAPI specific variables
 static MSG msg;
@@ -21,6 +35,7 @@ struct WindowClass {
 	HDC hdc;
 	HWND hWnd;
 	WNDCLASS wc;
+	GWindow::GWindowCallback callbackfun = nullptr;
 
 	bool isFree = false;
 };
@@ -328,6 +343,76 @@ static const unsigned int getIndex(HWND hWnd) {
 	return 0;
 }
 
+bool GWindow::init() {
+	WNDCLASSA window_class = {};
+	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	window_class.lpfnWndProc = DefWindowProcA;
+	window_class.hInstance = GetModuleHandle(0);
+	window_class.lpszClassName = "Dummy_WGL_djuasiodwa";
+
+	if (!RegisterClassA(&window_class)) {
+		return false;
+	}
+
+	HWND dummy_window = CreateWindowExA(
+		0,
+		window_class.lpszClassName,
+		"Dummy OpenGL Window",
+		0,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		0,
+		0,
+		window_class.hInstance,
+		0);
+
+	if (!dummy_window) {
+		return false;
+	}
+
+	HDC dummy_dc = GetDC(dummy_window);
+
+	PIXELFORMATDESCRIPTOR pfd = {};
+	pfd.nSize = sizeof(pfd);
+	pfd.nVersion = 1;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.cColorBits = 32;
+	pfd.cAlphaBits = 8;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+	pfd.cDepthBits = 24;
+	pfd.cStencilBits = 8;
+
+	int pixel_format = ChoosePixelFormat(dummy_dc, &pfd);
+	if (!pixel_format) {
+		return false;
+	}
+	if (!SetPixelFormat(dummy_dc, pixel_format, &pfd)) {
+		return false;
+	}
+
+	HGLRC dummy_context = wglCreateContext(dummy_dc);
+	if (!dummy_context) {
+		return false;
+	}
+
+	if (!wglMakeCurrent(dummy_dc, dummy_context)) {
+		return false;
+	}
+
+	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)wglGetProcAddress(
+		"wglCreateContextAttribsARB");
+	if (glewInit() != GLEW_OK)
+		return false;
+	wglMakeCurrent(dummy_dc, 0);
+	wglDeleteContext(dummy_context);
+	ReleaseDC(dummy_window, dummy_dc);
+	DestroyWindow(dummy_window);
+	return true;
+}
+
 LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CLOSE:
@@ -336,16 +421,28 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		//Window close/destroy event
 		allWindowsInstances[getIndex(hWnd)].closeRequest = true;
 	}
+	case WM_ERASEBKGND: return 0;
+	case WM_SIZING:
+	{
+		auto area = (RECT*)lParam;
+		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&GGeneral::Rectangle<int>(area->left, area->top, area->right - area->left, area->bottom - area->top));
+		return MAKELRESULT(1, 1);
+	}
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 	{
 		//Window press event
 		auto key = getVirtualKeyCode(wParam);
 		//LOG(GEnumString::enumToString(key));
+		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+		return MAKELRESULT(1, 1);
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
 	{
+		auto key = getVirtualKeyCode(wParam);
+		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+		return MAKELRESULT(1, 1);
 	}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -372,12 +469,12 @@ GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGenera
 	for (size_t i = 0; i < allWindowsInstances.size(); i++) {
 		if (allWindowsInstances[i].isFree) {
 			this->WindowID = i;
-			allWindowsInstances[i] = { false, hdc, hWnd, wc, false };
+			allWindowsInstances[i] = { false, hdc, hWnd, wc };
 			goto DONE;
 		}
 	}
 	this->WindowID = allWindowsInstances.size();
-	allWindowsInstances.push_back({ false, hdc, hWnd, wc, false });
+	allWindowsInstances.push_back({ false, hdc, hWnd, wc, nullptr });
 DONE:
 	EnableWindow(hWnd, true);
 }
@@ -386,7 +483,7 @@ GWindow::Window::~Window() {
 	THIS_INSTANCE.isFree = true;
 }
 
-bool GWindow::Window::initOpenGLContext() {
+bool GWindow::Window::createOpenGLcontext() {
 	PIXELFORMATDESCRIPTOR pfd =
 	{
 		sizeof(PIXELFORMATDESCRIPTOR),
@@ -410,7 +507,14 @@ bool GWindow::Window::initOpenGLContext() {
 	auto iPixelFormat = ChoosePixelFormat(THIS_INSTANCE.hdc, &pfd);
 	SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd);
 
-	hglrc = wglCreateContext(THIS_INSTANCE.hdc);
+	int gl33_attribs[] = {
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		0,
+	};
+
+	hglrc = wglCreateContextAttribsARB(THIS_INSTANCE.hdc, 0, gl33_attribs);
 	//TODO: do the extended opengl context creation
 	if (hglrc == NULL) return false;
 
@@ -453,4 +557,8 @@ const bool GWindow::Window::getCloseRequest() const {
 
 void GWindow::Window::forceCloseRequest() {
 	SendMessage(THIS_INSTANCE.hWnd, WM_CLOSE, 0, 0);
+}
+
+void GWindow::Window::addCallbackFunction(GWindowCallback fun) {
+	THIS_INSTANCE.callbackfun = fun;
 }

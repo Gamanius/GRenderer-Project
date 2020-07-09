@@ -114,6 +114,10 @@ GGeneral::String& GGeneral::String::operator<<(const char* c) {
 	return this->append(c);
 }
 
+GGeneral::String& GGeneral::String::operator<<(const byte* b) {
+	return this->append((const char*)b);
+}
+
 GGeneral::String& GGeneral::String::operator<<(const String& s) {
 	return this->append(s);
 }

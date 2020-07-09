@@ -274,8 +274,8 @@
  */
 #define G_PI 3.14159265359f
 
-#define TO_RAD(deg) deg * (G_PI / 180.0f)
-#define TO_DEG(rad) rad * (180.0f / G_PI)
+#define TO_RAD(deg) (deg * (G_PI / 180.0f))
+#define TO_DEG(rad) (rad * (180.0f / G_PI))
 
 #ifndef _WIN32
 #error Only Windows is Supported!

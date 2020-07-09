@@ -18,9 +18,6 @@
     <ClInclude Include="src\core\GRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\dependencies\header\wglext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\dependencies\GLEW\include\GL\eglew.h">
       <Filter>Header Files</Filter>
     </ClInclude>

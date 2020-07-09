@@ -32,7 +32,7 @@ namespace GGeneral {
 		char* buffer;
 		bool precise = false;
 	public:
-		//TODO fix this
+		/** Max size of string and used to indicate a failed find() */
 		static const size_t npos = SIZE_MAX;
 
 		/** Creates an empty string */
@@ -120,6 +120,12 @@ namespace GGeneral {
 		 */
 		String& operator<< (const char* c);
 		/**
+		 * Will just call append and cast the bytes into chars
+		 * @param b - The bytes to append
+		 * @return this string
+		 */
+		String& operator<< (const byte* b);
+		/**
 		 * Will just call append
 		 * @param s - The string to append
 		 * @return this string
@@ -131,6 +137,11 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& operator<< (const BaseObject& obj);
+		/**
+		 * Will format the void* into a char* and will then call append
+		 * @param adress - The void* to append
+		 * @return this string
+		 */
 		String& operator<< (const void* adress);
 		/**
 		 * Will format the number into a char* and will then call append
@@ -229,7 +240,7 @@ namespace GGeneral {
 	}
 
 	/**
-	 * Will try to convert given arguments using stringstream into a string
+	 * Will try to convert given arguments using the String class into a string
 	 * @param arg - The first needed argument
 	 * @param ...args - More arguments
 	 * @return A combined string of all arguments
@@ -509,6 +520,24 @@ namespace GGeneral {
 		}
 	};
 
+	template<typename T>
+	struct Rectangle : public BaseObject {
+		Point<T> position;
+		Dimension<T> dimension;
+
+		Rectangle(T x = 0, T y = 0, T width = 0, T height = 0) {
+			this->position = Point(x, y);
+			this->dimension = Dimension(width, height);
+		}
+
+		/**
+		 * @return A string with the current values of the Rectangle struct
+		 */
+		GGeneral::String toString() const override {
+			return PRINT_VAR(position, dimension);
+		}
+	};
+
 	/**
 	 * This namespace contains some Win32 API calls that dont fit the GWindow namespace.
 	 */
@@ -550,6 +579,7 @@ namespace GIO {
 		 */
 		unsigned int size = 0;
 
+		/** Default constructor */
 		File() {}
 
 		File(byte* data, unsigned int size) : data(data), size(size) {}
@@ -632,6 +662,213 @@ namespace GIO {
 	}
 }
 
+/**
+ * The GWindow namespace is for all window specific calls
+ */
+namespace GWindow {
+	/*! An Enum describing the different states the window can be in */
+	enum class WindowState {
+		HIDDEN /*! The Window is not visible by the user nor is it in the taskbar*/
+		, MAXIMIZED /*! The Window is maximized and visible*/
+		, MINIMIZED /*! The Window is not visible by the user but the icon can be seen on the taskbar*/
+		, NORMAL /*! The Window is visible but not maximized*/
+	};
+
+	/*! These are all Keys that the event system is tracking. All other keys that are pressed will be discarded*/
+	enum class VK {
+		LEFT_MB, RIGHT_MB, CANCEL, MIDDLE_MB, X1_MB, X2_MB,
+		LEFT_SHIFT, RIGHT_SHIFT, LEFT_CONTROL, RIGHT_CONTROL, BACKSPACE, TAB,
+		ENTER, ALT, PAUSE, CAPSLOCK, ESCAPE, SPACE, PAGE_UP, PAGE_DOWN, END, HOME, LEFTARROW, UPARROW, RIGHTARROW, DOWNARROW,
+		SELECT, PRINT, EXECUTE, PRINT_SCREEN, INSERT, DEL, HELP,
+		KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+		LEFT_WINDOWS, RIGHT_WINDOWS, APPLICATION, SLEEP, SCROLL_LOCK, LEFT_MENU, RIGHT_MENU,
+		VOLUME_MUTE, VOLUME_DOWN, VOLUME_UP,
+		MEDIA_NEXT, MEDIA_LAST, MEDIA_STOP, MEDIA_PLAY_PAUSE,
+		OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8, OEM_CLEAR, OEM_PLUS, OEM_COMMA, OEM_MINUS, OEM_PERIOD,
+		NUMPAD_0, NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9, NUMPAD_MULTIPLY, NUMPAD_ADD, NUMPAD_SEPERATOR, NUMPAD_SUBTRACT, NUMPAD_COMMA, NUMPAD_DIVIDE, NUMPAD_LOCK,
+		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24,
+		PLAY, ZOOM, UNKWON
+	};
+
+	enum class WindowEvent {
+		STATE
+		, WINDOW_RESIZE
+		, KEY_PRESS
+		, KEY_RELEASE
+	};
+
+	typedef void(*GWindowCallback)(WindowEvent, void*);
+
+	/**
+	 * Will create an dummy OpenGL context and activate it. It will also init all OpenGL calls meaning that this function needs to be called before calling any other rendering functions. If GRenderer::init() this will also
+	 * be initialized. After activation it will delete itself
+	 */
+	bool init();
+
+	/**
+	 * A class including all functions to create a window and fetch events from it using the WinAPI. When the class is constructed, it can only be accessed from the thread that constructed it.
+	 * This also counts for the fetchEvents() function but not the init() function!
+	 */
+	class Window {
+	private:
+		/*! Window ID used to identify any window */
+		int WindowID = -1;
+	public:
+		/*! Creates a new Window with default values */
+		Window() : Window("G-Renderer Window Instance", { 50, 50 }, { 1280,  720 }) {}
+		/**
+		 * Creates a new window and enables input for it
+		 * @param name - The name of the window to be displayed
+		 * @param pos - The Position in screen space of the upper left corner
+		 * @param dim - The dimension of the whole window
+		 */
+		Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
+
+		~Window();
+
+		/**
+		 * TODO
+		 */
+		void static init();
+
+		/**
+		 * TODO
+		 */
+		bool createOpenGLcontext();
+
+		/**
+		 * TODO
+		 */
+		void setOpenGLContextActive(bool b);
+
+		void swapBuffers();
+
+		/**
+		 * Set the extended window state of the window instance. Is used to change the visibility of the window.
+		 * @param state - The new State the window should take
+		 */
+		void setState(GWindow::WindowState state);
+
+		/**
+		 * Will retrieve all messages/events from the current queue from all Windows. It can only process all events from every window instance used owned/constructed from the current thread
+		 */
+		static void fetchEvents();
+
+		/**
+		 * Will fetch if there is a close request for the current window
+		 * @return True if there is one. Otherwise it will return false
+		 */
+		const bool getCloseRequest() const;
+
+		/**
+		 * Will immediately sent a close request to the Window and wait until it processed it.
+		 */
+		void forceCloseRequest();
+
+		/**
+		 * TODO
+		 * Will set the Mouse capture flag to true or false. If the mouse is captured, it cannot exit the window while the window has the focus. The mouse itself will be invisible and in a virtual window space
+		 * @param capture - Set the capture
+		 */
+		void setCaptureMouseMode(bool capture);
+
+		/**
+		 * TODO
+		 * Will fetch the current window state and return it
+		 *
+		 * @return The current Window state of the window
+		 */
+		WindowState getCurrentWindowState() const;
+
+		/**
+		 * TODO
+		 *
+		 */
+		void addCallbackFunction(GWindowCallback fun);
+	};
+
+	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
+	namespace Monitor {
+		/*! A struct containing all informations of a virtual monitor*/
+		struct Screen : public GGeneral::BaseObject {
+			/*!Name of the screen*/
+			GGeneral::String screenName;
+			/*!The digital Position of the Screen relative to the primary Monitor*/
+			GGeneral::Point<int> digitalPosition;
+			/*!The Resolution of the Monitor*/
+			GGeneral::Dimension<int> screenDimension;
+			/*!The size the digital coordinate system.*/
+			GGeneral::Dimension<int> workDimension;
+
+			/**
+			 * Creates a new Screen struct with given values
+			 * @param name - The screenName
+			 * @param pos - The digitalPosition
+			 * @param sdim - The screenDimension
+			 * @param wdim - The workDimension
+			 */
+			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = { 0,0 }, GGeneral::Dimension<int> sdim = { 0,0 }, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
+
+			/**
+			 * @return A string representing the Screen struct
+			 */
+			GGeneral::String toString() const override {
+				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
+			}
+		};
+
+		/**
+		 * Fetches all Monitor Informations. Needs to be called before calling any other functions
+		 *
+		 * @return True if no error occurs
+		 * @return False if an error occurs
+		 */
+		bool init();
+
+		/**
+		 * Returns a bool
+		 *
+		 * @return True if the information is already fetched
+		 * @return False if the information is not fetched or an error occurred
+		 */
+		const bool isInit();
+
+		/*
+		 * Returns a screen struct with the information of the primary Monitor
+		 *
+		 * @returns a Screen struct
+		 */
+		Screen const* getPrimaryMonitorInformation();
+
+		/**
+		 * @return an integer with the amount of virtual monitors
+		 */
+		const unsigned int getAmountOfMonitors();
+
+		/**
+		 * @return the index of the primary monitor
+		 */
+		const unsigned int getPrimaryMonitorIndex();
+
+		/**
+		 * Will return the information of the monitor with the given index.
+		 *
+		 * @return a monitor struct
+		 */
+		Screen const* getMonitorInformation(unsigned int i);
+
+		/**
+		 * Will return the maximum amount of supported Monitor devices
+		 *
+		 * @return The amount of monitors supported by the users GPU
+		 */
+		const unsigned int getSupportedAmountOfMonitorDevices();
+	}
+}
+
+/**
+ * A namespace containing all functions to get the renderer running and rendering
+ */
 namespace GRenderer {
 	/**
 	 * Will initialize the renderer
@@ -829,8 +1066,14 @@ namespace GRenderer {
 			 */
 			VertexArray(VertexBuffer vertex, IndexBuffer index, VertexArrayLayout layout);
 
+			/**
+			 * Creates a new VertexArray Object
+			 * @param vertex - The vertexes used by the VertexArray
+			 * @param layout - The indexes used by the VertexArray
+			 */
 			VertexArray(VertexBuffer vertex, VertexArrayLayout layout);
 
+			/** Deconstructer */
 			~VertexArray();
 
 			/**
@@ -1052,200 +1295,17 @@ namespace GRenderer {
 		unsigned int getID() const { return ID; }
 	};
 
+	/** A struct containing the Information to render an Object in 2D and 3D space */
 	struct Mesh {
 		Texture tex;
 		Primitives::VertexArray vertex;
 	};
 
-	void draw(Mesh& m);
-}
-
-typedef void(*GWindowCallback)(int);
-
-namespace GWindow {
-	/*! An Enum describing the different states the window can be in */
-	enum class WindowState {
-		HIDDEN /*! The Window is not visible by the user nor is it in the taskbar*/
-		, MAXIMIZED /*! The Window is maximized and visible*/
-		, MINIMIZED /*! The Window is not visible by the user but the icon can be seen on the taskbar*/
-		, NORMAL /*! The Window is visible but not maximized*/
-	};
-
-	/*! These are all Keys that the event system is tracking. All other keys that are pressed will be discarded*/
-	enum class VK {
-		LEFT_MB, RIGHT_MB, CANCEL, MIDDLE_MB, X1_MB, X2_MB,
-		LEFT_SHIFT, RIGHT_SHIFT, LEFT_CONTROL, RIGHT_CONTROL, BACKSPACE, TAB,
-		ENTER, ALT, PAUSE, CAPSLOCK, ESCAPE, SPACE, PAGE_UP, PAGE_DOWN, END, HOME, LEFTARROW, UPARROW, RIGHTARROW, DOWNARROW,
-		SELECT, PRINT, EXECUTE, PRINT_SCREEN, INSERT, DEL, HELP,
-		KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-		LEFT_WINDOWS, RIGHT_WINDOWS, APPLICATION, SLEEP, SCROLL_LOCK, LEFT_MENU, RIGHT_MENU,
-		VOLUME_MUTE, VOLUME_DOWN, VOLUME_UP,
-		MEDIA_NEXT, MEDIA_LAST, MEDIA_STOP, MEDIA_PLAY_PAUSE,
-		OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8, OEM_CLEAR, OEM_PLUS, OEM_COMMA, OEM_MINUS, OEM_PERIOD,
-		NUMPAD_0, NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9, NUMPAD_MULTIPLY, NUMPAD_ADD, NUMPAD_SEPERATOR, NUMPAD_SUBTRACT, NUMPAD_COMMA, NUMPAD_DIVIDE, NUMPAD_LOCK,
-		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24,
-		PLAY, ZOOM, UNKWON
-	};
-
 	/**
-	 * A class including all functions to create a window and fetch events from it using the WinAPI. When the class is constructed, it can only be accessed from the thread that constructed it.
-	 * This also counts for the fetchEvents() function but not the init() function!
+	 * Will bind the needed VertexArrays and Textures and then render the Mesh using the currently bound shaders
+	 * @param m - The Mesh to be drawn
 	 */
-	class Window {
-	private:
-		/*! Window ID used to identify any window */
-		int WindowID = -1;
-	public:
-		/*! Creates a new Window with default values */
-		Window() : Window("G-Renderer Window Instance", { 50, 50 }, { 1280,  720 }) {}
-		/**
-		 * Creates a new window and enables input for it
-		 * @param name - The name of the window to be displayed
-		 * @param pos - The Position in screen space of the upper left corner
-		 * @param dim - The dimension of the whole window
-		 */
-		Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
-
-		~Window();
-
-		/**
-		 * TODO
-		 */
-		void static init();
-
-		/**
-		 * TODO
-		 */
-		bool initOpenGLContext();
-
-		/**
-		 * TODO
-		 */
-		void setOpenGLContextActive(bool b);
-
-		void swapBuffers();
-
-		/**
-		 * Set the extended window state of the window instance. Is used to change the visibility of the window.
-		 * @param state - The new State the window should take
-		 */
-		void setState(GWindow::WindowState state);
-
-		/**
-		 * Will retrieve all messages/events from the current queue from all Windows. It can only process all events from every window instance used owned/constructed from the current thread
-		 */
-		static void fetchEvents();
-
-		/**
-		 * Will fetch if there is a close request for the current window
-		 * @return True if there is one. Otherwise it will return false
-		 */
-		const bool getCloseRequest() const;
-
-		/**
-		 * Will immediately sent a close request to the Window and wait until it processed it.
-		 */
-		void forceCloseRequest();
-
-		/**
-		 * TODO
-		 * Will set the Mouse capture flag to true or false. If the mouse is captured, it cannot exit the window while the window has the focus. The mouse itself will be invisible and in a virtual window space
-		 * @param capture - Set the capture
-		 */
-		void setCaptureMouseMode(bool capture);
-
-		/**
-		 * TODO
-		 * Will fetch the current window state and return it
-		 *
-		 * @return The current Window state of the window
-		 */
-		WindowState getCurrentWindowState() const;
-
-		/**
-		 * TODO
-		 *
-		 */
-		void addCallbackFunction(GWindowCallback fun);
-	};
-
-	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
-	namespace Monitor {
-		/*! A struct containing all informations of a virtual monitor*/
-		struct Screen : public GGeneral::BaseObject {
-			/*!Name of the screen*/
-			GGeneral::String screenName;
-			/*!The digital Position of the Screen relative to the primary Monitor*/
-			GGeneral::Point<int> digitalPosition;
-			/*!The Resolution of the Monitor*/
-			GGeneral::Dimension<int> screenDimension;
-			/*!The size the digital coordinate system.*/
-			GGeneral::Dimension<int> workDimension;
-
-			/**
-			 * Creates a new Screen struct with given values
-			 * @param name - The screenName
-			 * @param pos - The digitalPosition
-			 * @param sdim - The screenDimension
-			 * @param wdim - The workDimension
-			 */
-			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = { 0,0 }, GGeneral::Dimension<int> sdim = { 0,0 }, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
-
-			/**
-			 * @return A string representing the Screen struct
-			 */
-			GGeneral::String toString() const override {
-				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
-			}
-		};
-
-		/**
-		 * Fetches all Monitor Informations. Needs to be called before calling any other functions
-		 *
-		 * @return True if no error occurs
-		 * @return False if an error occurs
-		 */
-		bool init();
-
-		/**
-		 * Returns a bool
-		 *
-		 * @return True if the information is already fetched
-		 * @return False if the information is not fetched or an error occurred
-		 */
-		const bool isInit();
-
-		/*
-		 * Returns a screen struct with the information of the primary Monitor
-		 *
-		 * @returns a Screen struct
-		 */
-		Screen const* getPrimaryMonitorInformation();
-
-		/**
-		 * @return an integer with the amount of virtual monitors
-		 */
-		const unsigned int getAmountOfMonitors();
-
-		/**
-		 * @return the index of the primary monitor
-		 */
-		const unsigned int getPrimaryMonitorIndex();
-
-		/**
-		 * Will return the information of the monitor with the given index.
-		 *
-		 * @return a monitor struct
-		 */
-		Screen const* getMonitorInformation(unsigned int i);
-
-		/**
-		 * Will return the maximum amount of supported Monitor devices
-		 *
-		 * @return The amount of monitors supported by the users GPU
-		 */
-		const unsigned int getSupportedAmountOfMonitorDevices();
-	}
+	void draw(Mesh& m);
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GGeneral::Logger::Severity e) {
@@ -1265,6 +1325,15 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::
 	case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:	 return s.append("UNSIGNED BYTE");
 	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	 return s.append("UNSIGNED SHORT");
 	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:	 return s.append("UNSIGNED INT");
+	}
+}
+
+inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowEvent e) {
+	switch (e) {
+	case GWindow::WindowEvent::STATE:                 return s.append("EXTENDED WINDOW STATE");
+	case GWindow::WindowEvent::WINDOW_RESIZE:		  return s.append("WINDOW RESIZE");
+	case GWindow::WindowEvent::KEY_PRESS:			  return s.append("KEY PRESS");
+	case GWindow::WindowEvent::KEY_RELEASE:			  return s.append("KEY RELEASE");
 	}
 }
 

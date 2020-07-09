@@ -6,8 +6,10 @@
 #endif // !G_MEMORY
 
 #ifdef _DEBUG
-#define EXTENDED_MEMORYTRACKING
+//#define EXTENDED_MEMORYTRACKING
 #endif // _DEBUG
+
+#define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
 
 /**
  * A class whose main purpose is to track memory. It will process all allocation done with the MALLOC/FREE define or with the
@@ -28,23 +30,50 @@ public:
 	static const size_t getAllocation() { return allocations; }
 	static const size_t getDeAllocation() { return deallocations; }
 
+#ifndef EXTENDED_MEMORYTRACKING
+	/**
+	 * @return nullptr
+	 */
+	static void** getAllocInfo() {
+		auto temp = reinterpret_cast<unsigned int*>(malloc(2 * sizeof(unsigned int)));
+		temp[0] = 0;
+		temp++;
+		return (void**)temp;
+	}
+#endif
+	/** This class can be used to check how much memory has been allocated on the heap since construction of this class */
 	class MemoryTracker {
 		size_t start = getMemory();
 		size_t allocations = getAllocation();
 	public:
+		/**
+		 * @return The difference in allocation count since construction of this class
+		 */
 		const int getAllocationDifference() const { return getCurrentAllocationCount() - allocations; }
+		/**
+		 * @return The difference in memory usage since construction of this class
+		 */
 		const int getMemoryDifference() const { return  getMemory() - start; }
 	};
 
 #ifdef EXTENDED_MEMORYTRACKING
 public:
+	/** This struct holds basic information of allocation happening during a program */
 	struct AllocInfo {
+		/** The memory adress */
 		void* address;
+		/** Amount of bytes allocated */
 		size_t size;
+		/** The file path to the file in which the allocation happened */
 		const char* fileName;
+		/** The signature of the function */
 		const char* functionSig;
+		/** The line in which the allocation happened */
 		unsigned int line;
 
+		/**
+		 * Will only compare the two memory addresses
+		 */
 		bool operator==(void* b) { return address == b; }
 	};
 private:
@@ -55,10 +84,10 @@ private:
 	inline static List* extendedAllocations = nullptr;
 
 public:
-#define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
+
 	/**
 	 * Will return a pointer array of AllocInfo structs and the amount of pointers. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetches by reading 4 bytes before of this pointer
-	 * or by using the GET_ALLOC_INFO_COUNT macro
+	 * or by using the GET_ALLOC_INFO_COUNT macro. Note that this function can be the reason for random crashes if the application is multi threaded
 	 * @return An AllocInfo Pointer array
 	 */
 	static AllocInfo** getAllocInfo() {
