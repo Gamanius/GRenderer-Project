@@ -6,11 +6,13 @@
 #include <vector>
 #include <sstream>
 #include <Windows.h>
+#include <mutex>
 #include <array>
 
 //Some general Vars
 std::list<GGeneral::Logger::Message> msgBuffer;
 std::thread workerThread;
+std::mutex globalMutex;
 
 std::vector<GGeneral::String> userNames;
 
@@ -19,40 +21,23 @@ const std::array<unsigned int, 6> SeverityColors = { 8, 9, 10, 6, 4, 64 };
 volatile GGeneral::Logger::Severity severityFilter = GGeneral::Logger::Severity::S_MSG;
 
 volatile bool isInit = false;
-volatile bool shouldThreadWork = true;
+volatile bool wasInit = false;
 volatile bool shouldThreadTerminate = false;
 volatile bool threadBufferClearLock = false;
-volatile bool discardAllMsg = false;
 
 inline std::ostream& operator<<(std::ostream& os, const GGeneral::BaseObject& obj) {
 	os << obj.toString();
 	return os;
 }
 
-GGeneral::String getSystemTime() {
-	//Outdateted...maybe use something better than ctime n0ob
-	struct tm currentTime;
-	time_t now = time(0);
-	localtime_s(&currentTime, &now);
-	GGeneral::String seconds;
-	seconds << currentTime.tm_sec;
-	GGeneral::String minutes;
-	minutes << currentTime.tm_min;
-	//TODO: use the (currently not implemented) time system
-	if (seconds.getSize() == 1)
-		seconds = "0" + seconds;
-	if (minutes.getSize() == 1)
-		minutes = "0" + minutes;
-
-	return GGeneral::toString(currentTime.tm_hour) + ":" + minutes + ":" + seconds;
-}
-
-void printmsg(GGeneral::Logger::Message msg) {
+void processMsg(GGeneral::Logger::Message msg) {
 	if ((int)msg.sev >= (int)severityFilter) {
 		//Print everything
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), SeverityColors[(int)msg.sev]);
 
-		std::cout << "[" << getSystemTime() << "|";
+		GGeneral::Time::TimePoint time(msg.time);
+		GGeneral::Time::fillTimePoint(time);
+		std::cout << "[" << time.hour << ":" << time.minute << ":" << time.seconds << ":" << time.microsecond << "|";
 		switch (msg.sev) {
 		case GGeneral::Logger::Severity::S_MSG:       std::cout << "MESSAGE";  break;
 		case GGeneral::Logger::Severity::S_INFO:      std::cout << "INFO";	   break;
@@ -61,8 +46,6 @@ void printmsg(GGeneral::Logger::Message msg) {
 		case GGeneral::Logger::Severity::S_ERROR:	  std::cout << "ERROR";	   break;
 		case GGeneral::Logger::Severity::S_FATAL:     std::cout << "FATAL";	   break;
 		}
-		if (msg.ID != -1 && msg.ID < (int)userNames.size())
-			std::cout << "|" << userNames[msg.ID];
 		std::cout << "]: " << msg.msg << "\n";
 
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
@@ -70,35 +53,35 @@ void printmsg(GGeneral::Logger::Message msg) {
 }
 
 void t_process() {
-	while (shouldThreadWork) {
+	while (!shouldThreadTerminate) {
 		auto it = msgBuffer.cbegin();
 		while (it != msgBuffer.cend()) {
 			if (shouldThreadTerminate)
 				return;
-			if (discardAllMsg)
-				break;
-			while (threadBufferClearLock);
 
-			printmsg(*it);
+			//globalMutex.lock();
+			processMsg(*it);
 			it++;
-			msgBuffer.erase(msgBuffer.begin());
+			msgBuffer.pop_front();
+			//globalMutex.unlock();
 		}
-		//Maybe fix...this function may discard messages sometimes
-		/*
-		//Clear the buffer if everything is done and noone is adding to it
-		//Technically useless
-		if (!threadBufferClearLock)
-			msgBuffer.clear();
-			*/
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(10ms);
 	}
 }
 
 void GGeneral::Logger::printMessage(Message in) {
-	if (maxBufferSize > 0)
-		while (maxBufferSize > (int)msgBuffer.size());
-	threadBufferClearLock = true;
-	msgBuffer.push_back(in);
-	threadBufferClearLock = false;
+	if (isInit) {
+		if (maxBufferSize > 0)
+			while (maxBufferSize > (int)msgBuffer.size());
+		//testing without any locks
+		//globalMutex.lock();
+		msgBuffer.push_back(in);
+		//globalMutex.unlock();
+	}
+	else {
+		processMsg(in);
+	}
 }
 
 void GGeneral::Logger::setSeverityFilter(Severity filter) {
@@ -109,25 +92,30 @@ GGeneral::Logger::Severity GGeneral::Logger::getSeverityFilter() {
 	return severityFilter;
 }
 
-int GGeneral::Logger::addUserName(GGeneral::String name) {
-	for (unsigned int i = 0; i < userNames.size(); i++) {
-		if (userNames[i].compare(name) == 0)
-			return -1;
-	}
-	auto id = userNames.size();
-	userNames.push_back(name);
-	return id;
+void stop() {
+	//Threads need to be terminated to not cause a crash
+	GGeneral::Logger::terminateThread();
 }
 
 bool GGeneral::Logger::init() {
 	if (isInit)
 		return false;
+
+	int result;
+	if (!wasInit) {
+		result = std::atexit(stop);
+		if (result != 0)
+			return false;
+	}
+
+	wasInit = true;
+	isInit = true;
 	workerThread = std::thread(t_process);
 	return true;
 }
 
 void GGeneral::Logger::wait() {
-	static volatile unsigned int s = msgBuffer.size();
+	static volatile size_t s = msgBuffer.size();
 	while (s != 0) {
 		s = msgBuffer.size();
 	}
@@ -136,11 +124,9 @@ void GGeneral::Logger::wait() {
 void GGeneral::Logger::terminateThread() {
 	isInit = false;
 	shouldThreadTerminate = true;
-	shouldThreadWork = false;
 
 	workerThread.join();
 
 	shouldThreadTerminate = false;
-	shouldThreadWork = true;
 	msgBuffer.clear();
 }

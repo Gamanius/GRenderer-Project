@@ -162,7 +162,7 @@ public:
 	 * Override for the new operator
 	 */
 	static void* alloc(size_t size) {
-		std::cout << "Allocated " << size << " bytes\n";
+		//std::cout << "Allocated " << size << " bytes\n";
 		memoryUsage += size;
 		allocations++;
 		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
@@ -176,7 +176,7 @@ public:
 	 */
 	static void dele(void* p) {
 		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
-		std::cout << "Deleted " << size << " bytes\n";
+		//std::cout << "Deleted " << size << " bytes\n";
 		memoryUsage -= size;
 		deallocations++;
 		auto del = reinterpret_cast<unsigned int*>(p) - 1;

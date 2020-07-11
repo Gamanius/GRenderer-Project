@@ -293,26 +293,37 @@ namespace GGeneral {
 	namespace Time {
 		/** This struct holds the information of any timepoint */
 		struct TimePoint : public GGeneral::BaseObject {
-			/** The time since 1980 in nanoseconds(?) */
+			/** The time since 1970 in nanoseconds */
 			unsigned long long int timepoint = 0;
 			/** Years since 0 */
 			unsigned int year = 0;
 			/** Amount of months */
-			byte month = 0;
+			unsigned short month = 0;
 			/** Amount of days */
-			byte day = 0;
+			unsigned short day = 0;
 			/** Amount of hours */
-			byte hour = 0;
+			unsigned short hour = 0;
 			/** Amount of minutes */
-			byte minute = 0;
+			unsigned short minute = 0;
 			/** Amount of seconds */
-			byte seconds = 0;
+			unsigned short seconds = 0;
 			/** Amount of milliseconds */
 			unsigned int millisecond = 0;
 			/** Amount of microseconds */
 			unsigned int microsecond = 0;
 			/** Amount of nanoseconds */
 			unsigned int nanosecond = 0;
+
+			/**
+			 * Will set the timepoint member to the given value
+			 * @param timepoint - The value of the timepoint in nanoseconds since 1970
+			 */
+			TimePoint(unsigned long long timepoint) : timepoint(timepoint) {}
+
+			/**
+			 * Will initialize all members to the value 0
+			 */
+			TimePoint() {}
 
 			/**
 			 * Will return the current timepoint
@@ -332,6 +343,72 @@ namespace GGeneral {
 		/** Will return true if the year was a leap year */
 		const bool isLeapYear(const unsigned int year);
 
+		/**
+		 * This will fetch the current UTC time. Timezones are not taken into account.
+		 * @return A new Timepoint with filled out values
+		 */
+		TimePoint getCurrentTime();
+
+		unsigned long long getNanoTime();
+
+		/**
+		 * Will convert the given days (since 1970) into the correct amount of years. This function will take
+		 * leap years into account
+		 * @param day - days since 1970
+		 * @return Years since 1970
+		 */
+		unsigned int daysToYears(unsigned int day);
+
+		/**
+		 * Will convert the given year (since 1970) to the equivalent amount of days. This function will take leap years
+		 * into account
+		 * @param year - Years since 1970
+		 * @return Days since 1970
+		 */
+		unsigned int yearsToDays(unsigned int year);
+
+		/**
+		 * Will convert the given months since year begin and return the equivalent amount of days. Will not take leap years into
+		 * account.
+		 * @param m - Month since the beginning of the current year
+		 *
+		 * @return Days since the beginning of the year
+		 */
+		unsigned int monthsToDays(byte m);
+		/**
+		 * Will convert the given months since year begin and return the equivalent amount of days. Can take leap years into
+		 * account.
+		 *
+		 * @param m - Month since the beginning of the current year
+		 * @param leap - If set to true it will consider the year a leap year
+		 *
+		 * @return Days since the beginning of the year
+		 */
+		unsigned int monthsToDays(byte m, bool leap);
+
+		/**
+		 * Will convert the days into the corresponding months. It will consider the year not a leap year
+		 * @param d - Days since the beginning of the year in question
+		 *
+		 * @return The months since the beginning of the year
+		 */
+		byte daysToMonths(unsigned short d);
+
+		/**
+		 * Will convert the days into the corresponding months. It can consider the year a leap year
+		 * @param d - Days since the beginning of the year in question
+		 * @param leap - If set to true it will consider the current year a leap year
+		 *
+		 * @return The months since the beginning of the year
+		 */
+		byte daysToMonths(unsigned short d, bool leap);
+
+		/**
+		 * Will try to fill out missing data from an Timepoint. This will only work if TimePoint.timepoint is valid
+		 * This function will change the values of the timepoint given
+		 */
+		TimePoint& fillTimePoint(TimePoint& t);
+
 		/** On construction it will start an internal timer. If the stop method is called the timer will return the time sice its construction */
 		struct Timer {
 			/** The time the Time was constructed in nanoseconds */
@@ -347,12 +424,9 @@ namespace GGeneral {
 	}
 
 	/**
-	 * This Logger class needs to be initialized manually before calling the printMessage() function.
 	 * The class is multi threaded meaning that there is a buffer all messages will go into. All message in the buffer thread are being read from the worker thread, formatted and in the end printed to the console.
 	 * You can set the maximum size of the buffer via setMaxBufferSize variable. If you try to send a message into the buffer, while the buffer size is larger or the same size as the maximum buffer size, the program will halt until there is enough free space to add new message
-	 * Before the normal program termination you should always call terminateThread() to end the worker thread correctly.
-	 * If you font want to use multi threading you can deactivate it by defining LOGGER_NO_MULTITHREAD (WIP).
-	 * NOTE: There is a really small chance that a message will get deleted
+	 * NOTE: If Logger::init() is not called the function printMsg() will not be multi threaded. Instead it will be processed by the same thread that called the function
 	 */
 	namespace Logger {
 		/**
@@ -378,7 +452,7 @@ namespace GGeneral {
 		struct Message {
 			GGeneral::String msg;
 			Severity sev;
-			int ID;
+			unsigned long long time;
 		};
 
 		/**
@@ -403,18 +477,11 @@ namespace GGeneral {
 		 * @param ID - the user ID to be printed with the message
 		 */
 		template<typename T_TYPE>
-		void printMessage(T_TYPE message, Severity sev, int ID) {
+		void printMessage(T_TYPE message, Severity sev) {
 			String s;
 			s << message;
-			printMessage({ s, sev, ID });
+			printMessage({ s, sev, Time::getNanoTime() });
 		}
-
-		/**
-		 * Adds a new user name to the Logger. The int can be used in the printMessage() function to print the user name given. Every thread can use any User ID. there is no checking.
-		 *
-		 * @return The ID of the name
-		 */
-		int addUserName(GGeneral::String name);
 
 		/**
 		 * Sets the SeverityFilter to the given filter. All message that have a lower value of the filter will be discarded.
@@ -729,11 +796,6 @@ namespace GWindow {
 		/**
 		 * TODO
 		 */
-		void static init();
-
-		/**
-		 * TODO
-		 */
 		bool createOpenGLcontext();
 
 		/**
@@ -879,10 +941,18 @@ namespace GRenderer {
 	 */
 	GGeneral::String getCurentOpenGLVersion();
 
+	enum class GLString {
+		VENDOR,
+		RENDERER,
+		VERSION,
+		SHADER_VERSION
+	};
+	GGeneral::String getGLString(GLString s);
+
 	/**
 	 * Clears the current active OpenGL context with the given color
 	 */
-	void clear(GGeneral::Color& color);
+	void clear(GGeneral::Color color);
 
 	//definition for shaderprogram so friendships work
 	class ShaderProgram;
@@ -1049,7 +1119,7 @@ namespace GRenderer {
 			};
 		private:
 			bool isOnlyVertexBuffer = false;
-			unsigned int amount;
+			unsigned int amount = 0;
 			IndexTypes type = IndexTypes::UNSIGNED_BYTE;
 			/**
 			 * Internal OpenGL ID
@@ -1182,7 +1252,7 @@ namespace GRenderer {
 	 * A class wrapper for OpenGL textures
 	 */
 	class Texture {
-		unsigned int ID;
+		unsigned int ID = 0;
 		unsigned int textureSlot = 0;
 
 	public:
@@ -1316,8 +1386,8 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GGeneral::Logger::Sever
 	case GGeneral::Logger::Severity::S_WARNING:                 return s.append("WARNING");
 	case GGeneral::Logger::Severity::S_ERROR:	                return s.append("ERROR");
 	case GGeneral::Logger::Severity::S_FATAL:                   return s.append("FATAL");
-	default:													return s.append("UNKNOWN");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::IndexTypes e) {
@@ -1326,6 +1396,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::
 	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	 return s.append("UNSIGNED SHORT");
 	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:	 return s.append("UNSIGNED INT");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowEvent e) {
@@ -1335,6 +1406,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowEvent e)
 	case GWindow::WindowEvent::KEY_PRESS:			  return s.append("KEY PRESS");
 	case GWindow::WindowEvent::KEY_RELEASE:			  return s.append("KEY RELEASE");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::VertexTypes e) {
@@ -1345,6 +1417,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::
 	case GRenderer::Primitives::VertexTypes::FLOAT:		return s.append("FLOAT");
 	case GRenderer::Primitives::VertexTypes::DOUBLE:	return s.append("DOUBLE");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::ShaderTypes e) {
@@ -1357,6 +1430,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::
 	case GRenderer::Primitives::ShaderTypes::FRAGMENT_SHADER:					return s.append("FRAGMENT SHADER");
 	case GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER:						return s.append("UNKOWN SHADER");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowState e) {
@@ -1366,6 +1440,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowState e)
 	case GWindow::WindowState::MINIMIZED:						return s.append("MINIMIZED");
 	case GWindow::WindowState::NORMAL:							return s.append("NORMAL");
 	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::VK e) {
@@ -1511,4 +1586,5 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::VK e) {
 	case GWindow::VK::ZOOM:			           return s.append("Zoom");
 	case GWindow::VK::UNKWON:                  return s.append("Unknown Key");
 	}
+	return s.append("Invalid Enum");
 }

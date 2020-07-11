@@ -414,6 +414,9 @@ bool GWindow::init() {
 }
 
 LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	auto callback = GWindow::GWindowCallback();
+	if (allWindowsInstances.size() >= 1)
+		callback = allWindowsInstances[getIndex(hWnd)].callbackfun;
 	switch (uMsg) {
 	case WM_CLOSE:
 	case WM_DESTROY:
@@ -424,32 +427,34 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_ERASEBKGND: return 0;
 	case WM_SIZING:
 	{
-		auto area = (RECT*)lParam;
-		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&GGeneral::Rectangle<int>(area->left, area->top, area->right - area->left, area->bottom - area->top));
-		return MAKELRESULT(1, 1);
+		if (callback != nullptr) {
+			auto area = (RECT*)lParam;
+			callback(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&GGeneral::Rectangle<int>(area->left, area->top, area->right - area->left, area->bottom - area->top));
+			return MAKELRESULT(1, 1);
+		}
 	}
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 	{
-		//Window press event
-		auto key = getVirtualKeyCode(wParam);
-		//LOG(GEnumString::enumToString(key));
-		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::KEY_PRESS, (void*)key);
-		return MAKELRESULT(1, 1);
+		if (callback != nullptr) {
+			//Window press event
+			auto key = getVirtualKeyCode(wParam);
+			//LOG(GEnumString::enumToString(key));
+			callback(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+			return MAKELRESULT(1, 1);
+		}
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
 	{
-		auto key = getVirtualKeyCode(wParam);
-		allWindowsInstances[getIndex(hWnd)].callbackfun(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
-		return MAKELRESULT(1, 1);
+		if (callback != nullptr) {
+			auto key = getVirtualKeyCode(wParam);
+			callback(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+			return MAKELRESULT(1, 1);
+		}
 	}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
-}
-
-void GWindow::Window::init() {
-	//TODO Load functions with getprocadress and do some attrib stuff
 }
 
 GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim) {
@@ -481,6 +486,8 @@ DONE:
 
 GWindow::Window::~Window() {
 	THIS_INSTANCE.isFree = true;
+	ReleaseDC(THIS_INSTANCE.hWnd, THIS_INSTANCE.hdc);
+	DestroyWindow(THIS_INSTANCE.hWnd);
 }
 
 bool GWindow::Window::createOpenGLcontext() {
@@ -515,7 +522,6 @@ bool GWindow::Window::createOpenGLcontext() {
 	};
 
 	hglrc = wglCreateContextAttribsARB(THIS_INSTANCE.hdc, 0, gl33_attribs);
-	//TODO: do the extended opengl context creation
 	if (hglrc == NULL) return false;
 
 	return true;
