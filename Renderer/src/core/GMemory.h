@@ -1,12 +1,13 @@
 #pragma once
-#include <iostream>
+#include <mutex>
+#include <atomic>
 
 #ifndef G_MEMORY
 #define G_MEMORY
 #endif // !G_MEMORY
 
 #ifdef _DEBUG
-//#define EXTENDED_MEMORYTRACKING
+#define EXTENDED_MEMORYTRACKING
 #endif // _DEBUG
 
 #define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
@@ -17,8 +18,8 @@
  */
 class GMemory {
 private:
-	inline static size_t memoryUsage = 0;
-	inline static size_t allocations = 0, deallocations = 0;
+	inline static std::atomic_uint32_t memoryUsage = 0;
+	inline static std::atomic_uint32_t allocations = 0, deallocations = 0;
 public:
 	/**
 	 * Will fetch the current Memory usage
@@ -60,7 +61,7 @@ public:
 public:
 	/** This struct holds basic information of allocation happening during a program */
 	struct AllocInfo {
-		/** The memory adress */
+		/** The memory address */
 		void* address;
 		/** Amount of bytes allocated */
 		size_t size;
@@ -82,27 +83,30 @@ private:
 		List* next;
 	};
 	inline static List* extendedAllocations = nullptr;
+	inline static std::mutex globalMutex;
 
 public:
 
 	/**
 	 * Will return a pointer array of AllocInfo structs and the amount of pointers. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetches by reading 4 bytes before of this pointer
-	 * or by using the GET_ALLOC_INFO_COUNT macro. Note that this function can be the reason for random crashes if the application is multi threaded
+	 * or by using the GET_ALLOC_INFO_COUNT macro.
 	 * @return An AllocInfo Pointer array
 	 */
 	static AllocInfo** getAllocInfo() {
+		globalMutex.lock();
 		auto temp = reinterpret_cast<unsigned int*>(malloc(getCurrentAllocationCount() * sizeof(AllocInfo**) + sizeof(unsigned int)));
 		auto add = extendedAllocations;
 		temp++;
 		auto alloc = reinterpret_cast<AllocInfo**>(temp);
 
 		unsigned int amount = 0;
-		while (add->next != nullptr) {
+		while (add != nullptr) {
 			alloc[amount] = add->address;
 			add = add->next;
 			amount++;
 		}
 		temp[-1] = amount;
+		globalMutex.unlock();
 		return alloc;
 	}
 
@@ -110,6 +114,7 @@ public:
 	 * Override for the new operator
 	 */
 	static void* alloc(size_t size, const char* file, const char* function, unsigned int line) {
+		globalMutex.lock();
 		//std::cout << "Allocated " << size << " bytes\n";
 		AllocInfo* mem = reinterpret_cast<AllocInfo*>(malloc(size + sizeof(AllocInfo)));
 		auto info = mem;
@@ -133,6 +138,7 @@ public:
 		}
 		memoryUsage += size;
 		allocations++;
+		globalMutex.unlock();
 		return reinterpret_cast<void*>(mem);
 	}
 
@@ -140,6 +146,9 @@ public:
 	 * Override for the delete operator
 	 */
 	static void dele(void* p) {
+		if (p == nullptr)
+			return;
+		globalMutex.lock();
 		AllocInfo info = (reinterpret_cast<AllocInfo*>(p) - 1)[0];
 		//std::cout << "Deleted " << info.size << " bytes\n";
 		memoryUsage -= info.size;
@@ -152,7 +161,7 @@ public:
 			temp = temp->next;
 		}
 		last->next = temp->next;
-
+		globalMutex.unlock();
 		free(reinterpret_cast<void*>((reinterpret_cast<AllocInfo*>(p) - 1)));
 	}
 #else
@@ -175,6 +184,8 @@ public:
 	 * Override for the delete operator
 	 */
 	static void dele(void* p) {
+		if (p == nullptr)
+			return;
 		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
 		//std::cout << "Deleted " << size << " bytes\n";
 		memoryUsage -= size;
@@ -189,6 +200,7 @@ public:
 inline void* operator new(size_t size) {
 	return GMemory::alloc(size);
 }
+#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size))
 #else
 inline void* operator new(size_t size) {
 	return GMemory::alloc(size, "UNKNOWN", "UNKNOWN", 0);
@@ -200,6 +212,7 @@ inline void operator delete(void* p, const char* file, const char* function, uns
 	GMemory::dele(p);
 }
 #define new new(__FILE__,  __FUNCSIG__, __LINE__)
+#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size, __FILE__,  __FUNCSIG__, __LINE__))
 #endif // !EXTENDED_MEMORYTRACKING
 
 inline void operator delete(void* p) {

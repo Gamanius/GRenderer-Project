@@ -4,6 +4,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "GLEW/include/GL/glew.h"
+#include <cassert>
 
 float vertices[] = {
 	// positions         // colors
@@ -87,7 +88,8 @@ int main() {
 	GRenderer::Texture t2(*img2);
 
 	auto mat = GMath::mat4x4Identity<float>();
-	mat.translate(GMath::vec3<float>(0, 0, -3));
+	//	mat.translate(GMath::vec3<float>(0, 0, -3));
+	mat[2][3] = -3;
 
 	//auto ortho = GMath::perpective<float>(45, 1280 / 720, 0.1, 100);
 	auto ortho = GMath::ortho<float>(0, 1280, 0, 720, 0.1, 100);
@@ -104,10 +106,12 @@ int main() {
 
 	vertex.bind();
 	program.bind();
+	program.set("mat", ortho);
+	program.set("cam", mat);/*
 	auto d = program.getUniformLocation("mat");
-	glUniformMatrix4fv(d, 1, true, ortho.memadd());
+	glUniformMatrix4fv(d, 1, true, ortho.mem());
 	d = program.getUniformLocation("cam");
-	glUniformMatrix4fv(d, 1, true, mat.memadd());
+	glUniformMatrix4fv(d, 1, true, mat.mem());*/
 	GGeneral::Color c(50, 50, 50);
 
 	auto info = GMemory::getAllocInfo();
@@ -133,5 +137,4 @@ int main() {
 #endif
 	}
 	GGeneral::Logger::wait();
-	GGeneral::Logger::terminateThread();
 }

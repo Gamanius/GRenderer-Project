@@ -6,7 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <Windows.h>
-#include <mutex>
+//#include <mutex>
 #include <array>
 
 //Some general Vars
@@ -115,18 +115,21 @@ bool GGeneral::Logger::init() {
 }
 
 void GGeneral::Logger::wait() {
-	static volatile size_t s = msgBuffer.size();
+	volatile size_t s = msgBuffer.size();
 	while (s != 0) {
 		s = msgBuffer.size();
 	}
 }
 
 void GGeneral::Logger::terminateThread() {
-	isInit = false;
-	shouldThreadTerminate = true;
+	//Dont try to terminate if there is no thread
+	if (isInit) {
+		isInit = false;
+		shouldThreadTerminate = true;
 
-	workerThread.join();
+		workerThread.join();
 
-	shouldThreadTerminate = false;
-	msgBuffer.clear();
+		shouldThreadTerminate = false;
+		msgBuffer.clear();
+	}
 }

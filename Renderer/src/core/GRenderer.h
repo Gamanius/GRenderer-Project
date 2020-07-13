@@ -4,9 +4,8 @@
 #include <initializer_list>
 #include <vector>
 
-#include "GMath.h"
 #pragma warning(disable : 4595)
-#include "GMemory.h"
+#include "GMath.h"
 
 #ifndef G_RENDERER
 #define G_RENDERER
@@ -14,13 +13,12 @@
 
 //Documentation can be (and is) created using doxygen
 
-/** \mainpage <strong>The SREP </strong>
+/** \mainpage The SREP
  *  <p> This project is just a simple a try to create a Renderer that can, given the right data, make some beautiful pictures.The hope is that it can be used to create simple games and visualizations.The Renderer can only be used on Windows machines because of the inclusion of the <em>Win32</em> API. </p>
  */
 
  /**
-  * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated. Meaning with a rewrite the Renderer would still work but with the expense that everything is more or less unreadable and
-  * very untidy.
+  * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
   */
 namespace GGeneral {
 	struct BaseObject;
@@ -173,6 +171,23 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& operator<< (uint16_t ui16);
+
+		/**
+		 * Will format the number into a char* and will then call append
+		 * @param d - The number to append
+		 * @return this string
+		 */
+		String& operator<< (double d);
+
+		template<typename T, size_t S>
+		String& operator<< (GMath::vec<T, S> v) {
+			*this << "[size = " << S;
+			for (size_t i = 0; i < S; i++) {
+				*this << ", x" << i << " = " << v[i];
+			}
+			*this << "]";
+			return *this;
+		}
 
 		/**
 		 * Will set the precise flag. If the precise flag is set to true the string will be the most memory efficient. Every time something is append the buffer will only allocate just enough space for the chars given.
@@ -1348,6 +1363,24 @@ namespace GRenderer {
 		const unsigned int getUniformLocation(const GGeneral::String& name) const;
 
 		//TODO: setter
+		void set(const GGeneral::String& name, GMath::mat2<float> mat);
+		void set(const GGeneral::String& name, GMath::mat3<float> mat);
+		void set(const GGeneral::String& name, GMath::mat4<float> mat);
+
+		void set(const GGeneral::String& name, float f);
+		void set(const GGeneral::String& name, GMath::vec2<float> f);
+		void set(const GGeneral::String& name, GMath::vec3<float> f);
+		void set(const GGeneral::String& name, GMath::vec4<float> f);
+
+		void set(const GGeneral::String& name, int i);
+		void set(const GGeneral::String& name, GMath::vec2<int> i);
+		void set(const GGeneral::String& name, GMath::vec3<int> i);
+		void set(const GGeneral::String& name, GMath::vec4<int> i);
+
+		void set(const GGeneral::String& name, unsigned int ui);
+		void set(const GGeneral::String& name, GMath::vec2<unsigned int> ui);
+		void set(const GGeneral::String& name, GMath::vec3<unsigned int> ui);
+		void set(const GGeneral::String& name, GMath::vec4<unsigned int> ui);
 
 		/**
 		 * Will bind the shader program

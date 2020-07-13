@@ -163,6 +163,10 @@ GGeneral::String& GGeneral::String::operator<<(uint16_t ui16) {
 	FORMAT("%u", ui16);
 }
 
+GGeneral::String& GGeneral::String::operator<<(double d) {
+	FORMAT("%f", d);
+}
+
 void GGeneral::String::setPrecise(const bool b) { precise = b; }
 
 size_t GGeneral::String::find(const char* c) {
