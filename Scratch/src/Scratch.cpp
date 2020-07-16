@@ -97,12 +97,12 @@ int main() {
 	//ortho = GMath::mat4x4Identity<float>();
 
 	GRenderer::Primitives::VertexBuffer v(cube, 36, 6);
-	GRenderer::Primitives::IndexBuffer i(index, 6);
+	//GRenderer::Primitives::IndexBuffer i(index, 6);
 	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3, 3, 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
-	GRenderer::Primitives::VertexArray vertex(v, i, l);
+	GRenderer::Primitives::VertexArray vertex(v, l);
 	GRenderer::Mesh m;
-	m.tex = t2;
-	m.vertex = vertex;
+	m.tex = &t2;
+	m.vertex = &vertex;
 
 	vertex.bind();
 	program.bind();

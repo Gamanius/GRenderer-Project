@@ -8,6 +8,9 @@
 
 #ifdef _DEBUG
 #define EXTENDED_MEMORYTRACKING
+#define IF_EXTENDED_MEM(expression) expression
+#else
+#define IF_EXTENDED_MEM(expression)
 #endif // _DEBUG
 
 #define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
@@ -161,6 +164,7 @@ public:
 			temp = temp->next;
 		}
 		last->next = temp->next;
+		free(temp);
 		globalMutex.unlock();
 		free(reinterpret_cast<void*>((reinterpret_cast<AllocInfo*>(p) - 1)));
 	}

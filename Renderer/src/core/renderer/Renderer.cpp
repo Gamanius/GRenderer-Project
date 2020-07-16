@@ -7,6 +7,8 @@ const bool GRenderer::init() {
 		return false;
 	if (!GWindow::Monitor::init())
 		return false;
+	//if (!GGraphics::init())
+	//	return false;
 	return true;
 }
 
@@ -35,18 +37,19 @@ void GRenderer::clear(GGeneral::Color color) {
 }
 
 void GRenderer::draw(Mesh& m) {
-	m.tex.bind();
-	m.vertex.bind();
-	if (m.vertex.isOnlyVertex()) {
-		glDrawArrays(GL_TRIANGLES, 0, m.vertex.getAmount());
+	if (m.tex != nullptr)
+		m.tex->bind();
+	m.vertex->bind();
+	if (m.vertex->isOnlyVertex()) {
+		glDrawArrays(GL_TRIANGLES, 0, m.vertex->getAmount());
 	}
 	else {
 		GLenum type;
-		switch (m.vertex.getIndexType()) {
+		switch (m.vertex->getIndexType()) {
 		case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:	 type = GL_UNSIGNED_BYTE;  break;
 		case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	 type = GL_UNSIGNED_SHORT; break;
 		default:	                                             type = GL_UNSIGNED_INT;   break;
 		}
-		glDrawElements(GL_TRIANGLES, m.vertex.getAmount(), type, nullptr);
+		glDrawElements(GL_TRIANGLES, m.vertex->getAmount(), type, nullptr);
 	}
 }

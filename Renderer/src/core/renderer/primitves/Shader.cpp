@@ -83,6 +83,12 @@ bool GRenderer::Primitives::Shader::loadShader(GGeneral::String filepath) {
 	return true;
 }
 
+bool GRenderer::Primitives::Shader::sourceShader(GGeneral::String source, ShaderTypes type) {
+	sourceCode = source.cStr();
+	this->type = type;
+	return true;
+}
+
 bool GRenderer::Primitives::Shader::compileShader() {
 	if (type == ShaderTypes::UNKOWN_SHADER)
 		return false;

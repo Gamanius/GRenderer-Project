@@ -108,6 +108,7 @@
     <ClCompile Include="src\core\general\os.cpp" />
     <ClCompile Include="src\core\general\String.cpp" />
     <ClCompile Include="src\core\general\Time.cpp" />
+    <ClCompile Include="src\core\graphics\Graphics.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Indexbuffer.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Shader.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Vertexarray.cpp" />

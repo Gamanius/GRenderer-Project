@@ -304,6 +304,19 @@ namespace GGeneral {
 		}
 	};
 
+	struct aColor : public GGeneral::Color {
+		/** Alpha component */
+		byte alpha;
+
+		aColor(byte red = 0, byte green = 0, byte blue = 0, byte alpha = 255);
+
+		byte operator[](byte i);
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(this->red, this->green, this->blue, alpha);
+		}
+	};
+
 	/** A namespace containing mostly time functions.*/
 	namespace Time {
 		/** This struct holds the information of any timepoint */
@@ -1044,42 +1057,46 @@ namespace GRenderer {
 			/**
 			 * Internal OpenGL ID
 			 */
-			unsigned int ID;
+			unsigned int ID = 0;
 			unsigned int amount = 0;
 
 		public:
 			VertexBuffer() = default;
-			//TODO: correct documentation
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All the data
-			 * @param amount - !PLEASE CHECK THIS IS NOT CORRECT! The amount of values to be used
+			 * @param data - The Data to use
+			 * @param amount - The amount of elements
+			 * @param count - The amount of Vertexes
 			 */
-			VertexBuffer(char data[], unsigned int amount, unsigned int count);
+			VertexBuffer(char data[], unsigned int amount, unsigned int count = 0);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All data
-			 * @param amount - The amount of values to be used
+			 * @param data - The Data to use
+			 * @param amount - The amount of elements
+			 * @param count - The amount of Vertexes
 			 */
-			VertexBuffer(short data[], unsigned int amount, unsigned int count);
+			VertexBuffer(short data[], unsigned int amount, unsigned int count = 0);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All data
-			 * @param amount - The amount of value to be used
+			 * @param data - The Data to use
+			 * @param amount - The amount of elements
+			 * @param count - The amount of Vertexes
 			 */
-			VertexBuffer(int data[], unsigned int amount, unsigned int count);
+			VertexBuffer(int data[], unsigned int amount, unsigned int count = 0);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All data
-			 * @param amount - The amount of value to be used
+			 * @param data - The Data to use
+			 * @param amount - The amount of elements
+			 * @param count - The amount of Vertexes
 			 */
-			VertexBuffer(float data[], unsigned int amount, unsigned int count);
+			VertexBuffer(float data[], unsigned int amount, unsigned int count = 0);
 			/**
 			 * Creates a new VertexBuffer
-			 * @param data - All data
-			 * @param amount - The amount of value to be used
+			 * @param data - The Data to use
+			 * @param amount - The amount of elements
+			 * @param count - The amount of Vertexes
 			 */
-			VertexBuffer(double data[], unsigned int amount, unsigned int count);
+			VertexBuffer(double data[], unsigned int amount, unsigned int count = 0);
 			/**
 			 * Deletes the VertexBuffer
 			 */
@@ -1240,6 +1257,8 @@ namespace GRenderer {
 			 */
 			bool loadShader(GGeneral::String filepath);
 
+			bool sourceShader(GGeneral::String source, ShaderTypes type);
+
 			/**
 			 * Will try to compile the shader
 			 * @return true If the shader compilation was successful
@@ -1362,25 +1381,94 @@ namespace GRenderer {
 		 */
 		const unsigned int getUniformLocation(const GGeneral::String& name) const;
 
-		//TODO: setter
-		void set(const GGeneral::String& name, GMath::mat2<float> mat);
-		void set(const GGeneral::String& name, GMath::mat3<float> mat);
-		void set(const GGeneral::String& name, GMath::mat4<float> mat);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param mat - The matrix
+		 */
+		void set(const GGeneral::String& name, GMath::mat2<float>& mat);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param mat - The matrix
+		 */
+		void set(const GGeneral::String& name, GMath::mat3<float>& mat);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param mat - The matrix
+		 */
+		void set(const GGeneral::String& name, GMath::mat4<float>& mat);
 
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param f - The new value
+		 */
 		void set(const GGeneral::String& name, float f);
-		void set(const GGeneral::String& name, GMath::vec2<float> f);
-		void set(const GGeneral::String& name, GMath::vec3<float> f);
-		void set(const GGeneral::String& name, GMath::vec4<float> f);
+		void set(const GGeneral::String& name, GMath::vec2<float>& f);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param f - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec3<float>& f);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param f - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec4<float>& f);
 
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param i - The new value
+		 */
 		void set(const GGeneral::String& name, int i);
-		void set(const GGeneral::String& name, GMath::vec2<int> i);
-		void set(const GGeneral::String& name, GMath::vec3<int> i);
-		void set(const GGeneral::String& name, GMath::vec4<int> i);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param i - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec2<int>& i);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param i - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec3<int>& i);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param i - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec4<int>& i);
 
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param ui - The new value
+		 */
 		void set(const GGeneral::String& name, unsigned int ui);
-		void set(const GGeneral::String& name, GMath::vec2<unsigned int> ui);
-		void set(const GGeneral::String& name, GMath::vec3<unsigned int> ui);
-		void set(const GGeneral::String& name, GMath::vec4<unsigned int> ui);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param ui - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec2<unsigned int>& ui);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param ui - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec3<unsigned int>& ui);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param ui - The new value
+		 */
+		void set(const GGeneral::String& name, GMath::vec4<unsigned int>& ui);
 
 		/**
 		 * Will bind the shader program
@@ -1400,8 +1488,14 @@ namespace GRenderer {
 
 	/** A struct containing the Information to render an Object in 2D and 3D space */
 	struct Mesh {
-		Texture tex;
-		Primitives::VertexArray vertex;
+		/** The texture of the Mesh */
+		Texture* tex = nullptr;
+		/** The vertexes of the Mesh */
+		Primitives::VertexArray* vertex = nullptr;
+		~Mesh() {
+			delete tex;
+			delete vertex;
+		}
 	};
 
 	/**
@@ -1409,6 +1503,25 @@ namespace GRenderer {
 	 * @param m - The Mesh to be drawn
 	 */
 	void draw(Mesh& m);
+}
+
+namespace GGraphics {
+	/**
+	 * Will initilaize the namespace
+	 */
+	const bool init();
+
+	/**
+	 * Will set the default color to the given color. All draw calls in the namespace will draw with the default color
+	 * @param c - The Color to use
+	 */
+	void setColor(GGeneral::aColor c);
+
+	/**
+	 * Will draw a rectangle at the coordinates specified
+	 * @param r - The coordinates
+	 */
+	void drawRect(GGeneral::Rectangle<int> r);
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GGeneral::Logger::Severity e) {
