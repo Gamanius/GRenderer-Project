@@ -1,140 +1,65 @@
 #pragma once
 
 #include <GRenderer.h>
-#include <iostream>
-#include <Windows.h>
-#include "GLEW/include/GL/glew.h"
-#include <cassert>
 
-float vertices[] = {
-	// positions         // colors
-	 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-	-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-	 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top
+float x = 0;
+float y = 710;
+float w = 10;
+float h = 10;
+
+float rectangle[] = {
+	x, y,
+	x, h + y,
+	x + w, y + h,
+	x + w, y,
+};
+
+unsigned short index[] = {
+	0, 1, 2,
+	2, 3, 0
 };
 
 float cube[] = {
-	// positions          // colors           // texture coords
-	 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-	 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
+	0.5, 0.5,
+	-0.5, 0.5,
+	0.5, -0.5
 };
 
-//float cube[] = {
-//	// positions          // colors           // texture coords
-//	 500.0f,  500.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-//	 500.0f, -500.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-//	-500.0f, -500.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-//	-500.0f,  500.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left
-//};
-
-unsigned short index[] = {
-	0, 1, 3,
-	1, 2, 3
-};
-
-/*
 int main() {
-	using namespace GGeneral;
+	LOGI("Initiating!");
 	GRenderer::init();
-	for (unsigned int i = 0; i < 10; i++) {
-		auto s = new String("dawe");
-		if (i % 2 == 0)
-			delete s;
-	}
-	auto info = GMemory::getAllocInfo();
-	auto j = GMemory::getCurrentAllocationCount();
-	for (size_t i = 0; i < j; i++) {
-		LOGI("Adress: ", info[i]->address, " Signature: ", info[i]->functionSig);
-	}
 
-	GGeneral::Logger::wait();
-	GGeneral::Logger::terminateThread();
-}*/
-
-//#undef LOG
-//#define LOG(...) std::cout << GGeneral::toString(__VA_ARGS__) << "\n"
-
-void test(GWindow::WindowEvent e, void* data) {
-	LOG(e);
-	if (e == GWindow::WindowEvent::WINDOW_RESIZE) {
-		auto rect = *(GGeneral::Rectangle<int>*)data;
-		//LOGI(rect);
-	}
-}
-
-int main() {
-	GRenderer::init();
-	GWindow::Window w;
-	w.setState(GWindow::WindowState::NORMAL);
+	GWindow::Window w("Test", { 50, 50 }, { 1280, 720 });
 	w.createOpenGLcontext();
 	w.setOpenGLContextActive(true);
-	w.addCallbackFunction(test);
+	w.setState(GWindow::WindowState::NORMAL);
+	LOGS("Initialed!");
 
-	LOGS("Everything initialized");
-	LOGI(GGeneral::toString("OpenGL Version: ", glGetString(GL_VERSION)));
-	GGeneral::Logger::wait();
+	using namespace GRenderer;
+	Primitives::Shader frag("rsc/shader/frag.frag");
+	Primitives::Shader vert("rsc/shader/vert.vert");
 
-	GRenderer::Primitives::Shader frag("rsc/shader/frag.frag");
-	GRenderer::Primitives::Shader vert("rsc/shader/vert.vert");
-
-	GRenderer::ShaderProgram program({ &frag, &vert });
+	ShaderProgram program({ &frag, &vert });
 	program.link();
-
-	auto img2 = GIO::Graphics::loadImage("rsc/img/smile.bmp");
-
-	GGeneral::Logger::wait();
-	GRenderer::Texture t2(*img2);
-
-	auto mat = GMath::mat4x4Identity<float>();
-	//	mat.translate(GMath::vec3<float>(0, 0, -3));
-	mat[2][3] = -3;
-
-	//auto ortho = GMath::perpective<float>(45, 1280 / 720, 0.1, 100);
-	auto ortho = GMath::ortho<float>(0, 1280, 0, 720, 0.1, 100);
-	ortho = GMath::perpective<float>(45, 1280.0f / 720.0f, 0.1, 100);
-	//ortho = GMath::mat4x4Identity<float>();
-
-	GRenderer::Primitives::VertexBuffer v(cube, 36, 6);
-	//GRenderer::Primitives::IndexBuffer i(index, 6);
-	GRenderer::Primitives::VertexArray::VertexArrayLayout l({ 3, 3, 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
-	GRenderer::Primitives::VertexArray vertex(v, l);
-	GRenderer::Mesh m;
-	m.tex = &t2;
-	m.vertex = &vertex;
-
-	vertex.bind();
 	program.bind();
-	program.set("mat", ortho);
-	program.set("cam", mat);/*
-	auto d = program.getUniformLocation("mat");
-	glUniformMatrix4fv(d, 1, true, ortho.mem());
-	d = program.getUniformLocation("cam");
-	glUniformMatrix4fv(d, 1, true, mat.mem());*/
-	GGeneral::Color c(50, 50, 50);
+	GMath::vec2<float> size;
+	size[0] = 1280;
+	size[1] = 720;
+	program.set("u_size", size);
+	GMath::vec4<float> color(0.5);
+	program.set("u_color", color);
 
-	auto info = GMemory::getAllocInfo();
-	auto alloccount = GET_ALLOC_INFO_COUNT(info);
-	for (size_t i = 0; i < alloccount; i++) {
-#ifdef EXTENDED_MEMORYTRACKING
-		LOG(PRINT_VAR(info[i]->functionSig, info[i]->line, info[i]->size));
-#endif
-	}
+	Primitives::VertexBuffer buffer(rectangle, 8, 4);
+	Primitives::VertexArray::VertexArrayLayout layout({ 2 }, Primitives::VertexTypes::FLOAT);
+	Primitives::IndexBuffer ibuf(index, 6);
+	Primitives::VertexArray* array = new Primitives::VertexArray(buffer, ibuf, layout);
+	array->bind();
+	Mesh m(array, nullptr);
 
 	while (!w.getCloseRequest()) {
-		GRenderer::clear(c);
-		GRenderer::draw(m);
-		GWindow::Window::fetchEvents();
+		clear({ 100, 100, 100 });
+		draw(m);
 		w.swapBuffers();
+		w.fetchEvents();
 	}
-
-	info = GMemory::getAllocInfo();
-	alloccount = GET_ALLOC_INFO_COUNT(info);
-	for (size_t i = 0; i < alloccount; i++) {
-#ifdef EXTENDED_MEMORYTRACKING
-		LOG(PRINT_VAR(info[i]->functionSig, info[i]->line, info[i]->size));
-#endif
-	}
-	GGeneral::Logger::wait();
 }

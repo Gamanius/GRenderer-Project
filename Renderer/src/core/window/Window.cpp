@@ -26,7 +26,7 @@ wglCreateContextAttribsARB_type* wglCreateContextAttribsARB;
 //WinAPI specific variables
 static MSG msg;
 HINSTANCE hInstance = GetModuleHandle(0);
-HGLRC hglrc;
+HGLRC hglrc = NULL;
 
 struct WindowClass {
 	//General Stuff
@@ -138,6 +138,7 @@ static GWindow::VK getVirtualKeyCode(int windowsKey) {
 	case VK_OEM_6:			                   return GWindow::VK::OEM_6;
 	case VK_OEM_7:			                   return GWindow::VK::OEM_7;
 	case VK_OEM_8:			                   return GWindow::VK::OEM_8;
+	case VK_OEM_102:                           return GWindow::VK::OEM_102;
 	case VK_OEM_CLEAR:		                   return GWindow::VK::OEM_CLEAR;
 	case VK_OEM_PLUS:		                   return GWindow::VK::OEM_PLUS;
 	case VK_OEM_COMMA:		                   return GWindow::VK::OEM_COMMA;
@@ -283,6 +284,7 @@ static int getWindowsVirtualKeyCode(GWindow::VK key) {
 	case GWindow::VK::OEM_6:			   return VK_OEM_6;
 	case GWindow::VK::OEM_7:			   return VK_OEM_7;
 	case GWindow::VK::OEM_8:			   return VK_OEM_8;
+	case GWindow::VK::OEM_102:             return VK_OEM_102;
 	case GWindow::VK::OEM_CLEAR:		   return VK_OEM_CLEAR;
 	case GWindow::VK::OEM_PLUS:		       return VK_OEM_PLUS;
 	case GWindow::VK::OEM_COMMA:		   return VK_OEM_COMMA;
@@ -413,6 +415,40 @@ bool GWindow::init() {
 	return true;
 }
 
+//Will only check for CTRL, ALT and SHIFT
+std::vector<GWindow::VK> processUnknownKeys(bool pressed) {
+	std::vector<GWindow::VK> returnValue;
+	static int keyToCheck[6] = {
+		//Shift               //Control                 //Alt
+		VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU
+	};
+
+	static bool wasPressed[] = {
+		0, 0, 0, 0, 0, 0
+	};
+
+	for (byte i = 0; i < 6; i++) {
+		auto key = GetKeyState(keyToCheck[i]);
+		char isPressed = (key & -128) + 129;
+		if (isPressed == 1 && pressed) {
+			wasPressed[i] = true;
+			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
+		}
+		else if (isPressed != 1 && !pressed && wasPressed[i]) {
+			wasPressed[i] = false;
+			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
+		}
+	}
+
+	return returnValue;
+}
+
+void* proccessXButton(WPARAM button) {
+	if (GET_XBUTTON_WPARAM(button) == 1)
+		return (void*)GWindow::VK::X1_MB;
+	return (void*)GWindow::VK::X2_MB;
+}
+
 LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	auto callback = GWindow::GWindowCallback();
 	if (allWindowsInstances.size() >= 1)
@@ -429,7 +465,10 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		if (callback != nullptr) {
 			auto area = (RECT*)lParam;
-			callback(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&GGeneral::Rectangle<int>(area->left, area->top, area->right - area->left, area->bottom - area->top));
+			GGeneral::Dimension<int> dim;
+			dim.width = area->right - area->left;
+			dim.height = area->bottom - area->top;
+			callback(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&dim);
 			return MAKELRESULT(1, 1);
 		}
 	}
@@ -439,8 +478,14 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		if (callback != nullptr) {
 			//Window press event
 			auto key = getVirtualKeyCode(wParam);
-			//LOG(GEnumString::enumToString(key));
-			callback(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+			if (key == GWindow::VK::UNKWON) {
+				auto moreKeys = processUnknownKeys(true);
+				for (size_t i = 0; i < moreKeys.size(); i++) {
+					callback(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+				}
+			}
+			else
+				callback(GWindow::WindowEvent::KEY_PRESS, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
 	}
@@ -449,10 +494,71 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		if (callback != nullptr) {
 			auto key = getVirtualKeyCode(wParam);
-			callback(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+			if (key == GWindow::VK::UNKWON) {
+				auto moreKeys = processUnknownKeys(false);
+				for (size_t i = 0; i < moreKeys.size(); i++) {
+					callback(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+				}
+			}
+			else
+				callback(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
 	}
+	case WM_LBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_RBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_XBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_LBUTTONUP:
+	{
+		ReleaseCapture();
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_RBUTTONUP:
+	{
+		ReleaseCapture();
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_XBUTTONUP:
+	{
+		ReleaseCapture();
+		if (callback != nullptr) {
+			callback(GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
+		}
+		return MAKELRESULT(1, 1);
+	}
+	//Do something when the mouse wants some juicy pics
+	case WM_SETCURSOR:
+		if (LOWORD(lParam) == HTCLIENT) {
+			SetCursor(LoadCursorA(NULL, IDC_ARROW));
+			return true;
+		}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -482,15 +588,7 @@ GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGenera
 	allWindowsInstances.push_back({ false, hdc, hWnd, wc, nullptr });
 DONE:
 	EnableWindow(hWnd, true);
-}
-
-GWindow::Window::~Window() {
-	THIS_INSTANCE.isFree = true;
-	ReleaseDC(THIS_INSTANCE.hWnd, THIS_INSTANCE.hdc);
-	DestroyWindow(THIS_INSTANCE.hWnd);
-}
-
-bool GWindow::Window::createOpenGLcontext() {
+	//Pixel format
 	PIXELFORMATDESCRIPTOR pfd =
 	{
 		sizeof(PIXELFORMATDESCRIPTOR),
@@ -513,11 +611,21 @@ bool GWindow::Window::createOpenGLcontext() {
 	//Set pixel format
 	auto iPixelFormat = ChoosePixelFormat(THIS_INSTANCE.hdc, &pfd);
 	SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd);
+}
 
+GWindow::Window::~Window() {
+	this->setOpenGLContextActive(false);
+	THIS_INSTANCE.isFree = true;
+	ReleaseDC(THIS_INSTANCE.hWnd, THIS_INSTANCE.hdc);
+	DeleteDC(THIS_INSTANCE.hdc);
+	DestroyWindow(THIS_INSTANCE.hWnd);
+}
+
+bool GWindow::Window::createOpenGLcontext() {
 	int gl33_attribs[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
 		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
 		0,
 	};
 
@@ -528,7 +636,7 @@ bool GWindow::Window::createOpenGLcontext() {
 }
 
 void GWindow::Window::setOpenGLContextActive(bool b) {
-	wglMakeCurrent(b ? THIS_INSTANCE.hdc : NULL, b ? hglrc : NULL);
+	wglMakeCurrent(THIS_INSTANCE.hdc, b ? hglrc : NULL);
 }
 
 void GWindow::Window::swapBuffers() {
@@ -563,6 +671,31 @@ const bool GWindow::Window::getCloseRequest() const {
 
 void GWindow::Window::forceCloseRequest() {
 	SendMessage(THIS_INSTANCE.hWnd, WM_CLOSE, 0, 0);
+}
+
+GWindow::WindowState GWindow::Window::getCurrentWindowState() const {
+	WINDOWPLACEMENT state;
+	state.length = sizeof(state);
+	GetWindowPlacement(THIS_INSTANCE.hWnd, &state);
+	switch (state.showCmd) {
+	case SW_HIDE: return GWindow::WindowState::HIDDEN;
+	case SW_MAXIMIZE: return GWindow::WindowState::MAXIMIZED;
+	case SW_SHOWMINIMIZED:
+	case SW_MINIMIZE: return GWindow::WindowState::MINIMIZED;
+	default: return GWindow::WindowState::NORMAL;
+	};
+}
+
+GGeneral::Dimension<int> GWindow::Window::getWindowSize() const {
+	RECT rect = {};
+	GetWindowRect(THIS_INSTANCE.hWnd, &rect);
+	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+GGeneral::Dimension<int> GWindow::Window::getWindowDrawSize() const {
+	RECT rect = {};
+	GetClientRect(THIS_INSTANCE.hWnd, &rect);
+	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
 }
 
 void GWindow::Window::addCallbackFunction(GWindowCallback fun) {

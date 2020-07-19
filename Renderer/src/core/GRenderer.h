@@ -771,27 +771,159 @@ namespace GWindow {
 
 	/*! These are all Keys that the event system is tracking. All other keys that are pressed will be discarded*/
 	enum class VK {
-		LEFT_MB, RIGHT_MB, CANCEL, MIDDLE_MB, X1_MB, X2_MB,
-		LEFT_SHIFT, RIGHT_SHIFT, LEFT_CONTROL, RIGHT_CONTROL, BACKSPACE, TAB,
-		ENTER, ALT, PAUSE, CAPSLOCK, ESCAPE, SPACE, PAGE_UP, PAGE_DOWN, END, HOME, LEFTARROW, UPARROW, RIGHTARROW, DOWNARROW,
-		SELECT, PRINT, EXECUTE, PRINT_SCREEN, INSERT, DEL, HELP,
-		KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-		LEFT_WINDOWS, RIGHT_WINDOWS, APPLICATION, SLEEP, SCROLL_LOCK, LEFT_MENU, RIGHT_MENU,
-		VOLUME_MUTE, VOLUME_DOWN, VOLUME_UP,
-		MEDIA_NEXT, MEDIA_LAST, MEDIA_STOP, MEDIA_PLAY_PAUSE,
-		OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8, OEM_CLEAR, OEM_PLUS, OEM_COMMA, OEM_MINUS, OEM_PERIOD,
-		NUMPAD_0, NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9, NUMPAD_MULTIPLY, NUMPAD_ADD, NUMPAD_SEPERATOR, NUMPAD_SUBTRACT, NUMPAD_COMMA, NUMPAD_DIVIDE, NUMPAD_LOCK,
-		F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24,
-		PLAY, ZOOM, UNKWON
+		LEFT_MB            /*! Left Mouse Button */
+		, RIGHT_MB		   /*! Right Mouse Button*/
+		, CANCEL		   /*! Control Breaking Key (Most likely deprecated)*/
+		, MIDDLE_MB		   /*! Middle Mouse Button */
+		, X1_MB			   /*! X1 Button (Usually on the side of the mouse)*/
+		, X2_MB			   /*! X2 Button (Usually on the side of the mouse)*/
+		, LEFT_SHIFT	   /*! Left Shift Key*/
+		, RIGHT_SHIFT	   /*! Right Shift Key*/
+		, LEFT_CONTROL	   /*! Left Control Key*/
+		, RIGHT_CONTROL	   /*! Right Control Key*/
+		, BACKSPACE		   /*! Backspace*/
+		, TAB			   /*! Tabulator Key*/
+		, ENTER			   /*! Enter Key*/
+		, ALT			   /*! Alt Key*/
+		, PAUSE			   /*! Pause Key. Also known as the Break key*/
+		, CAPSLOCK		   /*! Capslock Key*/
+		, ESCAPE		   /*! Escape Key. Also known as ESC*/
+		, SPACE			   /*! Space Key*/
+		, PAGE_UP		   /*! Page up Key*/
+		, PAGE_DOWN		   /*! Page down Key*/
+		, END			   /*! End Key*/
+		, HOME			   /*! Home Key. Also known as Pos1*/
+		, LEFTARROW		   /*! The Left Arrow Key*/
+		, UPARROW		   /*! The Up Arrow Key*/
+		, RIGHTARROW	   /*! The Right Arrow Key*/
+		, DOWNARROW		   /*! The Down Arrow Key*/
+		, SELECT		   /*! Select Key (Most likely deprecated)*/
+		, PRINT			   /*! Print Key. Not to be confused with the Print Screen Key which are somehow different key for windows (Most likely deprecated)*/
+		, EXECUTE		   /*! Execute Key (Most likely deprecated)*/
+		, PRINT_SCREEN	   /*! Print Screen Key. Use this instead of Print key*/
+		, INSERT		   /*! Insert Key*/
+		, DEL			   /*! Delete Key*/
+		, HELP			   /*! Help Key */
+		, KEY_0			   /*! Number 0 Key */
+		, KEY_1			   /*! Number 1 Key */
+		, KEY_2			   /*! Number 2 Key */
+		, KEY_3			   /*! Number 3 Key */
+		, KEY_4			   /*! Number 4 Key */
+		, KEY_5			   /*! Number 5 Key */
+		, KEY_6			   /*! Number 6 Key */
+		, KEY_7			   /*! Number 7 Key */
+		, KEY_8			   /*! Number 8 Key */
+		, KEY_9			   /*! Number 9 Key */
+		, A				   /*! A Key*/
+		, B				   /*! B Key*/
+		, C				   /*! C Key*/
+		, D				   /*! D Key*/
+		, E				   /*! E Key*/
+		, F				   /*! F Key*/
+		, G				   /*! G Key*/
+		, H				   /*! H Key*/
+		, I				   /*! I Key*/
+		, J				   /*! J Key*/
+		, K				   /*! K Key*/
+		, L				   /*! L Key*/
+		, M				   /*! M Key*/
+		, N				   /*! N Key*/
+		, O				   /*! O Key*/
+		, P				   /*! P Key*/
+		, Q				   /*! Q Key*/
+		, R				   /*! R Key*/
+		, S				   /*! S Key*/
+		, T				   /*! T Key*/
+		, U				   /*! U Key*/
+		, V				   /*! V Key*/
+		, W				   /*! W Key*/
+		, X				   /*! X Key*/
+		, Y				   /*! Y Key*/
+		, Z				   /*! Z Key*/
+		, LEFT_WINDOWS	   /*! The left Windows key*/
+		, RIGHT_WINDOWS	   /*! The right Window key*/
+		, APPLICATION	   /*! Application Key. Usually used as a replacement for the left mouse button key*/
+		, SLEEP			   /*! Sleep Key*/
+		, SCROLL_LOCK	   /*! Scroll Lock Key (Who uses this?) */
+		, LEFT_MENU		   /*! Left Alt key (Not used! Please just use Alt) */
+		, RIGHT_MENU	   /*! Right Alt key (Not used! Please just use Alt) */
+		, VOLUME_MUTE	   /*! Volume Mute key*/
+		, VOLUME_DOWN	   /*! Volume decrease button */
+		, VOLUME_UP		   /*! Volume increase button */
+		, MEDIA_NEXT	   /*! Skip button for media (music, films...)*/
+		, MEDIA_LAST	   /*! Previous button for media (music, films...)*/
+		, MEDIA_STOP	   /*! Stop button for media (music, films...)*/
+		, MEDIA_PLAY_PAUSE /*! Play/Pause button for media (music, films...)*/
+		, OEM_1			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ü'*/
+		, OEM_2			   /*! Keyboard specific key. On German keyboards the OEM key is usually '#'*/
+		, OEM_3			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ö'*/
+		, OEM_4			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ß'*/
+		, OEM_5			   /*! Keyboard specific key. On German keyboards the OEM key is usually '^'*/
+		, OEM_6			   /*! Keyboard specific key. On German keyboards the OEM key is usually '´'*/
+		, OEM_7			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ä'*/
+		, OEM_8			   /*! Keyboard specific key.*/
+		, OEM_102		   /*! Keyboard specific key. On German keyboards the OEM key is usually '<'*/
+		, OEM_CLEAR		   /*! Clear Key*/
+		, OEM_PLUS		   /*! Plus Key*/
+		, OEM_COMMA		   /*! Comma Key*/
+		, OEM_MINUS		   /*! Minus Key*/
+		, OEM_PERIOD	   /*! Period Key*/
+		, NUMPAD_0		   /*! Numpad 0 Key*/
+		, NUMPAD_1		   /*! Numpad 1 Key*/
+		, NUMPAD_2		   /*! Numpad 2 Key*/
+		, NUMPAD_3		   /*! Numpad 3 Key*/
+		, NUMPAD_4		   /*! Numpad 4 Key*/
+		, NUMPAD_5		   /*! Numpad 5 Key*/
+		, NUMPAD_6		   /*! Numpad 6 Key*/
+		, NUMPAD_7		   /*! Numpad 7 Key*/
+		, NUMPAD_8		   /*! Numpad 8 Key*/
+		, NUMPAD_9		   /*! Numpad 9 Key*/
+		, NUMPAD_MULTIPLY  /*! Numpad Multiply Key*/
+		, NUMPAD_ADD	   /*! Numpad Plus Key*/
+		, NUMPAD_SEPERATOR /*! Numpad Separator Key*/
+		, NUMPAD_SUBTRACT  /*! Numpad Minus Key*/
+		, NUMPAD_COMMA	   /*! Numpad Comma Key*/
+		, NUMPAD_DIVIDE	   /*! Numpad Divide Key*/
+		, NUMPAD_LOCK	   /*! Numpad lock*/
+		, F1			   /*! F1 Key*/
+		, F2			   /*! F2 Key*/
+		, F3			   /*! F3 Key*/
+		, F4			   /*! F4 Key*/
+		, F5			   /*! F5 Key*/
+		, F6			   /*! F6 Key*/
+		, F7			   /*! F7 Key*/
+		, F8			   /*! F8 Key*/
+		, F9			   /*! F9 Key*/
+		, F10			   /*! F10 Key*/
+		, F11			   /*! F11 Key*/
+		, F12			   /*! F12 Key*/
+		, F13			   /*! F13 Key*/
+		, F14			   /*! F14 Key*/
+		, F15			   /*! F15 Key*/
+		, F16			   /*! F16 Key*/
+		, F17			   /*! F17 Key*/
+		, F18			   /*! F18 Key*/
+		, F19			   /*! F19 Key*/
+		, F20			   /*! F20 Key*/
+		, F21			   /*! F21 Key*/
+		, F22			   /*! F22 Key*/
+		, F23			   /*! F23 Key*/
+		, F24			   /*! F24 Key*/
+		, PLAY			   /*! Play Key (Most likely deprecated)*/
+		, ZOOM			   /*! Zoom Key  (Most likely deprecated)*/
+		, UNKWON		   /*! Key that can not be indetefied or are not in this list are unknown keys*/
 	};
 
 	enum class WindowEvent {
-		STATE
-		, WINDOW_RESIZE
-		, KEY_PRESS
-		, KEY_RELEASE
+		STATE /*! A change in the extended state of the Window*/
+		, WINDOW_RESIZE /*! A window resize */
+		, KEY_PRESS /*! A Key or Mouse button press */
+		, KEY_RELEASE /*! A Key or Mouse button release*/
 	};
 
+	/**
+	 * General Function used to get all callback messages that a GWindow instance will be able to send
+	 */
 	typedef void(*GWindowCallback)(WindowEvent, void*);
 
 	/**
@@ -819,15 +951,18 @@ namespace GWindow {
 		 */
 		Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim);
 
+		/** Destructor */
 		~Window();
 
 		/**
-		 * TODO
+		 * This will create a global OpenGL context. Only use this function once! If the function was successful the context can be used with any window.
+		 * @return True if the function was succeful. False if not
 		 */
 		bool createOpenGLcontext();
 
 		/**
-		 * TODO
+		 * Will set the context active/inactive
+		 * @param b - If true the context will be made active
 		 */
 		void setOpenGLContextActive(bool b);
 
@@ -863,12 +998,22 @@ namespace GWindow {
 		void setCaptureMouseMode(bool capture);
 
 		/**
-		 * TODO
-		 * Will fetch the current window state and return it
-		 *
+		 * Will fetch the current window state and return it. If an error occurs the window state will be "NORMAL"
 		 * @return The current Window state of the window
 		 */
 		WindowState getCurrentWindowState() const;
+
+		/**
+		 * Will fetch the size of the whole window
+		 * @return The window size
+		 */
+		GGeneral::Dimension<int> getWindowSize() const;
+
+		/**
+		 * Will fetch the size of the client region
+		 * @return Client size
+		 */
+		GGeneral::Dimension<int> getWindowDrawSize() const;
 
 		/**
 		 * TODO
@@ -1488,10 +1633,12 @@ namespace GRenderer {
 
 	/** A struct containing the Information to render an Object in 2D and 3D space */
 	struct Mesh {
-		/** The texture of the Mesh */
-		Texture* tex = nullptr;
 		/** The vertexes of the Mesh */
 		Primitives::VertexArray* vertex = nullptr;
+		/** The texture of the Mesh */
+		Texture* tex = nullptr;
+		Mesh(Primitives::VertexArray* vertex, Texture* tex) : vertex(vertex), tex(tex) {}
+
 		~Mesh() {
 			delete tex;
 			delete vertex;
@@ -1507,7 +1654,7 @@ namespace GRenderer {
 
 namespace GGraphics {
 	/**
-	 * Will initilaize the namespace
+	 * Will initialize the namespace
 	 */
 	const bool init();
 
@@ -1516,6 +1663,8 @@ namespace GGraphics {
 	 * @param c - The Color to use
 	 */
 	void setColor(GGeneral::aColor c);
+
+	void setViewport(GGeneral::Dimension<int> size);
 
 	/**
 	 * Will draw a rectangle at the coordinates specified
@@ -1682,6 +1831,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::VK e) {
 	case GWindow::VK::OEM_6:			       return s.append("Oem 6");
 	case GWindow::VK::OEM_7:			       return s.append("Oem 7");
 	case GWindow::VK::OEM_8:			       return s.append("Oem 8");
+	case GWindow::VK::OEM_102:                 return s.append("Oem 102");
 	case GWindow::VK::OEM_CLEAR:		       return s.append("Clear");
 	case GWindow::VK::OEM_PLUS:		           return s.append("Plus");
 	case GWindow::VK::OEM_COMMA:		       return s.append("Comma");

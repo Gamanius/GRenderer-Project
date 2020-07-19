@@ -1,19 +1,18 @@
 #version 330
 //#shader vert
 
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 col;
-layout (location = 2) in vec2 texc;
+layout (location = 0) in vec2 vertex;
 
-out vec2 tex;
-out vec3 vcol;
+uniform vec2 u_size;
+uniform vec4 u_color;
 
-uniform mat4 mat;
-uniform mat4 cam;
+out vec4 o_color;
 
 void main() {
-	gl_Position =  mat * cam * vec4(pos, 1);
-	
-	tex = texc;
-	vcol = col; 
+	vec2 o_vert;
+	o_vert.x = (vertex.x / u_size.x) * 2 - 1;
+	o_vert.y = (vertex.y / u_size.y) * 2 - 1;
+	gl_Position =  vec4(o_vert, 0, 1);
+
+	o_color = u_color;
 }
