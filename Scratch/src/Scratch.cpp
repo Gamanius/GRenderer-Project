@@ -1,65 +1,26 @@
 #pragma once
 
 #include <GRenderer.h>
-
-float x = 0;
-float y = 710;
-float w = 10;
-float h = 10;
-
-float rectangle[] = {
-	x, y,
-	x, h + y,
-	x + w, y + h,
-	x + w, y,
-};
-
-unsigned short index[] = {
-	0, 1, 2,
-	2, 3, 0
-};
-
-float cube[] = {
-	0.5, 0.5,
-	-0.5, 0.5,
-	0.5, -0.5
-};
+#include <iostream>
 
 int main() {
-	LOGI("Initiating!");
-	GRenderer::init();
+	auto error = GRenderer::init();
+	error = error & GNetworking::init();
+	if (error == 0)
+		LOGF("Couldn't init");
 
-	GWindow::Window w("Test", { 50, 50 }, { 1280, 720 });
-	w.createOpenGLcontext();
-	w.setOpenGLContextActive(true);
-	w.setState(GWindow::WindowState::NORMAL);
-	LOGS("Initialed!");
-
-	using namespace GRenderer;
-	Primitives::Shader frag("rsc/shader/frag.frag");
-	Primitives::Shader vert("rsc/shader/vert.vert");
-
-	ShaderProgram program({ &frag, &vert });
-	program.link();
-	program.bind();
-	GMath::vec2<float> size;
-	size[0] = 1280;
-	size[1] = 720;
-	program.set("u_size", size);
-	GMath::vec4<float> color(0.5);
-	program.set("u_color", color);
-
-	Primitives::VertexBuffer buffer(rectangle, 8, 4);
-	Primitives::VertexArray::VertexArrayLayout layout({ 2 }, Primitives::VertexTypes::FLOAT);
-	Primitives::IndexBuffer ibuf(index, 6);
-	Primitives::VertexArray* array = new Primitives::VertexArray(buffer, ibuf, layout);
-	array->bind();
-	Mesh m(array, nullptr);
-
-	while (!w.getCloseRequest()) {
-		clear({ 100, 100, 100 });
-		draw(m);
-		w.swapBuffers();
-		w.fetchEvents();
+	auto sock = new GNetworking::Socket("jlb734-47100.portmap.host", 47100);
+	sock->setBlockingMode(false);
+	while (sock->isConnected()) {
+		auto b = sock->receive();
+		LOGI(b.size);
+		if (b.data != nullptr)
+			LOG(GGeneral::String(b.data));
+		//Sleep(1000);
+		//sock.disconnect();
 	}
+
+	delete sock;
+	GGeneral::ErrorHandler::printAll();
+	GGeneral::Logger::wait();
 }

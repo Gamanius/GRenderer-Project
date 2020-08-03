@@ -1,12 +1,20 @@
 #include "../GRenderer.h"
 #include <GL/glew.h>
 
+unsigned long lastDeltaT = 0;
+
 const bool GRenderer::init() {
-	GGeneral::Logger::init();
-	if (!GWindow::init())
+	if (!GGeneral::Logger::init()) {
+		THROWW("Couldn't init Logger");
 		return false;
-	if (!GWindow::Monitor::init())
+	}
+	if (!GWindow::init()) {
+		THROWF("Couldn't init window class and OpenGL");
 		return false;
+	}
+	if (!GWindow::Monitor::init()) {
+		return false;
+	}
 	//if (!GGraphics::init())
 	//	return false;
 	return true;
@@ -15,6 +23,17 @@ const bool GRenderer::init() {
 GGeneral::String GRenderer::getCurentOpenGLVersion() {
 	GGeneral::String r(glGetString(GL_VERSION));
 	return r;
+}
+
+double GRenderer::delta() {
+	if (lastDeltaT == 0) {
+		lastDeltaT = GGeneral::Time::getNanoTime() / 1000000;
+		return 0;
+	}
+	unsigned long t = GGeneral::Time::getNanoTime() / 1000000;
+	auto temp = t - lastDeltaT;
+	lastDeltaT = t;
+	return temp;
 }
 
 GGeneral::String GRenderer::getGLString(GLString s) {

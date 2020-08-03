@@ -1,25 +1,818 @@
 #pragma once
 #pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "Ws2_32.lib")
+#pragma warning(disable : 4595)
 
+#include <mutex>
+#include <atomic>
 #include <initializer_list>
 #include <vector>
+#include <cmath>
 
-#pragma warning(disable : 4595)
-#include "GMath.h"
+#ifndef _WIN32
+#error Only Windows is Supported!
+#elif _WIN64
+#error There is no 64x support!
+#endif
+
+//#ifdef _DEBUG
+//#define EXTENDED_MEMORYTRACKING
+//#define IF_EXTENDED_MEM(expression) expression
+//#else
+//#define IF_EXTENDED_MEM(expression)
+//#endif // _DEBUG
+//
+/** Var print define */
+#define MSVC_BUG(x, y) x y
+
+#define VAR_PRINT(x) GGeneral::toString(#x) + " = " + GGeneral::toString(x) + ", "
+#define VAR_PRINTEND(x) GGeneral::toString(#x) + " = " + GGeneral::toString(x)
+
+#define RETURN_ARG_COUNT(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, _17_, _18_, _19_, _20_, _21_, _22_, _23_, _24_, _25_, _26_, _27_, _28_, _29_, _30_, _31_, _32_, _33_, _34_, _35_, _36_, _37_, _38_, _39_, _40_, _41_, _42_, _43_, _44_, _45_, _46_, _47_, _48_, _49_, _50_, _51_, _52_, _53_, _54_, _55_, _56_, _57_, _58_, _59_, _60_, _61_, _62_, _63_, _64_, _65_, _66_, _67_, _68_, _69_, _70_, _71_, _72_, _73_, _74_, _75_, _76_, _77_, _78_, _79_, _80_, _81_, _82_, _83_, _84_, _85_, _86_, _87_, _88_, _89_, _90_, _91_, _92_, _93_, _94_, _95_, _96_, _97_, _98_, _99_, _100_, _101_, _102_, _103_, _104_, _105_, _106_, _107_, _108_, _109_, _110_, _111_, _112_, _113_, _114_, _115_, _116_, _117_, _118_, _119_, _120_, _121_, _122_, _123_, _124_, _125_, count, ...) count
+#define EXPAND_ARGS(args) RETURN_ARG_COUNT args
+#define COUNT_ARGS_MAX(...) EXPAND_ARGS((__VA_ARGS__, 125, 124, 123, 122, 121, 120, 119, 118, 117, 116, 115, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))
+
+#define VAR_NAME1(x) VAR_PRINTEND(x)
+#define VAR_NAME2(x0, x1) VAR_PRINT(x0) + VAR_NAME1(x1)
+#define VAR_NAME3(x0, x1, x2) VAR_PRINT(x0) + VAR_NAME2(x1, x2)
+#define VAR_NAME4(x0, x1, x2, x3) VAR_PRINT(x0) + VAR_NAME3(x1, x2, x3)
+#define VAR_NAME5(x0, x1, x2, x3, x4) VAR_PRINT(x0) + VAR_NAME4(x1, x2, x3, x4)
+#define VAR_NAME6(x0, x1, x2, x3, x4, x5) VAR_PRINT(x0) + VAR_NAME5(x1, x2, x3, x4, x5)
+#define VAR_NAME7(x0, x1, x2, x3, x4, x5, x6) VAR_PRINT(x0) + VAR_NAME6(x1, x2, x3, x4, x5, x6)
+#define VAR_NAME8(x0, x1, x2, x3, x4, x5, x6, x7) VAR_PRINT(x0) + VAR_NAME7(x1, x2, x3, x4, x5, x6, x7)
+#define VAR_NAME9(x0, x1, x2, x3, x4, x5, x6, x7, x8) VAR_PRINT(x0) + VAR_NAME8(x1, x2, x3, x4, x5, x6, x7, x8)
+#define VAR_NAME10(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) VAR_PRINT(x0) + VAR_NAME9(x1, x2, x3, x4, x5, x6, x7, x8, x9)
+#define VAR_NAME11(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) VAR_PRINT(x0) + VAR_NAME10(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+#define VAR_NAME12(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11) VAR_PRINT(x0) + VAR_NAME11(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+#define VAR_NAME13(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12) VAR_PRINT(x0) + VAR_NAME12(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12)
+#define VAR_NAME14(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13) VAR_PRINT(x0) + VAR_NAME13(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)
+#define VAR_NAME15(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) VAR_PRINT(x0) + VAR_NAME14(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14)
+#define VAR_NAME16(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) VAR_PRINT(x0) + VAR_NAME15(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15)
+#define VAR_NAME17(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16) VAR_PRINT(x0) + VAR_NAME16(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16)
+#define VAR_NAME18(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17) VAR_PRINT(x0) + VAR_NAME17(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)
+#define VAR_NAME19(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18) VAR_PRINT(x0) + VAR_NAME18(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)
+#define VAR_NAME20(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19) VAR_PRINT(x0) + VAR_NAME19(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19)
+#define VAR_NAME21(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20) VAR_PRINT(x0) + VAR_NAME20(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20)
+#define VAR_NAME22(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21) VAR_PRINT(x0) + VAR_NAME21(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21)
+#define VAR_NAME23(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22) VAR_PRINT(x0) + VAR_NAME22(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22)
+#define VAR_NAME24(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23) VAR_PRINT(x0) + VAR_NAME23(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23)
+#define VAR_NAME25(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24) VAR_PRINT(x0) + VAR_NAME24(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24)
+#define VAR_NAME26(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25) VAR_PRINT(x0) + VAR_NAME25(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25)
+#define VAR_NAME27(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26) VAR_PRINT(x0) + VAR_NAME26(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26)
+#define VAR_NAME28(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27) VAR_PRINT(x0) + VAR_NAME27(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27)
+#define VAR_NAME29(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28) VAR_PRINT(x0) + VAR_NAME28(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28)
+#define VAR_NAME30(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29) VAR_PRINT(x0) + VAR_NAME29(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29)
+#define VAR_NAME31(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30) VAR_PRINT(x0) + VAR_NAME30(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30)
+#define VAR_NAME32(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31) VAR_PRINT(x0) + VAR_NAME31(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31)
+#define VAR_NAME33(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32) VAR_PRINT(x0) + VAR_NAME32(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32)
+#define VAR_NAME34(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33) VAR_PRINT(x0) + VAR_NAME33(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33)
+#define VAR_NAME35(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34) VAR_PRINT(x0) + VAR_NAME34(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34)
+#define VAR_NAME36(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35) VAR_PRINT(x0) + VAR_NAME35(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35)
+#define VAR_NAME37(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36) VAR_PRINT(x0) + VAR_NAME36(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36)
+#define VAR_NAME38(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37) VAR_PRINT(x0) + VAR_NAME37(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37)
+#define VAR_NAME39(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38) VAR_PRINT(x0) + VAR_NAME38(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38)
+#define VAR_NAME40(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39) VAR_PRINT(x0) + VAR_NAME39(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39)
+#define VAR_NAME41(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40) VAR_PRINT(x0) + VAR_NAME40(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40)
+#define VAR_NAME42(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41) VAR_PRINT(x0) + VAR_NAME41(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41)
+#define VAR_NAME43(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42) VAR_PRINT(x0) + VAR_NAME42(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42)
+#define VAR_NAME44(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43) VAR_PRINT(x0) + VAR_NAME43(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43)
+#define VAR_NAME45(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44) VAR_PRINT(x0) + VAR_NAME44(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44)
+#define VAR_NAME46(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45) VAR_PRINT(x0) + VAR_NAME45(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45)
+#define VAR_NAME47(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46) VAR_PRINT(x0) + VAR_NAME46(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46)
+#define VAR_NAME48(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47) VAR_PRINT(x0) + VAR_NAME47(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47)
+#define VAR_NAME49(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48) VAR_PRINT(x0) + VAR_NAME48(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48)
+#define VAR_NAME50(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49) VAR_PRINT(x0) + VAR_NAME49(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49)
+#define VAR_NAME51(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50) VAR_PRINT(x0) + VAR_NAME50(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50)
+#define VAR_NAME52(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51) VAR_PRINT(x0) + VAR_NAME51(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51)
+#define VAR_NAME53(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52) VAR_PRINT(x0) + VAR_NAME52(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52)
+#define VAR_NAME54(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53) VAR_PRINT(x0) + VAR_NAME53(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53)
+#define VAR_NAME55(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54) VAR_PRINT(x0) + VAR_NAME54(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54)
+#define VAR_NAME56(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55) VAR_PRINT(x0) + VAR_NAME55(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55)
+#define VAR_NAME57(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56) VAR_PRINT(x0) + VAR_NAME56(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56)
+#define VAR_NAME58(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57) VAR_PRINT(x0) + VAR_NAME57(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57)
+#define VAR_NAME59(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58) VAR_PRINT(x0) + VAR_NAME58(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58)
+#define VAR_NAME60(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59) VAR_PRINT(x0) + VAR_NAME59(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59)
+#define VAR_NAME61(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60) VAR_PRINT(x0) + VAR_NAME60(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60)
+#define VAR_NAME62(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61) VAR_PRINT(x0) + VAR_NAME61(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61)
+#define VAR_NAME63(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62) VAR_PRINT(x0) + VAR_NAME62(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62)
+#define VAR_NAME64(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63) VAR_PRINT(x0) + VAR_NAME63(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63)
+#define VAR_NAME65(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64) VAR_PRINT(x0) + VAR_NAME64(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64)
+#define VAR_NAME66(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65) VAR_PRINT(x0) + VAR_NAME65(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65)
+#define VAR_NAME67(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66) VAR_PRINT(x0) + VAR_NAME66(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66)
+#define VAR_NAME68(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67) VAR_PRINT(x0) + VAR_NAME67(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67)
+#define VAR_NAME69(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68) VAR_PRINT(x0) + VAR_NAME68(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68)
+#define VAR_NAME70(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69) VAR_PRINT(x0) + VAR_NAME69(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69)
+#define VAR_NAME71(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70) VAR_PRINT(x0) + VAR_NAME70(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70)
+#define VAR_NAME72(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71) VAR_PRINT(x0) + VAR_NAME71(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71)
+#define VAR_NAME73(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72) VAR_PRINT(x0) + VAR_NAME72(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72)
+#define VAR_NAME74(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73) VAR_PRINT(x0) + VAR_NAME73(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73)
+#define VAR_NAME75(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74) VAR_PRINT(x0) + VAR_NAME74(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74)
+#define VAR_NAME76(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75) VAR_PRINT(x0) + VAR_NAME75(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75)
+#define VAR_NAME77(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76) VAR_PRINT(x0) + VAR_NAME76(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76)
+#define VAR_NAME78(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77) VAR_PRINT(x0) + VAR_NAME77(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77)
+#define VAR_NAME79(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78) VAR_PRINT(x0) + VAR_NAME78(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78)
+#define VAR_NAME80(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79) VAR_PRINT(x0) + VAR_NAME79(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79)
+#define VAR_NAME81(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80) VAR_PRINT(x0) + VAR_NAME80(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80)
+#define VAR_NAME82(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81) VAR_PRINT(x0) + VAR_NAME81(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81)
+#define VAR_NAME83(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82) VAR_PRINT(x0) + VAR_NAME82(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82)
+#define VAR_NAME84(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83) VAR_PRINT(x0) + VAR_NAME83(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83)
+#define VAR_NAME85(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84) VAR_PRINT(x0) + VAR_NAME84(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84)
+#define VAR_NAME86(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85) VAR_PRINT(x0) + VAR_NAME85(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85)
+#define VAR_NAME87(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86) VAR_PRINT(x0) + VAR_NAME86(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86)
+#define VAR_NAME88(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87) VAR_PRINT(x0) + VAR_NAME87(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87)
+#define VAR_NAME89(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88) VAR_PRINT(x0) + VAR_NAME88(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88)
+#define VAR_NAME90(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89) VAR_PRINT(x0) + VAR_NAME89(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89)
+#define VAR_NAME91(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90) VAR_PRINT(x0) + VAR_NAME90(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90)
+#define VAR_NAME92(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91) VAR_PRINT(x0) + VAR_NAME91(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91)
+#define VAR_NAME93(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92) VAR_PRINT(x0) + VAR_NAME92(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92)
+#define VAR_NAME94(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93) VAR_PRINT(x0) + VAR_NAME93(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93)
+#define VAR_NAME95(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94) VAR_PRINT(x0) + VAR_NAME94(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94)
+#define VAR_NAME96(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95) VAR_PRINT(x0) + VAR_NAME95(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95)
+#define VAR_NAME97(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96) VAR_PRINT(x0) + VAR_NAME96(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96)
+#define VAR_NAME98(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97) VAR_PRINT(x0) + VAR_NAME97(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97)
+#define VAR_NAME99(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98) VAR_PRINT(x0) + VAR_NAME98(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98)
+#define VAR_NAME100(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99) VAR_PRINT(x0) + VAR_NAME99(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99)
+#define VAR_NAME101(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100) VAR_PRINT(x0) + VAR_NAME100(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100)
+#define VAR_NAME102(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101) VAR_PRINT(x0) + VAR_NAME101(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101)
+#define VAR_NAME103(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102) VAR_PRINT(x0) + VAR_NAME102(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102)
+#define VAR_NAME104(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103) VAR_PRINT(x0) + VAR_NAME103(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103)
+#define VAR_NAME105(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104) VAR_PRINT(x0) + VAR_NAME104(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104)
+#define VAR_NAME106(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105) VAR_PRINT(x0) + VAR_NAME105(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105)
+#define VAR_NAME107(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106) VAR_PRINT(x0) + VAR_NAME106(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106)
+#define VAR_NAME108(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107) VAR_PRINT(x0) + VAR_NAME107(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107)
+#define VAR_NAME109(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108) VAR_PRINT(x0) + VAR_NAME108(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108)
+#define VAR_NAME110(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109) VAR_PRINT(x0) + VAR_NAME109(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109)
+#define VAR_NAME111(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110) VAR_PRINT(x0) + VAR_NAME110(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110)
+#define VAR_NAME112(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111) VAR_PRINT(x0) + VAR_NAME111(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111)
+#define VAR_NAME113(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112) VAR_PRINT(x0) + VAR_NAME112(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112)
+#define VAR_NAME114(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113) VAR_PRINT(x0) + VAR_NAME113(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113)
+#define VAR_NAME115(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114) VAR_PRINT(x0) + VAR_NAME114(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114)
+#define VAR_NAME116(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115) VAR_PRINT(x0) + VAR_NAME115(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115)
+#define VAR_NAME117(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116) VAR_PRINT(x0) + VAR_NAME116(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116)
+#define VAR_NAME118(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117) VAR_PRINT(x0) + VAR_NAME117(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117)
+#define VAR_NAME119(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118) VAR_PRINT(x0) + VAR_NAME118(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118)
+#define VAR_NAME120(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119) VAR_PRINT(x0) + VAR_NAME119(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119)
+#define VAR_NAME121(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120) VAR_PRINT(x0) + VAR_NAME120(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120)
+#define VAR_NAME122(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121) VAR_PRINT(x0) + VAR_NAME121(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121)
+#define VAR_NAME123(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122) VAR_PRINT(x0) + VAR_NAME122(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122)
+#define VAR_NAME124(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123) VAR_PRINT(x0) + VAR_NAME123(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123)
+#define VAR_NAME125(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124) VAR_PRINT(x0) + VAR_NAME124(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124)
+#define VAR_NAME126(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125) VAR_PRINT(x0) + VAR_NAME125(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125)
+#define VAR_NAME127(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125, x126) VAR_PRINT(x0) + VAR_NAME126(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125, x126)
+
+#define CHOOSER126(count) VAR_NAME##count
+#define CHOOSER125(count) CHOOSER126(count)
+#define CHOOSER124(count) CHOOSER125(count)
+#define CHOOSER123(count) CHOOSER124(count)
+#define CHOOSER122(count) CHOOSER123(count)
+#define CHOOSER121(count) CHOOSER122(count)
+#define CHOOSER120(count) CHOOSER121(count)
+#define CHOOSER119(count) CHOOSER120(count)
+#define CHOOSER118(count) CHOOSER119(count)
+#define CHOOSER117(count) CHOOSER118(count)
+#define CHOOSER116(count) CHOOSER117(count)
+#define CHOOSER115(count) CHOOSER116(count)
+#define CHOOSER114(count) CHOOSER115(count)
+#define CHOOSER113(count) CHOOSER114(count)
+#define CHOOSER112(count) CHOOSER113(count)
+#define CHOOSER111(count) CHOOSER112(count)
+#define CHOOSER110(count) CHOOSER111(count)
+#define CHOOSER109(count) CHOOSER110(count)
+#define CHOOSER108(count) CHOOSER109(count)
+#define CHOOSER107(count) CHOOSER108(count)
+#define CHOOSER106(count) CHOOSER107(count)
+#define CHOOSER105(count) CHOOSER106(count)
+#define CHOOSER104(count) CHOOSER105(count)
+#define CHOOSER103(count) CHOOSER104(count)
+#define CHOOSER102(count) CHOOSER103(count)
+#define CHOOSER101(count) CHOOSER102(count)
+#define CHOOSER100(count) CHOOSER101(count)
+#define CHOOSER99(count) CHOOSER100(count)
+#define CHOOSER98(count) CHOOSER99(count)
+#define CHOOSER97(count) CHOOSER98(count)
+#define CHOOSER96(count) CHOOSER97(count)
+#define CHOOSER95(count) CHOOSER96(count)
+#define CHOOSER94(count) CHOOSER95(count)
+#define CHOOSER93(count) CHOOSER94(count)
+#define CHOOSER92(count) CHOOSER93(count)
+#define CHOOSER91(count) CHOOSER92(count)
+#define CHOOSER90(count) CHOOSER91(count)
+#define CHOOSER89(count) CHOOSER90(count)
+#define CHOOSER88(count) CHOOSER89(count)
+#define CHOOSER87(count) CHOOSER88(count)
+#define CHOOSER86(count) CHOOSER87(count)
+#define CHOOSER85(count) CHOOSER86(count)
+#define CHOOSER84(count) CHOOSER85(count)
+#define CHOOSER83(count) CHOOSER84(count)
+#define CHOOSER82(count) CHOOSER83(count)
+#define CHOOSER81(count) CHOOSER82(count)
+#define CHOOSER80(count) CHOOSER81(count)
+#define CHOOSER79(count) CHOOSER80(count)
+#define CHOOSER78(count) CHOOSER79(count)
+#define CHOOSER77(count) CHOOSER78(count)
+#define CHOOSER76(count) CHOOSER77(count)
+#define CHOOSER75(count) CHOOSER76(count)
+#define CHOOSER74(count) CHOOSER75(count)
+#define CHOOSER73(count) CHOOSER74(count)
+#define CHOOSER72(count) CHOOSER73(count)
+#define CHOOSER71(count) CHOOSER72(count)
+#define CHOOSER70(count) CHOOSER71(count)
+#define CHOOSER69(count) CHOOSER70(count)
+#define CHOOSER68(count) CHOOSER69(count)
+#define CHOOSER67(count) CHOOSER68(count)
+#define CHOOSER66(count) CHOOSER67(count)
+#define CHOOSER65(count) CHOOSER66(count)
+#define CHOOSER64(count) CHOOSER65(count)
+#define CHOOSER63(count) CHOOSER64(count)
+#define CHOOSER62(count) CHOOSER63(count)
+#define CHOOSER61(count) CHOOSER62(count)
+#define CHOOSER60(count) CHOOSER61(count)
+#define CHOOSER59(count) CHOOSER60(count)
+#define CHOOSER58(count) CHOOSER59(count)
+#define CHOOSER57(count) CHOOSER58(count)
+#define CHOOSER56(count) CHOOSER57(count)
+#define CHOOSER55(count) CHOOSER56(count)
+#define CHOOSER54(count) CHOOSER55(count)
+#define CHOOSER53(count) CHOOSER54(count)
+#define CHOOSER52(count) CHOOSER53(count)
+#define CHOOSER51(count) CHOOSER52(count)
+#define CHOOSER50(count) CHOOSER51(count)
+#define CHOOSER49(count) CHOOSER50(count)
+#define CHOOSER48(count) CHOOSER49(count)
+#define CHOOSER47(count) CHOOSER48(count)
+#define CHOOSER46(count) CHOOSER47(count)
+#define CHOOSER45(count) CHOOSER46(count)
+#define CHOOSER44(count) CHOOSER45(count)
+#define CHOOSER43(count) CHOOSER44(count)
+#define CHOOSER42(count) CHOOSER43(count)
+#define CHOOSER41(count) CHOOSER42(count)
+#define CHOOSER40(count) CHOOSER41(count)
+#define CHOOSER39(count) CHOOSER40(count)
+#define CHOOSER38(count) CHOOSER39(count)
+#define CHOOSER37(count) CHOOSER38(count)
+#define CHOOSER36(count) CHOOSER37(count)
+#define CHOOSER35(count) CHOOSER36(count)
+#define CHOOSER34(count) CHOOSER35(count)
+#define CHOOSER33(count) CHOOSER34(count)
+#define CHOOSER32(count) CHOOSER33(count)
+#define CHOOSER31(count) CHOOSER32(count)
+#define CHOOSER30(count) CHOOSER31(count)
+#define CHOOSER29(count) CHOOSER30(count)
+#define CHOOSER28(count) CHOOSER29(count)
+#define CHOOSER27(count) CHOOSER28(count)
+#define CHOOSER26(count) CHOOSER27(count)
+#define CHOOSER25(count) CHOOSER26(count)
+#define CHOOSER24(count) CHOOSER25(count)
+#define CHOOSER23(count) CHOOSER24(count)
+#define CHOOSER22(count) CHOOSER23(count)
+#define CHOOSER21(count) CHOOSER22(count)
+#define CHOOSER20(count) CHOOSER21(count)
+#define CHOOSER19(count) CHOOSER20(count)
+#define CHOOSER18(count) CHOOSER19(count)
+#define CHOOSER17(count) CHOOSER18(count)
+#define CHOOSER16(count) CHOOSER17(count)
+#define CHOOSER15(count) CHOOSER16(count)
+#define CHOOSER14(count) CHOOSER15(count)
+#define CHOOSER13(count) CHOOSER14(count)
+#define CHOOSER12(count) CHOOSER13(count)
+#define CHOOSER11(count) CHOOSER12(count)
+#define CHOOSER10(count) CHOOSER11(count)
+#define CHOOSER9(count) CHOOSER10(count)
+#define CHOOSER8(count) CHOOSER9(count)
+#define CHOOSER7(count) CHOOSER8(count)
+#define CHOOSER6(count) CHOOSER7(count)
+#define CHOOSER5(count) CHOOSER6(count)
+#define CHOOSER4(count) CHOOSER5(count)
+#define CHOOSER3(count) CHOOSER4(count)
+#define CHOOSER2(count) CHOOSER3(count)
+#define CHOOSER1(count) CHOOSER2(count)
+#define CHOOSER0(count) CHOOSER1(count)
+
+#define PRINT_VAR(...) GGeneral::String("[") +  MSVC_BUG(CHOOSER0(COUNT_ARGS_MAX(__VA_ARGS__)), (__VA_ARGS__)) + "]"
+
+#ifndef NO_LOGGER_DEF
+ //Logger macros
+#define LOG(...)      GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_MSG)
+#define LOGI(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_INFO)
+#define LOGS(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_SUCCESS)
+#define LOGW(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_WARNING)
+#define LOGE(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_ERROR)
+#define LOGF(...)     GGeneral::Logger::printMessage(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL)
+#endif //NO_LOGGER_DEF
+
+#define	THROW(...)   GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__))
+#define	THROWW(...)  GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_WARNING)
+#define	THROWF(...)  GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL)
+#define	THROWI(...)  GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_INFO)
+
+/*! Reference see: GMemory */
+#define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
+
+/**
+ * The approx value of Pi used in this renderer
+ */
+#define G_PI 3.14159265359f
+
+#define TO_RAD(deg) (deg * (G_PI / 180.0f))
+#define TO_DEG(rad) (rad * (180.0f / G_PI))
 
 #ifndef G_RENDERER
 #define G_RENDERER
 #endif // !G_RENDERER
 
-//Documentation can be (and is) created using doxygen
+ //Documentation can be (and is) created using doxygen
 
-/** \mainpage The SREP
- *  <p> This project is just a simple a try to create a Renderer that can, given the right data, make some beautiful pictures.The hope is that it can be used to create simple games and visualizations.The Renderer can only be used on Windows machines because of the inclusion of the <em>Win32</em> API. </p>
- */
-
- /**
-  * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
+ /** \mainpage The SREP
+  *  <p> This project is just a simple a try to create a Renderer that can, given the right data, make some beautiful pictures.The hope is that it can be used to create simple games and visualizations.The Renderer can only be used on Windows machines because of the inclusion of the <em>Win32</em> API. </p>
   */
+
+  /**
+   * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
+   */
+
+   /**
+	* A class whose main purpose is to track memory. It will process all allocation done with the MALLOC/FREE define or with the
+	* new/delete operator. Note that every allocation will allocate 4 more bytes than needed to save the size.
+	*/
+class GMemory {
+private:
+	inline static std::atomic_uint32_t memoryUsage = 0;
+	inline static std::atomic_uint32_t allocations = 0, deallocations = 0;
+public:
+	/**
+	 * Will fetch the current Memory usage
+	 * @return The amount of memory used in bytes
+	 */
+	static const size_t getMemory() { return memoryUsage; }
+
+	static const size_t getCurrentAllocationCount() { return allocations - deallocations; }
+	static const size_t getAllocation() { return allocations; }
+	static const size_t getDeAllocation() { return deallocations; }
+
+#ifndef EXTENDED_MEMORYTRACKING
+	/**
+	 * @return nullptr
+	 */
+	static void** getAllocInfo() {
+		auto temp = reinterpret_cast<unsigned int*>(malloc(2 * sizeof(unsigned int)));
+		temp[0] = 0;
+		temp++;
+		return (void**)temp;
+	}
+#endif
+	/** This class can be used to check how much memory has been allocated on the heap since construction of this class */
+	class MemoryTracker {
+		size_t start = getMemory();
+		size_t allocations = getAllocation();
+	public:
+		/**
+		 * @return The difference in allocation count since construction of this class
+		 */
+		const int getAllocationDifference() const { return getCurrentAllocationCount() - allocations; }
+		/**
+		 * @return The difference in memory usage since construction of this class
+		 */
+		const int getMemoryDifference() const { return  getMemory() - start; }
+	};
+
+#ifdef EXTENDED_MEMORYTRACKING
+public:
+	/** This struct holds basic information of allocation happening during a program */
+	struct AllocInfo {
+		/** The memory address */
+		void* address;
+		/** Amount of bytes allocated */
+		size_t size;
+		/** The file path to the file in which the allocation happened */
+		const char* fileName;
+		/** The signature of the function */
+		const char* functionSig;
+		/** The line in which the allocation happened */
+		unsigned int line;
+
+		/**
+		 * Will only compare the two memory addresses
+		 */
+		bool operator==(void* b) { return address == b; }
+	};
+private:
+	struct List {
+		AllocInfo* address;
+		List* next;
+	};
+	inline static List* extendedAllocations = nullptr;
+	inline static std::mutex globalMutex;
+
+public:
+
+	/**
+	 * Will return a pointer array of AllocInfo structs and the amount of pointers. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetches by reading 4 bytes before of this pointer
+	 * or by using the GET_ALLOC_INFO_COUNT macro.
+	 * @return An AllocInfo Pointer array
+	 */
+	static AllocInfo** getAllocInfo() {
+		globalMutex.lock();
+		auto temp = reinterpret_cast<unsigned int*>(malloc(getCurrentAllocationCount() * sizeof(AllocInfo**) + sizeof(unsigned int)));
+		auto add = extendedAllocations;
+		temp++;
+		auto alloc = reinterpret_cast<AllocInfo**>(temp);
+
+		unsigned int amount = 0;
+		while (add != nullptr) {
+			alloc[amount] = add->address;
+			add = add->next;
+			amount++;
+		}
+		temp[-1] = amount;
+		globalMutex.unlock();
+		return alloc;
+	}
+
+	/**
+	 * Override for the new operator
+	 */
+	static void* alloc(size_t size, const char* file, const char* function, unsigned int line) {
+		globalMutex.lock();
+		//std::cout << "Allocated " << size << " bytes\n";
+		AllocInfo* mem = reinterpret_cast<AllocInfo*>(malloc(size + sizeof(AllocInfo)));
+		auto info = mem;
+		mem++;
+		info[0] = { mem, size, file, function, line };
+		if (extendedAllocations == nullptr) {
+			extendedAllocations = reinterpret_cast<List*>(malloc(sizeof(List)));
+			extendedAllocations->address = info;
+			extendedAllocations->next = nullptr;
+		}
+		else {
+			auto temp = extendedAllocations;
+			while (temp->next != nullptr) {
+				temp = temp->next;
+			}
+			temp->next = reinterpret_cast<List*>(malloc(sizeof(List)));
+			auto last = temp;
+			temp = temp->next;
+			temp->address = info;
+			temp->next = nullptr;
+		}
+		memoryUsage += size;
+		allocations++;
+		globalMutex.unlock();
+		return reinterpret_cast<void*>(mem);
+	}
+
+	/**
+	 * Override for the delete operator
+	 */
+	static void dele(void* p) {
+		if (p == nullptr)
+			return;
+		globalMutex.lock();
+		AllocInfo info = (reinterpret_cast<AllocInfo*>(p) - 1)[0];
+		//std::cout << "Deleted " << info.size << " bytes\n";
+		memoryUsage -= info.size;
+		deallocations++;
+
+		auto temp = extendedAllocations;
+		auto last = temp;
+		while (temp->address->address != p && temp->next != nullptr) {
+			last = temp;
+			temp = temp->next;
+		}
+		last->next = temp->next;
+		free(temp);
+		globalMutex.unlock();
+		free(reinterpret_cast<void*>((reinterpret_cast<AllocInfo*>(p) - 1)));
+	}
+#else
+
+public:
+	/**
+	 * Override for the new operator
+	 */
+	static void* alloc(size_t size) {
+		//std::cout << "Allocated " << size << " bytes\n";
+		memoryUsage += size;
+		allocations++;
+		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
+		mem[0] = size;
+		mem++;
+		return (void*)mem;
+	}
+
+	/**
+	 * Override for the delete operator
+	 */
+	static void dele(void* p) {
+		if (p == nullptr)
+			return;
+		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
+		//std::cout << "Deleted " << size << " bytes\n";
+		memoryUsage -= size;
+		deallocations++;
+		auto del = reinterpret_cast<unsigned int*>(p) - 1;
+		free((void*)del);
+	}
+#endif // EXTENDED_MEMORYTRACKING
+};
+
+#ifndef EXTENDED_MEMORYTRACKING
+inline void* operator new(size_t size) {
+	return GMemory::alloc(size);
+}
+#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size))
+#else
+inline void* operator new(size_t size) {
+	return GMemory::alloc(size, "UNKNOWN", "UNKNOWN", 0);
+}
+inline void* operator new(size_t size, const char* file, const char* function, unsigned int line) {
+	return GMemory::alloc(size, file, function, line);
+}
+inline void operator delete(void* p, const char* file, const char* function, unsigned int line) {
+	GMemory::dele(p);
+}
+#define new new(__FILE__,  __FUNCSIG__, __LINE__)
+#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size, __FILE__,  __FUNCSIG__, __LINE__))
+#endif // !EXTENDED_MEMORYTRACKING
+
+inline void operator delete(void* p) {
+	GMemory::dele(p);
+}
+
+inline void operator delete[](void* p) {
+	GMemory::dele(p);
+}
+
+/*! Just a typedef so the code is better to read */
+typedef unsigned char byte;
+/**
+ * This namespace includes the most important OpenGL math functions needed. It can be also used outside the engine and/or without OpenGL.
+ * The Renderer doesn't need to be initialized to use the functions
+ */
+namespace GMath {
+	/**
+	 * This structure hold information of a vector.
+	 */
+	template<typename T, size_t size>
+	struct vec {
+	private:
+		T* data = nullptr;
+	public:
+
+		/**
+		 * Constructor for the vector. Will set all values to 0
+		 */
+		vec() {
+			data = new T[size];
+			memset(data, 0, sizeof(T) * size);
+		}
+
+		/**
+		 * Will construct the vector and set all values to the given value
+		 * @param value - The value of the vector
+		 */
+		vec(T value) {
+			data = new T[size];
+			for (size_t i = 0; i < size; i++) {
+				data[i] = value;
+			}
+		}
+
+		/**
+		 * Will copy the contents of another vector
+		 * @param other - The vector to copy
+		 */
+		vec(const vec<T, size>& other) {
+			data = new T[size];
+			memcpy(data, other.data, sizeof(T) * size);
+		}
+
+		/**
+		 * Will move the vector
+		 * @param other - The other vector
+		 */
+		vec(vec<T, size>&& other) {
+			data = other.data;
+			other.data = nullptr;
+		}
+
+		/** Destructor */
+		~vec() { delete[] data; }
+
+		/**
+		 * @return A memory address of the data
+		 */
+		const T* const mem() const { return data; }
+
+		/**
+		 * Will perform normal vector to vector addition
+		 * @param other - The other vector to add
+		 * @return A new vector
+		 */
+		template<typename V>
+		vec<T, size> operator+(const vec<V, size>& other) {
+			auto cpy = vec(*this);
+			for (size_t i = 0; i < size; i++) {
+				cpy[i] += other[i];
+			}
+			return cpy;
+		}
+
+		/**
+		 * Will perform normal vector to vector addition
+		 * @param other - The other vector
+		 * @return This vector
+		 */
+		template<typename V>
+		vec<T, size> operator+=(const vec<V, size>& other) {
+			for (size_t i = 0; i < size; i++) {
+				data[i] += other[i];
+			}
+			return *this;
+		}
+
+		/**
+		 * Will return a reference to the value of the index
+		 * @param i - The index
+		 * @return The value at this place
+		 */
+		T& operator[](size_t i) const {
+			return data[i];
+		}
+
+		/**
+		 * @return The size of the vector
+		 */
+		const size_t getSize() const { return size; }
+	};
+
+	/** Vector with 2 elements */
+	template<typename T>
+	using vec2 = vec<T, 2>;
+	/** Vector with 3 elements */
+	template<typename T>
+	using vec3 = vec<T, 3>;
+	/** Vector with 4 elements */
+	template<typename T>
+	using vec4 = vec<T, 4>;
+
+	/** This struct hold the information of a matrix. All matrices are column major */
+	template<typename T, size_t row, size_t column>
+	struct mat {
+	private:
+		/** Data */
+		T* data = nullptr;//  new T[row * column];
+	public:
+
+		/** Will create a Matrix.*/
+		mat() {
+			data = new T[row * column];
+			memset(data, 0, sizeof(T) * row * column);
+		}
+
+		/**
+		 * Will create a Matrix
+		 * @param value - The value the matrix should hold
+		 */
+		mat(T value) {
+			data = new T[row * column];
+			memset(data, value, sizeof(T) * row * column);
+		}
+
+		/**
+		 * Will copy the other matrix
+		 * @param other - The other matrix to copy
+		 */
+		mat(const mat<T, row, column>& other) {
+			data = new T[row * column];
+			memcpy(data, other.data, sizeof(T) * row * column);
+		}
+
+		/**
+		 * Will move the matrix
+		 * @param other - The other matrix to move
+		 */
+		mat(mat<T, row, column>&& other) noexcept {
+			data = other.data;
+			other.data = nullptr;
+		}
+
+		/**
+		 * Will copy the matrix
+		 * @param other - The other matrix to copy
+		 * @return This matrix
+		 */
+		mat& operator=(const mat<T, row, column>& other) {
+			data = other.data;
+			return *this;
+		}
+
+		/**
+		 * Will move the matrix
+		 * @param other - The other matrix to move
+		 * @return This matrix
+		 */
+		mat& operator=(mat<T, row, column>&& other) noexcept {
+			data = other.data;
+			other.data = nullptr;
+			return *this;
+		}
+
+		/** Destructor */
+		~mat() { delete[] data; }
+
+		/**
+		 * @return The memory address of the first element
+		 */
+		const T* const mem() const { return data; }
+
+		T* operator[](size_t i) {
+			return &data[i * row];
+		}
+	};
+
+#define USE_MAT(n)\
+	template<typename T>\
+	using mat##n##x##n = mat<T, n, n>;\
+	template<typename T>\
+	using mat##n = mat##n##x##n <T>;
+
+	/** definition of a 2x2 Matrix */
+	USE_MAT(2);
+	/** definition of a 3x3 Matrix */
+	USE_MAT(3);
+	/** definition of a 4x4 Matrix */
+	USE_MAT(4);
+
+#undef USE_MAT
+
+	/**
+	 * Creates a new Identity Matrix 4x4
+	 * @return a mat4x4
+	 */
+	template<typename T>
+	mat4<T> mat4x4Identity() {
+		mat4<T> returnValue;
+		returnValue[0][0] = 1;
+		returnValue[1][1] = 1;
+		returnValue[2][2] = 1;
+		returnValue[3][3] = 1;
+		return returnValue;
+	}
+
+	template<typename T, size_t S>
+	mat<T, S, S> matIdentity() {
+		mat<T, S, S> returnValue;
+		for (size_t i = 0; i < S; i++) {
+			returnValue[i][i] = 1;
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Will create an orthographic projection matrix and return it
+	 * @param left - Left coordinate of the frustum
+	 * @param right - Right coordinate of the frustum
+	 * @param bottom - Bottom coordinate of the frustum
+	 * @param top - Top coordinate of the frustum
+	 * @param _near - The near plane frustum
+	 * @param _far - The far plane frustum
+	 * @return An mat4x4
+	 */
+	template<typename T>
+	mat4<T> ortho(T left, T right, T bottom, T top, T _near, T _far) {
+		auto returnValue = mat4x4Identity<T>();
+		returnValue[0][0] = 2 / (right - left);
+		returnValue[1][1] = 2 / (top - bottom);
+		returnValue[2][2] = -(2 / (_far - _near));
+		returnValue[0][3] = -((right + left) / (right - left));
+		returnValue[1][3] = -((top + bottom) / (top - bottom));
+		returnValue[2][3] = -((_far + _near) / (_far - _near));
+		return returnValue;
+	}
+
+	/**
+	 * Will create an perspective projection matrix and return it
+	 * @param FOV - The field of view in degrees
+	 * @param aspect - The aspect ratio
+	 * @param _near - Specifies the near plane frustum
+	 * @param _far - Specifies the far plane frustum
+	 * @return An mat4x4
+	 */
+	template<typename T>
+	mat4<T> perpective(float FOV, T aspect, T _near, T _far) {
+		mat4<T> returnValue;
+		returnValue[0][0] = 1 / (aspect * tan(TO_RAD(FOV) / 2));
+		returnValue[1][1] = 1 / (tan(TO_RAD(FOV) / 2));
+		returnValue[2][2] = -((_far + _near) / (_far - _near));
+		returnValue[3][2] = -1;
+		returnValue[2][3] = -((2 * _far * _near) / (_far - _near));
+		return returnValue;
+	}
+}
+
+#undef A_OPERATION
+#undef A_OPERATION_BODY
+
 namespace GGeneral {
 	struct BaseObject;
 	class String {
@@ -27,7 +820,7 @@ namespace GGeneral {
 		/** Amount of chars without \0!! */
 		size_t size;
 		size_t bytesize;
-		char* buffer;
+		char* buffer = nullptr;
 		bool precise = false;
 	public:
 		/** Max size of string and used to indicate a failed find() */
@@ -171,6 +964,8 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& operator<< (uint16_t ui16);
+
+		String& operator<< (unsigned long ul);
 
 		/**
 		 * Will format the number into a char* and will then call append
@@ -377,6 +1172,7 @@ namespace GGeneral {
 		 */
 		TimePoint getCurrentTime();
 
+		/** Returns the time since 1980 in nanoseconds */
 		unsigned long long getNanoTime();
 
 		/**
@@ -617,12 +1413,46 @@ namespace GGeneral {
 
 	template<typename T>
 	struct Rectangle : public BaseObject {
+		/*! The upper left coordinate of the rectangle*/
 		Point<T> position;
+		/*! The width and height of the rectangle*/
 		Dimension<T> dimension;
 
 		Rectangle(T x = 0, T y = 0, T width = 0, T height = 0) {
 			this->position = Point(x, y);
 			this->dimension = Dimension(width, height);
+		}
+
+		Rectangle(Point<T> p, T width = 0, T height = 0) {
+			this->position = p;
+			this->dimension = Dimension(width, height);
+		}
+
+		Rectangle(Point<T> p, Dimension<T> d) {
+			this->position = p;
+			this->dimension = d;
+		}
+
+		/**
+		 * Will check if this rectangle is overlapping or touching with the other rectangle
+		 * @param other - The other rectangle to check
+		 * @return true - If the two rectangles overlap
+		 * @return false - If the two rectangles don't overlap
+		 */
+		template<typename O>
+		bool isColliding(Rectangle<O>& other) {
+			return !(position.y <= (other.position.y - other.dimension.height) || other.position.y <= position.y - dimension.height) && !(position.x >= (other.position.x + other.dimension.width) || other.position.x >= (position.x + dimension.width));
+		}
+
+		/**
+		 * Will check if this rectangle is overlapping or touching with the other rectangle
+		 * @param other - The other rectangle to check
+		 * @return true - If the two rectangles overlap
+		 * @return false - If the two rectangles don't overlap
+		 */
+		template<typename O>
+		bool isColliding(Rectangle<O>&& other) {
+			return !(position.y <= (other.position.y - other.dimension.height) || other.position.y <= position.y - dimension.height) && !(position.x >= (other.position.x + other.dimension.width) || other.position.x >= (position.x + dimension.width));
 		}
 
 		/**
@@ -634,7 +1464,7 @@ namespace GGeneral {
 	};
 
 	/**
-	 * This namespace contains some Win32 API calls that dont fit the GWindow namespace.
+	 * This namespace contains some Win32 API calls that don't fit the GWindow namespace.
 	 */
 	namespace OS {
 		/**
@@ -654,6 +1484,31 @@ namespace GGeneral {
 		 * @param newPos - The new position of the cursor
 		 */
 		void moveMouse(GGeneral::Point<int> newPos);
+	}
+
+	/** Small namespace to retrieve all errors from this engine */
+	namespace ErrorHandler {
+		/**
+		 * Will add an Error message to the buffer
+		 * @param errorMessage - A descriptive message of the error
+		 * @param sev - The severity of the error. This parameter is defaulted to S_ERROR
+		 */
+		void add(GGeneral::String errorMessage, Logger::Severity sev = Logger::Severity::S_ERROR);
+
+		/**
+		 * Will print out all messages caught in the buffer. If there are no error it will print nothing
+		 */
+		void printAll();
+
+		/**
+		 * Will retunrn the message of the last error posted
+		 */
+		GGeneral::String getLastError();
+
+		/**
+		 * Will clear the buffer from all error messages
+		 */
+		void clearBuffer();
 	}
 }
 
@@ -917,6 +1772,8 @@ namespace GWindow {
 	enum class WindowEvent {
 		STATE /*! A change in the extended state of the Window*/
 		, WINDOW_RESIZE /*! A window resize */
+		, WINDOW_FOCUS
+		, WINDOW_MOVE
 		, KEY_PRESS /*! A Key or Mouse button press */
 		, KEY_RELEASE /*! A Key or Mouse button release*/
 	};
@@ -924,7 +1781,7 @@ namespace GWindow {
 	/**
 	 * General Function used to get all callback messages that a GWindow instance will be able to send
 	 */
-	typedef void(*GWindowCallback)(WindowEvent, void*);
+	typedef void(*GWindowCallback)(int, WindowEvent, void*);
 
 	/**
 	 * Will create an dummy OpenGL context and activate it. It will also init all OpenGL calls meaning that this function needs to be called before calling any other rendering functions. If GRenderer::init() this will also
@@ -954,6 +1811,23 @@ namespace GWindow {
 		/** Destructor */
 		~Window();
 
+		enum class ContextHints {
+			MAJOR_VERSION /*! The major part of the version ->3.3*/
+			, MINOR_VERSION /*! The minor part of the version 3.3 <-*/
+			, PROFILE_MASK /*! The Profile. Can be either Core or Compatibility profile.*/
+		};
+
+		/**
+		 * Will set a context hint. The values set in this hint function are global meaning every Window class who would call createOpenGLcontext() will use the values set by this function.
+		 * Always call the function before calling createOpenGLcontext() else it wouldn't have any effect.
+		 * If c has either the value MAJOR_VERSION or MINOR_VERSION an integer specifying the new version is expected.
+		 * If c has the value PROFILE_MASK the value 1 or 0 is expected. If the value has the value 1 than the CORE_PROFILE is chosen else the COMPATIBILITY_PROFILE is chosen.
+		 * The default values are Version 3.3 CORE_PROFILE
+		 * @param c - The context hint to modify
+		 * @param value - The new value
+		 */
+		static void hint(ContextHints c, unsigned int value);
+
 		/**
 		 * This will create a global OpenGL context. Only use this function once! If the function was successful the context can be used with any window.
 		 * @return True if the function was succeful. False if not
@@ -966,6 +1840,9 @@ namespace GWindow {
 		 */
 		void setOpenGLContextActive(bool b);
 
+		/**
+		 * Will swap the buffers of the windows
+		 */
 		void swapBuffers();
 
 		/**
@@ -1003,6 +1880,8 @@ namespace GWindow {
 		 */
 		WindowState getCurrentWindowState() const;
 
+		void setResizable(bool b);
+
 		/**
 		 * Will fetch the size of the whole window
 		 * @return The window size
@@ -1016,10 +1895,15 @@ namespace GWindow {
 		GGeneral::Dimension<int> getWindowDrawSize() const;
 
 		/**
-		 * TODO
-		 *
+		 * Add a callback function that will be called even an Event happens. There is only one callback function per window. Use the GEventWrapper namespace for multiple functions support.
+		 * List of possible events and their parameters:
+		 *  -If the Event is either KEY_PRESS or KEY_RELEASE the void* is an integer that should be casted into a VK enum. This also includes Mouse buttons!
+		 *  -If the Event is STATE the returned value will be a WindowState enum
+		 *  -If the Event is WINDOW_RESIZE the returned value will be a GGeneral::Dimension struct
 		 */
-		void addCallbackFunction(GWindowCallback fun);
+		void setCallbackFunction(GWindowCallback fun);
+
+		const int getID() const { return WindowID; }
 	};
 
 	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
@@ -1101,6 +1985,213 @@ namespace GWindow {
 	}
 }
 
+/** Default maximum buffer siwze used by this namespace. */
+#define MAX_NET_BUFFER_SIZE 1024
+/**
+ * This namespace has the most important functions for Web Sockets. This class will only support IPv4 for now
+ */
+namespace GNetworking {
+	class Socket;
+	/**
+	 * A package contains the information that can be received via a receive function
+	 */
+	struct Package {
+		/** The size of this Package in bytes */
+		unsigned long size = 0;
+		/** The raw data of the package */
+		byte* data = nullptr;
+
+		/** Default Constructor */
+		Package() {}
+		/**
+		 * Move constructor
+		 */
+		Package(Package&& other) noexcept {
+			size = other.size;
+			data = other.data;
+
+			other.data = nullptr;
+			other.size = 0;
+		}
+
+		/** Destructor. Will delete the data */
+		~Package() {
+			delete[] data;
+		}
+	};
+	/**
+	 *  Needs to be called before using any other function in this namespace
+	 *  @return True if function was successful
+	 */
+	bool init();
+
+	/** This class can be used to connect to server sockets */
+	class Socket {
+	private:
+		unsigned int socketNr = ~0;
+		bool connected = false;
+		bool blocking = true;
+	public:
+		/** Default constructor */
+		Socket();
+
+		/**
+		 * Will initialize the socket and try to connect to the given IP address and port. If not successful the isConnected() function will return false
+		 * @param IP - The IP address to connect to
+		 * @param port - The port
+		 */
+		Socket(GGeneral::String ip, unsigned int port);
+
+		/** Will forcefully close the socket */
+		~Socket();
+
+		/**
+		 * Will try to connect to the given IP address and port. If not successful the return value will be false. For more information about the error use the GGeneral::ErrorHandler
+		 * @param IP - The IP address to connect to
+		 * @param port - The port
+		 * @return true if a connection has been established
+		 */
+		bool connect(GGeneral::String ip, GGeneral::String port);
+		/**
+		 * Will try to make a graceful disconnect to the connected socket. This function will also close the socket. If a new connection is needed a new Socket must be created
+		 */
+		void disconnect();
+
+		/**
+		 * This function may return true even if the connection is already terminated.
+		 * @return true if a connection is established
+		 */
+		bool isConnected();
+		/**
+		 * Will mark the socket as blocking or non blocking. if the socket is blocking receive and send may block the whole thread until further events. A socket is blocking by default
+		 * @param block - True if the Socket should be marked as blocking
+		 * @return true if the function was successful
+		 */
+		bool setBlockingMode(bool block);
+
+		/**
+		 * Will send the data to the connected socket.
+		 * @param data - The data to send
+		 * @param size - The size of the data in bytes
+		 */
+		void send(byte* data, unsigned int size = MAX_NET_BUFFER_SIZE);
+		/**
+		 * Will retrieve the first data that is currently in the queue. If there is no data and the socket is set as non blocking or any other error occur the data that the package is pointing to will be a nullptr.
+		 * @return A Package struct
+		 */
+		Package receive();
+	};
+
+	/** This class can be used to let other Sockets connect to */
+	class ServerSocket {
+	private:
+		std::vector<unsigned int> sockets;
+		unsigned int listenSocket = ~0;
+		bool blocking = true;
+	public:
+		/** Default constructor */
+		ServerSocket();
+		/**
+		 * Will create a Socket and set it to listen on the port given.
+		 * @param port - The port to listen on
+		 */
+		ServerSocket(unsigned int port);
+
+		/** Will Disconnect all connected sockets and then close the listening socket */
+		~ServerSocket();
+
+		/**
+		 * Will accept the first Socket in the queue
+		 * @return If successful a unsigned int representing the socket. If not the return value will be ~0
+		 */
+		unsigned int accept();
+		/**
+		 * Will create a socket that will listen on the port given.
+		 * @param port - The port to listen on
+		 * @return true if no error occurs
+		 */
+		bool listen(unsigned short port);
+
+		/**
+		 * Will try to gracefully disconnect the given socket. Will also close the socket that is connected
+		 * @param socket - The socket to disconnect
+		 */
+		void disconnect(unsigned int socket);
+
+		/**
+		 * Will set the blocking mode of the listening socket
+		 * @param block - True if the socket should be marked as blocking. false otherwise
+		 * @return true if the function was successful
+		 */
+		bool setBlockingMode(bool block);
+		/**
+		 * Will mark the socket as blocking or non blocking. if the socket is blocking receive and send may block the whole thread until further events. A socket is blocking by default
+		 * @param block - True if the Socket should be marked as blocking
+		 * @param socket - The socket to mark
+		 * @return true if the function was successful
+		 */
+		bool setBlockingMode(bool block, unsigned int socket);
+		/**
+		 * @return The amount of connected sockets. May be higher or lower than the real value
+		 */
+		unsigned int getConnectedAmount() const;
+
+		/**
+		 * Will send data to the given connected socket
+		 * @param socket - The socket to send the data to
+		 * @param data - A pointer to the data
+		 * @param size - The size in bytes of the data
+		 */
+		void send(unsigned int socket, byte* data, unsigned int size = MAX_NET_BUFFER_SIZE);
+		/**
+		 * Will receive the data of the connected socket
+		 * @param socket - The socket to receive from
+		 * @return A package. If the data of the package is a nullptr an error occured
+		 */
+		Package receive(unsigned int socket);
+	};
+}
+
+/**
+ * This namespace contains functions and classes for receiving information from the GWindow namespace.
+ */
+namespace GEventWrapper {
+	enum class MouseButtons {
+		LEFT
+		, RIGTH
+		, MIDDLE
+		, X1
+		, X2
+	};
+
+	typedef void(*GEventMouseButton)(GWindow::Window* window, bool pressed, MouseButtons);
+	typedef void(*GEventMouseMove)(GWindow::Window* window, GGeneral::Point<int> pos);
+	typedef void(*GEventKeyboard)(GWindow::Window* window, bool pressed, GWindow::VK key);
+
+	/**
+	 * Will only support 1 window
+	 */
+	class Windowhandler {
+	private:
+		unsigned int ID = 0;
+	public:
+		Windowhandler();
+		Windowhandler(GWindow::Window* window);
+
+		~Windowhandler();
+
+		void registerWindow(GWindow::Window* window);
+
+		void addCallback(GEventMouseButton f);
+		void addCallback(GEventMouseMove f);
+		void addCallback(GEventKeyboard f);
+
+		bool isKeyPressed(GWindow::VK key);
+	};
+
+	class GamepadHandler {};
+}
+
 /**
  * A namespace containing all functions to get the renderer running and rendering
  */
@@ -1113,6 +2204,8 @@ namespace GRenderer {
 	 * Fetches the current OpenGL Version
 	 */
 	GGeneral::String getCurentOpenGLVersion();
+
+	double delta();
 
 	enum class GLString {
 		VENDOR,

@@ -30,15 +30,6 @@
     <ClInclude Include="src\dependencies\GLEW\include\GL\wglew.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\GMath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Defines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\GMemory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\general\Logger.cpp">
@@ -87,6 +78,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\graphics\Graphics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\general\ErrorHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\networking\networking.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\networking\Socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\networking\ServerSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

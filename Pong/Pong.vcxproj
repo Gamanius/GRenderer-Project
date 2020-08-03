@@ -12,19 +12,20 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{6A9A07F2-761B-4ECE-8DD8-B6AFB9D65897}</ProjectGuid>
-    <RootNamespace>Renderer</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{1f4874a7-2253-4151-8d16-36d03f11fa18}</ProjectGuid>
+    <RootNamespace>Pong</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -54,11 +55,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessToFile>false</PreprocessToFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\core;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -71,11 +71,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessToFile>false</PreprocessToFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\core;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -83,46 +82,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-    <Lib>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\GRenderer.h" />
-    <ClInclude Include="src\dependencies\GLEW\include\GL\eglew.h" />
-    <ClInclude Include="src\dependencies\GLEW\include\GL\glew.h" />
-    <ClInclude Include="src\dependencies\GLEW\include\GL\glxew.h" />
-    <ClInclude Include="src\dependencies\GLEW\include\GL\wglew.h" />
+    <ProjectReference Include="..\Renderer\Renderer.vcxproj">
+      <Project>{6a9a07f2-761b-4ece-8dd8-b6afb9d65897}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp" />
-    <ClCompile Include="src\core\file\File.cpp" />
-    <ClCompile Include="src\core\general\Color.cpp" />
-    <ClCompile Include="src\core\general\ErrorHandler.cpp" />
-    <ClCompile Include="src\core\general\Logger.cpp" />
-    <ClCompile Include="src\core\general\os.cpp" />
-    <ClCompile Include="src\core\general\String.cpp" />
-    <ClCompile Include="src\core\general\Time.cpp" />
-    <ClCompile Include="src\core\graphics\Graphics.cpp" />
-    <ClCompile Include="src\core\networking\networking.cpp" />
-    <ClCompile Include="src\core\networking\ServerSocket.cpp" />
-    <ClCompile Include="src\core\networking\Socket.cpp" />
-    <ClCompile Include="src\core\renderer\primitves\Indexbuffer.cpp" />
-    <ClCompile Include="src\core\renderer\primitves\Shader.cpp" />
-    <ClCompile Include="src\core\renderer\primitves\Vertexarray.cpp" />
-    <ClCompile Include="src\core\renderer\primitves\Vertexbuffer.cpp" />
-    <ClCompile Include="src\core\renderer\Renderer.cpp" />
-    <ClCompile Include="src\core\renderer\Texture.cpp" />
-    <ClCompile Include="src\core\renderer\ShaderProgram.cpp" />
-    <ClCompile Include="src\core\window\Monitor.cpp" />
-    <ClCompile Include="src\core\window\Window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />
+    <ClCompile Include="src\GameLoop.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -104,8 +104,10 @@ bool GGeneral::Logger::init() {
 	int result;
 	if (!wasInit) {
 		result = std::atexit(stop);
-		if (result != 0)
+		if (result != 0) {
+			THROW("Logger couldn't set custom exit function");
 			return false;
+		}
 	}
 
 	wasInit = true;

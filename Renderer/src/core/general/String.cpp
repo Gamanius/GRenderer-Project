@@ -163,6 +163,10 @@ GGeneral::String& GGeneral::String::operator<<(uint16_t ui16) {
 	FORMAT("%u", ui16);
 }
 
+GGeneral::String& GGeneral::String::operator<<(unsigned long ul) {
+	FORMAT("%u", ul);
+}
+
 GGeneral::String& GGeneral::String::operator<<(double d) {
 	FORMAT("%f", d);
 }
@@ -171,6 +175,11 @@ void GGeneral::String::setPrecise(const bool b) { precise = b; }
 
 size_t GGeneral::String::find(const char* c) {
 	bool found = false;
+	int ssize = size;
+	int csize = strlen(c);
+	int dif = ssize - csize;
+	if (dif < 0)
+		return GGeneral::String::npos;
 	for (size_t i = 0; i < size - strlen(c) + 1; i++) {
 		for (size_t j = 0; j < strlen(c); j++) {
 			if (buffer[i + j] != c[j]) {
@@ -183,7 +192,7 @@ size_t GGeneral::String::find(const char* c) {
 		if (found)
 			return i;
 	}
-	return SIZE_MAX;
+	return GGeneral::String::npos;
 }
 
 bool GGeneral::String::compare(const char* c) {

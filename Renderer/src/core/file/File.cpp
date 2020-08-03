@@ -18,8 +18,10 @@ unsigned long long int GIO::getFileSize(GGeneral::String& relativeFilepath) {
 GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
 	File* returnValue = new File();
 	std::fstream file(relativeFilepath, std::ios_base::binary | std::ios_base::in);
-	if (file.fail())
+	if (file.fail()) {
+		THROW("Error while trying to load from relative path ", relativeFilepath, ". Maybe the Path is wrong?");
 		return returnValue;
+	}
 	file.seekg(0, std::ios_base::end);
 	unsigned int size = static_cast<unsigned int>(file.tellg());
 	file.seekg(0, 0);
@@ -34,7 +36,10 @@ GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
 
 GGeneral::String GIO::getWorkingDirectionary() {
 	char buffer[MAX_PATH];
-	GetModuleFileName(NULL, buffer, MAX_PATH);
+	auto error = GetModuleFileName(NULL, buffer, MAX_PATH);
+	if (error == 0) {
+		THROW("Error while trying to get the path of the executable. Code: ", GetLastError());
+	}
 	return GGeneral::String(buffer);
 }
 
@@ -90,5 +95,6 @@ GIO::Graphics::Image* GIO::Graphics::loadImage(GGeneral::String filepath) {
 		return doBMP(file);
 	}
 	delete file;
+	THROWW("File is possibly corrupt or not supported");
 	return nullptr;
 }

@@ -36,7 +36,7 @@ struct WindowClass {
 	HWND hWnd;
 	WNDCLASS wc;
 	GWindow::GWindowCallback callbackfun = nullptr;
-
+	//Should be deprecated soon
 	bool isFree = false;
 };
 
@@ -346,6 +346,7 @@ static const unsigned int getIndex(HWND hWnd) {
 }
 
 bool GWindow::init() {
+	//Taken from StackOverflow somewhere
 	WNDCLASSA window_class = {};
 	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	window_class.lpfnWndProc = DefWindowProcA;
@@ -353,6 +354,7 @@ bool GWindow::init() {
 	window_class.lpszClassName = "Dummy_WGL_djuasiodwa";
 
 	if (!RegisterClassA(&window_class)) {
+		THROW("Couldn't register window");
 		return false;
 	}
 
@@ -371,6 +373,7 @@ bool GWindow::init() {
 		0);
 
 	if (!dummy_window) {
+		THROW("Couldn't create window");
 		return false;
 	}
 
@@ -389,25 +392,31 @@ bool GWindow::init() {
 
 	int pixel_format = ChoosePixelFormat(dummy_dc, &pfd);
 	if (!pixel_format) {
+		THROW("Couldn't choose pixel format");
 		return false;
 	}
 	if (!SetPixelFormat(dummy_dc, pixel_format, &pfd)) {
+		THROW("Couldn't set pixel format");
 		return false;
 	}
 
 	HGLRC dummy_context = wglCreateContext(dummy_dc);
 	if (!dummy_context) {
+		THROW("Couldn't create context");
 		return false;
 	}
 
 	if (!wglMakeCurrent(dummy_dc, dummy_context)) {
+		THROW("Couldn't set context active");
 		return false;
 	}
 
 	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)wglGetProcAddress(
 		"wglCreateContextAttribsARB");
-	if (glewInit() != GLEW_OK)
+	if (glewInit() != GLEW_OK) {
+		THROWF("Couldn't load OpenGL functions");
 		return false;
+	}
 	wglMakeCurrent(dummy_dc, 0);
 	wglDeleteContext(dummy_context);
 	ReleaseDC(dummy_window, dummy_dc);
@@ -468,7 +477,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			GGeneral::Dimension<int> dim;
 			dim.width = area->right - area->left;
 			dim.height = area->bottom - area->top;
-			callback(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&dim);
+			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&dim);
 			return MAKELRESULT(1, 1);
 		}
 	}
@@ -481,11 +490,11 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			if (key == GWindow::VK::UNKWON) {
 				auto moreKeys = processUnknownKeys(true);
 				for (size_t i = 0; i < moreKeys.size(); i++) {
-					callback(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+					callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
 				}
 			}
 			else
-				callback(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
 	}
@@ -497,11 +506,11 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			if (key == GWindow::VK::UNKWON) {
 				auto moreKeys = processUnknownKeys(false);
 				for (size_t i = 0; i < moreKeys.size(); i++) {
-					callback(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+					callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
 				}
 			}
 			else
-				callback(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
 	}
@@ -509,7 +518,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		SetCapture(hWnd);
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -517,7 +526,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		SetCapture(hWnd);
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -525,7 +534,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		SetCapture(hWnd);
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -533,7 +542,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -541,7 +550,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -549,7 +558,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -573,9 +582,10 @@ GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGenera
 	GGeneral::String s = "G-Renderer Instance" + allWindowsInstances.size();
 	wc.lpszClassName = s.cStr();
 
-	if (!RegisterClass(&wc)) LOGF("An error occurred while creating the window");
+	if (!RegisterClassA(&wc)) THROW("An error occurred while registering the window");
 
-	HWND hWnd = CreateWindow(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
+	HWND hWnd = CreateWindowA(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
+	if (!hWnd) THROW("An error occurred while creating the window");
 	HDC hdc = GetDC(hWnd);
 	for (size_t i = 0; i < allWindowsInstances.size(); i++) {
 		if (allWindowsInstances[i].isFree) {
@@ -610,7 +620,8 @@ DONE:
 	};
 	//Set pixel format
 	auto iPixelFormat = ChoosePixelFormat(THIS_INSTANCE.hdc, &pfd);
-	SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd);
+	if (!iPixelFormat) THROW("Couldn't choose pixel format");
+	if (!SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd)) THROW("Couldn't set pixel format");
 }
 
 GWindow::Window::~Window() {
@@ -621,16 +632,42 @@ GWindow::Window::~Window() {
 	DestroyWindow(THIS_INSTANCE.hWnd);
 }
 
+int context_major = 3;
+int context_minor = 3;
+int context_profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+
+void GWindow::Window::hint(ContextHints c, unsigned int value) {
+	switch (c) {
+	case GWindow::Window::ContextHints::MAJOR_VERSION:
+		context_major = value;
+		break;
+	case GWindow::Window::ContextHints::MINOR_VERSION:
+		context_minor = value;
+		break;
+	case GWindow::Window::ContextHints::PROFILE_MASK:
+		if (value == 1)
+			context_profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+		else
+			context_profile = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+		break;
+	default:
+		break;
+	}
+}
+
 bool GWindow::Window::createOpenGLcontext() {
 	int gl33_attribs[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-		WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+		WGL_CONTEXT_MAJOR_VERSION_ARB, context_major,
+		WGL_CONTEXT_MINOR_VERSION_ARB, context_minor,
+		WGL_CONTEXT_PROFILE_MASK_ARB,  context_profile,
 		0,
 	};
 
 	hglrc = wglCreateContextAttribsARB(THIS_INSTANCE.hdc, 0, gl33_attribs);
-	if (hglrc == NULL) return false;
+	if (hglrc == NULL) {
+		THROW("Couldn't create OpenGL context");
+		return false;
+	}
 
 	return true;
 }
@@ -686,6 +723,13 @@ GWindow::WindowState GWindow::Window::getCurrentWindowState() const {
 	};
 }
 
+void GWindow::Window::setResizable(bool b) {
+	if (!b)
+		SetWindowLong(THIS_INSTANCE.hWnd, GWL_STYLE, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX);
+	else
+		SetWindowLong(THIS_INSTANCE.hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+}
+
 GGeneral::Dimension<int> GWindow::Window::getWindowSize() const {
 	RECT rect = {};
 	GetWindowRect(THIS_INSTANCE.hWnd, &rect);
@@ -698,6 +742,6 @@ GGeneral::Dimension<int> GWindow::Window::getWindowDrawSize() const {
 	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
 }
 
-void GWindow::Window::addCallbackFunction(GWindowCallback fun) {
+void GWindow::Window::setCallbackFunction(GWindowCallback fun) {
 	THIS_INSTANCE.callbackfun = fun;
 }
