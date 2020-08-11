@@ -95,6 +95,12 @@
     <ClCompile Include="src\core\networking\ServerSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\gamepad\Gamepad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\Framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />

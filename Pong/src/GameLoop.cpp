@@ -17,6 +17,8 @@ bool DOWN_pressed = false;
 
 bool start = true;
 
+bool force = false;
+
 GGeneral::String ip;
 unsigned int port;
 bool isServer = false;
@@ -138,7 +140,7 @@ void update() {
 
 		auto pack = server->receive(client);
 		if (pack.size == -1) {
-			LOGI("Connection has been reset. Program needs to terminate");
+			LOGW("Connection has been reset. Program needs to terminate");
 			abort();
 		}
 		if (pack.data != nullptr) {
@@ -153,7 +155,7 @@ void update() {
 		static bool uppress = false, downpress = false;
 		auto pack = socket->receive();
 		if (!socket->isConnected()) {
-			LOGI("Connection has been reset. Program needs to terminate");
+			LOGW("Connection has been reset. Program needs to terminate");
 			abort();
 		}
 		else if (pack.data != nullptr) {
@@ -225,30 +227,20 @@ void update() {
 
 	//Custom collision checking
 	if ((ball.position.x < player1.position.x + player1.dimension.width) && (ball.position.y - ball.dimension.height <= player1.position.y + player1.dimension.height) && (ball.position.y >= player1.position.y))
-		ballVelocity[0] = 1;
+		ballVelocity[0] = abs(ballVelocity[0]);
 	if ((ball.position.x + ball.dimension.width > player2.position.x) && (ball.position.y - ball.dimension.height <= player2.position.y + player2.dimension.height) && (ball.position.y >= player2.position.y))
-		ballVelocity[0] = -1;
+		ballVelocity[0] = -abs(ballVelocity[0]);
+
+	if (ballVelocity[0] < 10 || ballVelocity[0] > -10) {
+		if (ballVelocity[0] > 0)
+			ballVelocity[0] += delta / 100000.0f;
+		else
+			ballVelocity[0] -= delta / 100000.0f;
+	}
 
 	if ((ball.position.x + ball.dimension.width - 20 > player2.position.x) || (ball.position.x + 20 < player1.position.x + player1.dimension.width)) {
 		ball = { 1264 / 2.0f - 5, 681 / 2.0f - 5, 10, 10 };
 	}
-
-	//if ((ball.position.x + 20 < player1.position.x + player1.dimension.width)) {
-	//	LOGS("Player 2 won somehow...");
-	//	GGeneral::Logger::wait();
-	//
-	//	window->forceCloseRequest();
-	//
-	//	std::cin.get();
-	//}
-	//if (ball.position.x + ball.dimension.width - 20 > player2.position.x) {
-	//	LOGS("Player 1 won somehow...");
-	//	GGeneral::Logger::wait();
-	//
-	//	window->forceCloseRequest();
-	//
-	//	std::cin.get();
-	//}
 
 	start = false;
 }
@@ -262,6 +254,9 @@ void parseargs(int argc, const char** argv) {
 	std::vector<GGeneral::String> allParam;
 	for (size_t i = 0; i < argc; i++) {
 		allParam.push_back(GGeneral::String(argv[i]));
+		if (allParam[i].find("force") != GGeneral::String::npos) {
+			force = true;
+		}
 	}
 
 	if (allParam[1].find("noserver") != GGeneral::String::npos) {
@@ -288,13 +283,15 @@ int main(int argc, const char** argv) {
 		abort();
 	}
 	LOGS("Initialized");
+	LOGI("Using the GRenderer Version: ", G_RENDERER_VERSION);
 
 	parseargs(argc, argv);
 
 	if (isServer) {
 		LOGI("Searching for other Sockets...");
 		server = new GNetworking::ServerSocket(port);
-		client = server->accept();
+		if (!force)
+			client = server->accept();
 		server->setBlockingMode(false, client);
 		if (client == ~0) {
 			LOGF("An fatal error occurred while trying to accept Socket");
@@ -318,6 +315,8 @@ int main(int argc, const char** argv) {
 	window->setResizable(false);
 	window->createOpenGLcontext();
 	window->setOpenGLContextActive(true);
+	LOGI("Using Version: ", GRenderer::getVersion());
+	LOGI("Using OpenGL Version: ", GRenderer::getGLString(GRenderer::GLString::VERSION));
 	window->setCallbackFunction(callback);
 	window->setState(GWindow::WindowState::NORMAL);
 	GGraphics::init();

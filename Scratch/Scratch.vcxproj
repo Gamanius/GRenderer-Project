@@ -158,6 +158,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="rsc\shader\framebuffer.frag">
+      <FileType>Document</FileType>
+    </None>
     <ClCompile Include="src\Scratch.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -176,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="rsc\shader\frag.frag" />
+    <None Include="rsc\shader\framebuffer.vert" />
     <None Include="rsc\shader\vert.vert" />
   </ItemGroup>
   <ItemGroup>

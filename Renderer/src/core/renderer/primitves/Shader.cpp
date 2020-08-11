@@ -20,6 +20,7 @@ GRenderer::Primitives::ShaderTypes getTypeFromComment(GGeneral::String s) {
 		return ShaderTypes::TESS_CONTROL_SHADER;
 	if (s.find("eval") != GGeneral::String::npos || s.find("Eval") != GGeneral::String::npos)
 		return ShaderTypes::TESS_EVALUATION_SHADER;
+
 	return ShaderTypes::UNKOWN_SHADER;
 }
 
@@ -40,8 +41,10 @@ GRenderer::Primitives::Shader::Shader(GGeneral::String filepath) {
 	if (!loadShader(filepath))
 		return;
 
-	if (type == GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER)
+	if (type == GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER) {
+		THROW("Couldn't detect the ShaderType for Shader at location: '", filepath, "'");
 		return;
+	}
 
 	if (!compileShader())
 		return;
@@ -66,6 +69,7 @@ GRenderer::Primitives::Shader::~Shader() {
 bool GRenderer::Primitives::Shader::loadShader(GGeneral::String filepath) {
 	std::ifstream fileIn(filepath);
 	if (fileIn.fail()) {
+		THROW("Couldn't start loading the shader. Maybe a wrong filepath?");
 		fail = true;
 		return false;
 	}
@@ -74,6 +78,8 @@ bool GRenderer::Primitives::Shader::loadShader(GGeneral::String filepath) {
 	while (getline(fileIn, stringIn)) {
 		if (stringIn.find("#shader") != std::string::npos && type == ShaderTypes::UNKOWN_SHADER) {
 			type = getTypeFromComment(stringIn.c_str());
+			if (type == ShaderTypes::UNKOWN_SHADER)
+				THROWW("#shader found with invalid subsequent ShaderType at location: '", filepath, "'");
 		}
 		else {
 			sourceCode += stringIn.c_str();
@@ -90,8 +96,10 @@ bool GRenderer::Primitives::Shader::sourceShader(GGeneral::String source, Shader
 }
 
 bool GRenderer::Primitives::Shader::compileShader() {
-	if (type == ShaderTypes::UNKOWN_SHADER)
+	if (type == ShaderTypes::UNKOWN_SHADER) {
+		THROW("Couldn't start compiling shader. The shader type is unknown");
 		return false;
+	}
 	ID = glCreateShader(ShaderTypeToGLenum(type));
 	const char* shaderSourceCopy = sourceCode.cStr();
 	glShaderSource(ID, 1, &shaderSourceCopy, NULL);
@@ -100,6 +108,7 @@ bool GRenderer::Primitives::Shader::compileShader() {
 	int isCompiled;
 	glGetShaderiv(ID, GL_COMPILE_STATUS, &isCompiled);
 	if (isCompiled != 1) {
+		THROW("An error occurred while compiling. See getInfoMessage for information");
 		fail = true;
 		return false;
 	}

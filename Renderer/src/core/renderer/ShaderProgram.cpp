@@ -21,6 +21,8 @@ bool GRenderer::ShaderProgram::link() {
 
 	int isLinked;
 	glGetProgramiv(ID, GL_LINK_STATUS, &isLinked);
+	if (!isLinked)
+		THROWW("Linking of Shader program with the ID: ", ID, " wasn't successful. For more information use method getInfoMessage()");
 	return isLinked;
 }
 

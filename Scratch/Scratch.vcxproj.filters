@@ -39,6 +39,10 @@
   <ItemGroup>
     <None Include="rsc\shader\vert.vert" />
     <None Include="rsc\shader\frag.frag" />
+    <None Include="rsc\shader\framebuffer.vert" />
+    <None Include="rsc\shader\framebuffer.frag">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="rsc\img\a.bmp">

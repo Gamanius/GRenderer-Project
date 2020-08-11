@@ -3,8 +3,6 @@
 
 out vec4 fragcolor;
 
-in vec4 o_color;
-
 void main() {
-	fragcolor = o_color;
+	fragcolor = vec4(0, 1, 0, 1);
 }

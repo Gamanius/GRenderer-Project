@@ -33,6 +33,10 @@
           "Command": "7340"
         }
       ]
+    },
+    {
+      "Id": "aaeab98b-b085-48f8-830d-6d466c4a64d3",
+      "Command": "force"
     }
   ]
 }

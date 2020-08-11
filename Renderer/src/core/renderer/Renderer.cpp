@@ -13,11 +13,20 @@ const bool GRenderer::init() {
 		return false;
 	}
 	if (!GWindow::Monitor::init()) {
+		THROWW("Couldn't init Monitor namespace");
+		return false;
+	}
+	if (!GNetworking::init()) {
+		THROWF("Couldn't init networking namespace");
 		return false;
 	}
 	//if (!GGraphics::init())
 	//	return false;
 	return true;
+}
+
+const GGeneral::String GRenderer::getVersion() {
+	return GGeneral::String(G_RENDERER_VERSION);
 }
 
 GGeneral::String GRenderer::getCurentOpenGLVersion() {
@@ -53,6 +62,10 @@ GGeneral::String GRenderer::getGLString(GLString s) {
 void GRenderer::clear(GGeneral::Color color) {
 	glClearColor(((float)color[0]) / 255, ((float)color[1]) / 255, ((float)color[2]) / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void GRenderer::setWireFrameMode(bool b) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !b);
 }
 
 void GRenderer::draw(Mesh& m) {

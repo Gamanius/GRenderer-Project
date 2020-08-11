@@ -585,15 +585,19 @@ GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGenera
 	if (!RegisterClassA(&wc)) THROW("An error occurred while registering the window");
 
 	HWND hWnd = CreateWindowA(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
-	if (!hWnd) THROW("An error occurred while creating the window");
-	HDC hdc = GetDC(hWnd);
-	for (size_t i = 0; i < allWindowsInstances.size(); i++) {
-		if (allWindowsInstances[i].isFree) {
-			this->WindowID = i;
-			allWindowsInstances[i] = { false, hdc, hWnd, wc };
-			goto DONE;
-		}
+	if (!hWnd) {
+		THROW("An error occurred while creating the window");
+		return;
 	}
+
+	HDC hdc = GetDC(hWnd);
+	//for (size_t i = 0; i < allWindowsInstances.size(); i++) {
+	//	if (allWindowsInstances[i].isFree) {
+	//		this->WindowID = i;
+	//		allWindowsInstances[i] = { false, hdc, hWnd, wc };
+	//		goto DONE;
+	//	}
+	//}
 	this->WindowID = allWindowsInstances.size();
 	allWindowsInstances.push_back({ false, hdc, hWnd, wc, nullptr });
 DONE:

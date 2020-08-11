@@ -1,6 +1,7 @@
 #pragma once
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Xinput.lib")
 #pragma warning(disable : 4595)
 
 #include <mutex>
@@ -315,6 +316,11 @@
 
 #define TO_RAD(deg) (deg * (G_PI / 180.0f))
 #define TO_DEG(rad) (rad * (180.0f / G_PI))
+
+#ifndef G_RENDERER_VERSION
+ /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
+#define G_RENDERER_VERSION "early Build Version 0.0.1.8.20"
+#endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
 #define G_RENDERER
@@ -1515,7 +1521,7 @@ namespace GGeneral {
 /**
  * A namespace containing all function around file loading and reading.
  */
-namespace GIO {
+namespace GFile {
 	/**
 	 * A struct containing the most important information about a file. All classes that are loading in files should derive from it
 	 */
@@ -1985,6 +1991,71 @@ namespace GWindow {
 	}
 }
 
+/**
+ * Namespace with functions all about game pad inputs. For now this namespace uses the XInput library. Only Controller with XInput support can be recognized by this namespace.
+ * There may be support for DirectInput in the future
+ */
+namespace GGamepad {
+	enum class GamepadKey {
+		DPAD_UP
+		, DPAD_DOWN
+		, DPAD_LEFT
+		, DPAD_RIGHT
+		, START
+		, BACK
+		, A
+		, B
+		, X
+		, Y
+	};
+
+	struct GamepadState : public GGeneral::BaseObject {
+		//Those two small buttons
+		bool start = false;
+		bool back = false;
+		//Buttons
+		bool button_a = false;
+		bool button_b = false;
+		bool button_x = false;
+		bool button_y = false;
+		//DPad
+		bool dpad_down = false;
+		bool dpad_left = false;
+		bool dpad_right = false;
+		bool dpad_up = false;
+		//Shoulder Buttons
+		bool button_left_shoulder = false;
+		bool button_right_shoulder = false;
+		byte left_trigger = 0;
+		byte right_trigger = 0;
+		//Thumb stick
+		bool button_left_thumbstick = false;
+		bool button_right_thumbstick = false;
+		GGeneral::Point<short> left_thumbstick = { 0, 0 };
+		GGeneral::Point<short> right_thumbstick = { 0, 0 };
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(start, back, button_a, button_b, button_x, button_y, dpad_down, dpad_left, dpad_right, dpad_up, button_left_shoulder, button_right_shoulder, left_trigger, right_trigger, button_left_thumbstick, button_right_thumbstick, left_thumbstick, right_thumbstick);
+		}
+	};
+
+	class Gamepad {
+	private:
+		short num = -1;
+	public:
+		Gamepad() {}
+		Gamepad(short num) : num(num) {}
+		bool vibrate(float amount, bool leftMotor = true);
+		bool stopvibrate();
+
+		GamepadState getState();
+	};
+
+	short getAmountOfConnectedGPad();
+	void enable(bool enable);
+	Gamepad getGamepad(short num);
+}
+
 /** Default maximum buffer siwze used by this namespace. */
 #define MAX_NET_BUFFER_SIZE 1024
 /**
@@ -2200,6 +2271,8 @@ namespace GRenderer {
 	 * Will initialize the renderer
 	 */
 	const bool init();
+
+	const GGeneral::String getVersion();
 	/**
 	 * Fetches the current OpenGL Version
 	 */
@@ -2282,7 +2355,7 @@ namespace GRenderer {
 			/**
 			 * Unbind the current IndexBuffer
 			 */
-			void unbind();
+			static void unbind();
 
 			friend struct VertexArray;
 		};
@@ -2304,37 +2377,37 @@ namespace GRenderer {
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
-			 * @param count - The amount of Vertexes
+			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(char data[], unsigned int amount, unsigned int count = 0);
+			VertexBuffer(char data[], unsigned int amount, unsigned int count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
-			 * @param count - The amount of Vertexes
+			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(short data[], unsigned int amount, unsigned int count = 0);
+			VertexBuffer(short data[], unsigned int amount, unsigned int count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
-			 * @param count - The amount of Vertexes
+			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(int data[], unsigned int amount, unsigned int count = 0);
+			VertexBuffer(int data[], unsigned int amount, unsigned int count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
-			 * @param count - The amount of Vertexes
+			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(float data[], unsigned int amount, unsigned int count = 0);
+			VertexBuffer(float data[], unsigned int amount, unsigned int count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
-			 * @param count - The amount of Vertexes
+			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(double data[], unsigned int amount, unsigned int count = 0);
+			VertexBuffer(double data[], unsigned int amount, unsigned int count = 3);
 			/**
 			 * Deletes the VertexBuffer
 			 */
@@ -2347,7 +2420,7 @@ namespace GRenderer {
 			/**
 			 * Unbinds the curernt VertexBuffer
 			 */
-			void unbind();
+			static void unbind();
 
 			friend struct VertexArray;
 		};
@@ -2423,7 +2496,7 @@ namespace GRenderer {
 			/**
 			 * Unbinds the current VertexArray
 			 */
-			void unbind();
+			static void unbind();
 
 			/**
 			 * @return True if there is no IndexBuffer in this VertexArray
@@ -2541,7 +2614,7 @@ namespace GRenderer {
 		 * Will create a new Texture with the given image
 		 * @param i
 		 */
-		Texture(GIO::Graphics::Image& i);
+		Texture(GFile::Graphics::Image& i);
 
 		Texture& operator=(const Texture& other);
 
@@ -2552,7 +2625,9 @@ namespace GRenderer {
 		 * @param i - The Image to convert to a texture
 		 * @return Always true
 		 */
-		const bool createTexture(GIO::Graphics::Image& i);
+		const bool createTexture(GFile::Graphics::Image& i);
+
+		void createTexture(GGeneral::Dimension<int> size, bool alpha = false);
 
 		/**
 		 * Deconstructor
@@ -2575,7 +2650,11 @@ namespace GRenderer {
 		/**
 		 * Will unbind the current texture from the texture slot
 		 */
-		void unbind();
+		static void unbind();
+
+		const unsigned int getID() const { return ID; }
+
+		friend class FrameBuffer;
 	};
 
 	/**
@@ -2583,7 +2662,7 @@ namespace GRenderer {
 	 */
 	class ShaderProgram {
 	private:
-		unsigned int ID;
+		unsigned int ID = 0;
 		std::vector<unsigned int*> shaderIDs;
 		bool fail = true;
 	public:
@@ -2644,6 +2723,11 @@ namespace GRenderer {
 		 * @param f - The new value
 		 */
 		void set(const GGeneral::String& name, float f);
+		/**
+		 * Will fetch the uniform location and if found will set the the uniform to the value given
+		 * @param name - Name of the uniform
+		 * @param f - The new value
+		 */
 		void set(const GGeneral::String& name, GMath::vec2<float>& f);
 		/**
 		 * Will fetch the uniform location and if found will set the the uniform to the value given
@@ -2716,12 +2800,28 @@ namespace GRenderer {
 		/**
 		 * Will unbind the shader program
 		 */
-		void unbind();
+		static void unbind();
 
 		/**
 		 * @return The internal OpenGL Shaderprogram ID
 		 */
-		unsigned int getID() const { return ID; }
+		const unsigned int getID() const { return ID; }
+	};
+
+	class FrameBuffer {
+	private:
+		unsigned int ID = 0;
+		Texture* boundTexture = nullptr;
+	public:
+		FrameBuffer();
+		~FrameBuffer();
+
+		void attach(Texture& t);
+		void attachTex(GGeneral::Dimension<int> size);
+
+		const Texture* getBoundTexture() const { return boundTexture; }
+		void bind();
+		static void unbind();
 	};
 
 	/** A struct containing the Information to render an Object in 2D and 3D space */
@@ -2737,6 +2837,8 @@ namespace GRenderer {
 			delete vertex;
 		}
 	};
+
+	void setWireFrameMode(bool b);
 
 	/**
 	 * Will bind the needed VertexArrays and Textures and then render the Mesh using the currently bound shaders

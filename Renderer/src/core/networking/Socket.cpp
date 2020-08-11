@@ -40,7 +40,7 @@ bool GNetworking::Socket::connect(GGeneral::String ip, GGeneral::String port) {
 	this->socketNr = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 	error = socketConnect(this->socketNr, ptr->ai_addr, (int)ptr->ai_addrlen);
 	if (error == SOCKET_ERROR) {
-		THROW("Invalid socket");
+		THROW("Error while trying to connect");
 		closesocket(this->socketNr);
 		this->socketNr = INVALID_SOCKET;
 		return false;

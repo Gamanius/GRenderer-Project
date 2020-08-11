@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-unsigned long long int GIO::getFileSize(GGeneral::String& relativeFilepath) {
+unsigned long long int GFile::getFileSize(GGeneral::String& relativeFilepath) {
 	File returnValue = {};
 	std::fstream file(relativeFilepath, std::ios_base::binary);
 	if (file.fail())
@@ -15,7 +15,7 @@ unsigned long long int GIO::getFileSize(GGeneral::String& relativeFilepath) {
 	return size;
 }
 
-GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
+GFile::File* GFile::loadFile(GGeneral::String relativeFilepath) {
 	File* returnValue = new File();
 	std::fstream file(relativeFilepath, std::ios_base::binary | std::ios_base::in);
 	if (file.fail()) {
@@ -34,7 +34,7 @@ GIO::File* GIO::loadFile(GGeneral::String relativeFilepath) {
 	return returnValue;
 }
 
-GGeneral::String GIO::getWorkingDirectionary() {
+GGeneral::String GFile::getWorkingDirectionary() {
 	char buffer[MAX_PATH];
 	auto error = GetModuleFileName(NULL, buffer, MAX_PATH);
 	if (error == 0) {
@@ -43,20 +43,20 @@ GGeneral::String GIO::getWorkingDirectionary() {
 	return GGeneral::String(buffer);
 }
 
-bool GIO::Graphics::isParseble(GGeneral::String& filepath) {
+bool GFile::Graphics::isParseble(GGeneral::String& filepath) {
 	auto file = loadFile(filepath);
 	return isParseble(file->data);
 }
 
 static byte BMPSig[] = { 0x42, 0x4d };
-bool GIO::Graphics::isParseble(byte* data) {
+bool GFile::Graphics::isParseble(byte* data) {
 	if (data[0] == BMPSig[0] && data[1] == BMPSig[1])
 		return true;
 	return false;
 }
 
-GIO::Graphics::Image* doBMP(GIO::File* f) {
-	using namespace GIO::Graphics;
+GFile::Graphics::Image* doBMP(GFile::File* f) {
+	using namespace GFile::Graphics;
 	Image* returnValue = new Image;
 	//Check for header
 	//only support for 32 and 24 bit BMP's
@@ -82,7 +82,7 @@ GIO::Graphics::Image* doBMP(GIO::File* f) {
 	return returnValue;
 }
 
-GIO::Graphics::Image* GIO::Graphics::loadImage(GGeneral::String filepath) {
+GFile::Graphics::Image* GFile::Graphics::loadImage(GGeneral::String filepath) {
 	auto file = loadFile(filepath);
 	if (file->data == nullptr) {
 		delete file;

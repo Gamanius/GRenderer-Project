@@ -101,6 +101,7 @@
   <ItemGroup>
     <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp" />
     <ClCompile Include="src\core\file\File.cpp" />
+    <ClCompile Include="src\core\gamepad\Gamepad.cpp" />
     <ClCompile Include="src\core\general\Color.cpp" />
     <ClCompile Include="src\core\general\ErrorHandler.cpp" />
     <ClCompile Include="src\core\general\Logger.cpp" />
@@ -111,6 +112,7 @@
     <ClCompile Include="src\core\networking\networking.cpp" />
     <ClCompile Include="src\core\networking\ServerSocket.cpp" />
     <ClCompile Include="src\core\networking\Socket.cpp" />
+    <ClCompile Include="src\core\renderer\Framebuffer.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Indexbuffer.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Shader.cpp" />
     <ClCompile Include="src\core\renderer\primitves\Vertexarray.cpp" />

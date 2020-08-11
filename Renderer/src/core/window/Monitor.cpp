@@ -45,7 +45,10 @@ BOOL CALLBACK lpfnEnum(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LP
 
 bool GWindow::Monitor::init() {
 	int succesfull = EnumDisplayMonitors(0, 0, lpfnEnum, 0);
-	if (succesfull == 0) return false;
+	if (succesfull == 0) {
+		THROW("Couldn't enumerate displays");
+		return false;
+	}
 
 	DISPLAY_DEVICEA device;
 	device.cb = sizeof(DISPLAY_DEVICEA);
@@ -62,31 +65,41 @@ const bool GWindow::Monitor::isInit() {
 }
 
 GWindow::Monitor::Screen const* GWindow::Monitor::getPrimaryMonitorInformation() {
-	if (!isInit())
+	if (!isInit()) {
+		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return nullptr;
+	}
 	return allScreens[primaryMonitorIndex];
 }
 
 const unsigned int GWindow::Monitor::getAmountOfMonitors() {
-	if (!isInit())
+	if (!isInit()) {
+		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;
+	}
 	return allScreens.size();
 }
 
 const unsigned int GWindow::Monitor::getPrimaryMonitorIndex() {
-	if (!isInit())
+	if (!isInit()) {
+		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;
+	}
 	return primaryMonitorIndex;
 }
 
 GWindow::Monitor::Screen const* GWindow::Monitor::getMonitorInformation(unsigned int i) {
-	if (!isInit())
+	if (!isInit()) {
+		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return nullptr;
+	}
 	return allScreens[i];
 }
 
 const unsigned int GWindow::Monitor::getSupportedAmountOfMonitorDevices() {
-	if (!isInit())
+	if (!isInit()) {
+		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;
+	}
 	return maxAmountOfMonitors;
 }

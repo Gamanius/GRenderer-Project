@@ -14,7 +14,7 @@ GRenderer::Texture::Texture(Texture&& t) noexcept {
 	t.textureSlot = 0;
 }
 
-GRenderer::Texture::Texture(GIO::Graphics::Image& i) {
+GRenderer::Texture::Texture(GFile::Graphics::Image& i) {
 	createTexture(i);
 }
 
@@ -36,7 +36,7 @@ GRenderer::Texture& GRenderer::Texture::operator=(Texture&& t) noexcept {
 	return *this;
 }
 
-const bool GRenderer::Texture::createTexture(GIO::Graphics::Image& i) {
+const bool GRenderer::Texture::createTexture(GFile::Graphics::Image& i) {
 	glGenTextures(1, &ID);
 	bind();
 
@@ -53,6 +53,19 @@ const bool GRenderer::Texture::createTexture(GIO::Graphics::Image& i) {
 	}
 	glGenerateMipmap(GL_IMAGE_2D);
 	return true;
+}
+
+void GRenderer::Texture::createTexture(GGeneral::Dimension<int> size, bool alpha) {
+	glGenTextures(1, &ID);
+	bind();
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	//GL_RGB = 0x1907 GL_RGBA = 0x1908 -> GL_RGB + 1 = GL_RGBA
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + alpha, size.width, size.height, 0, GL_BGR, GL_UNSIGNED_BYTE, nullptr);
 }
 
 void GRenderer::Texture::bind(unsigned int slot) {
