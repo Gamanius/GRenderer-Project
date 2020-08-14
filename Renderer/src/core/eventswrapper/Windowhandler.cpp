@@ -153,9 +153,14 @@ static int getWindowsVirtualKeyCode(GWindow::VK key) {
 struct WrapperClass {
 	GWindow::Window* window = nullptr;
 	unsigned int thisID = 0;
+	std::vector<GEventWrapper::GEventWindowState> windowStateFun;
+	std::vector<GEventWrapper::GEventWindowResize> windowResizeFun;
+	std::vector<GEventWrapper::GEventWindowFocus> windowFocusFun;
+	std::vector<GEventWrapper::GEventWindowMove> windowMoveFun;
+	std::vector<GEventWrapper::GEventKeyboard> keyboardFun;
 	std::vector<GEventWrapper::GEventMouseButton> mouseButtonFun;
 	std::vector<GEventWrapper::GEventMouseMove> mouseMoveFun;
-	std::vector<GEventWrapper::GEventKeyboard> keyboardFun;
+	std::vector<GEventWrapper::GEventWindowClose> windowCloseFun;
 
 	bool* keyPressed = nullptr;
 
@@ -173,23 +178,97 @@ WrapperClass* getWrapperfromWindowID(int ID) {
 }
 
 void globalCallback(int id, GWindow::WindowEvent event, void* data) {
-	if (event == GWindow::WindowEvent::KEY_PRESS) {
+	switch (event) {
+	case GWindow::WindowEvent::WINDOW_STATE:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->windowStateFun.size(); i++) {
+			wrapper->windowStateFun[i](wrapper->window, (GWindow::WindowState)(int)data);
+		}
+		break;
+	}
+	case GWindow::WindowEvent::WINDOW_RESIZE:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->windowResizeFun.size(); i++) {
+			wrapper->windowResizeFun[i](wrapper->window, *(GGeneral::Rectangle<long>*)data);
+		}
+		break;
+	}
+	case GWindow::WindowEvent::WINDOW_FOCUS:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->windowFocusFun.size(); i++) {
+			wrapper->windowFocusFun[i](wrapper->window, (bool)data);
+		}
+		break;
+	}
+	case GWindow::WindowEvent::WINDOW_MOVE:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->windowMoveFun.size(); i++) {
+			wrapper->windowMoveFun[i](wrapper->window, *(GGeneral::Point<long>*)data);
+		}
+		break;
+	}
+	case GWindow::WindowEvent::KEY_PRESS:
+	{
+		GWindow::VK key = (GWindow::VK)(int)data;
 		//get window
 		auto wrapper = getWrapperfromWindowID(id);
-		GWindow::VK key = (GWindow::VK)(int)data;
 		wrapper->keyPressed[(int)key] = true;
-		for (size_t i = 0; i < wrapper->keyboardFun.size(); i++) {
-			wrapper->keyboardFun[i](wrapper->window, true, key);
+		switch (key) {
+		case GWindow::VK::LEFT_MB:
+		case GWindow::VK::RIGHT_MB:
+		case GWindow::VK::MIDDLE_MB:
+		case GWindow::VK::X1_MB:
+		case GWindow::VK::X2_MB:
+			for (size_t i = 0; i < wrapper->mouseButtonFun.size(); i++)
+				wrapper->mouseButtonFun[i](wrapper->window, true, (GEventWrapper::MouseButtons)(int)key);
+			break;
+		default:
+			for (size_t i = 0; i < wrapper->keyboardFun.size(); i++)
+				wrapper->keyboardFun[i](wrapper->window, true, key);
 		}
+		break;
 	}
-	if (event == GWindow::WindowEvent::KEY_RELEASE) {
+	case GWindow::WindowEvent::KEY_RELEASE:
+	{
 		//get window
 		auto wrapper = getWrapperfromWindowID(id);
 		GWindow::VK key = (GWindow::VK)(int)data;
 		wrapper->keyPressed[(int)key] = false;
-		for (size_t i = 0; i < wrapper->keyboardFun.size(); i++) {
-			wrapper->keyboardFun[i](wrapper->window, false, key);
+		switch (key) {
+		case GWindow::VK::LEFT_MB:
+		case GWindow::VK::RIGHT_MB:
+		case GWindow::VK::MIDDLE_MB:
+		case GWindow::VK::X1_MB:
+		case GWindow::VK::X2_MB:
+			for (size_t i = 0; i < wrapper->mouseButtonFun.size(); i++)
+				wrapper->mouseButtonFun[i](wrapper->window, false, (GEventWrapper::MouseButtons)(int)key);
+			break;
+		default:
+			for (size_t i = 0; i < wrapper->keyboardFun.size(); i++)
+				wrapper->keyboardFun[i](wrapper->window, false, key);
 		}
+		break;
+	}
+	case GWindow::WindowEvent::MOUSE_MOVE:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->mouseMoveFun.size(); i++) {
+			wrapper->mouseMoveFun[i](wrapper->window, *(GGeneral::Point<int>*)data);
+		}
+		break;
+	}
+	case GWindow::WindowEvent::WINDOW_CLOSE:
+	{
+		auto wrapper = getWrapperfromWindowID(id);
+		for (size_t i = 0; i < wrapper->windowCloseFun.size(); i++) {
+			wrapper->windowCloseFun[i](wrapper->window);
+		}
+		break;
+	}
 	}
 }
 
@@ -207,7 +286,9 @@ GEventWrapper::Windowhandler::Windowhandler(GWindow::Window* window) {
 	registerWindow(window);
 }
 
-GEventWrapper::Windowhandler::~Windowhandler() {}
+GEventWrapper::Windowhandler::~Windowhandler() {
+	THIS_INSTANCE.window->setCallbackFunction(nullptr);
+}
 
 void GEventWrapper::Windowhandler::registerWindow(GWindow::Window* window) {
 	if (THIS_INSTANCE.window != nullptr)
@@ -215,6 +296,22 @@ void GEventWrapper::Windowhandler::registerWindow(GWindow::Window* window) {
 	window->setCallbackFunction(globalCallback);
 	THIS_INSTANCE.thisID = this->ID;
 	THIS_INSTANCE.window = window;
+}
+
+void GEventWrapper::Windowhandler::addCallback(GEventWindowState callback) {
+	THIS_INSTANCE.windowStateFun.push_back(callback);
+}
+
+void GEventWrapper::Windowhandler::addCallback(GEventWindowResize callback) {
+	THIS_INSTANCE.windowResizeFun.push_back(callback);
+}
+
+void GEventWrapper::Windowhandler::addCallback(GEventWindowFocus callback) {
+	THIS_INSTANCE.windowFocusFun.push_back(callback);
+}
+
+void GEventWrapper::Windowhandler::addCallback(GEventWindowMove callback) {
+	THIS_INSTANCE.windowMoveFun.push_back(callback);
 }
 
 void GEventWrapper::Windowhandler::addCallback(GEventMouseButton f) {
@@ -225,10 +322,16 @@ void GEventWrapper::Windowhandler::addCallback(GEventMouseMove f) {
 	THIS_INSTANCE.mouseMoveFun.push_back(f);
 }
 
+void GEventWrapper::Windowhandler::addCallback(GEventWindowClose callback) {
+	THIS_INSTANCE.windowCloseFun.push_back(callback);
+}
+
 void GEventWrapper::Windowhandler::addCallback(GEventKeyboard f) {
 	THIS_INSTANCE.keyboardFun.push_back(f);
 }
 
 bool GEventWrapper::Windowhandler::isKeyPressed(GWindow::VK key) {
+	if (key == GWindow::VK::UNKWON)
+		return false;
 	return THIS_INSTANCE.keyPressed[(int)key];
 }

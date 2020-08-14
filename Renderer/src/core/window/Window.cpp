@@ -1,6 +1,7 @@
 #include "../GRenderer.h"
 #undef UNICODE
 #include <Windows.h>
+#include <Windowsx.h>
 #include <gl/glew.h>
 //#include "../../dependencies/header/wglext.h"
 //#include <wglext.h>
@@ -468,19 +469,60 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		//Window close/destroy event
 		allWindowsInstances[getIndex(hWnd)].closeRequest = true;
+		if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_CLOSE, (void*)true);
+		break;
 	}
 	case WM_ERASEBKGND: return 0;
 	case WM_SIZING:
 	{
 		if (callback != nullptr) {
 			auto area = (RECT*)lParam;
-			GGeneral::Dimension<int> dim;
-			dim.width = area->right - area->left;
-			dim.height = area->bottom - area->top;
-			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&dim);
+			GGeneral::Rectangle<long> rec;
+			rec.dimension.width = area->right - area->left;
+			rec.dimension.height = area->bottom - area->top;
+			rec.position.x = area->left;
+			rec.position.y = area->top;
+			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
 			return MAKELRESULT(1, 1);
 		}
+		break;
 	}
+	case WM_SIZE:
+	{
+		if (callback != nullptr) {
+			if (wParam == 0 || wParam == 2) {
+				if (!wParam)
+					callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::NORMAL);
+				else
+					callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MAXIMIZED);
+				RECT area = {};
+				GetWindowRect(hWnd, &area);
+				GGeneral::Rectangle<long> rec;
+				rec.dimension.width = area.right - area.left;
+				rec.dimension.height = area.bottom - area.top;
+				rec.position.x = area.left;
+				rec.position.y = area.top;
+				callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
+			}
+			else if (wParam) {
+				callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MINIMIZED);
+			}
+		}
+		return 0;
+	}
+	case WM_MOVING:
+	{
+		if (callback != nullptr) {
+			auto pos = (RECT*)lParam;
+			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_MOVE, (void*)&GGeneral::Point<long>(pos->left, pos->top));
+			return 0;
+		}
+		break;
+	}
+	//case WM_ACTIVATE: if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)(LOWORD(wParam) == WA_ACTIVE || LOWORD(wParam) == WA_CLICKACTIVE)); return 0;
+	case WM_SETFOCUS:  if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)true);															   return 0;
+	case WM_KILLFOCUS:  if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)false);														   return 0;
+	case WM_MOUSEMOVE: if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::MOUSE_MOVE, (void*)&GGeneral::Point<int>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));  return 0;
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 	{
@@ -497,6 +539,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
+		break;
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
@@ -513,6 +556,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)key);
 			return MAKELRESULT(1, 1);
 		}
+		break;
 	}
 	case WM_LBUTTONDOWN:
 	{
@@ -538,11 +582,19 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		}
 		return MAKELRESULT(1, 1);
 	}
+	case WM_MBUTTONDOWN:
+	{
+		ReleaseCapture();
+		if (callback != nullptr) {
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::MIDDLE_MB);
+		}
+		return MAKELRESULT(1, 1);
+	}
 	case WM_LBUTTONUP:
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::LEFT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -550,7 +602,7 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::RIGHT_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}
@@ -558,7 +610,15 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	{
 		ReleaseCapture();
 		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, proccessXButton(wParam));
+		}
+		return MAKELRESULT(1, 1);
+	}
+	case WM_MBUTTONUP:
+	{
+		ReleaseCapture();
+		if (callback != nullptr) {
+			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::MIDDLE_MB);
 		}
 		return MAKELRESULT(1, 1);
 	}

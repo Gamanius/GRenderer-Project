@@ -17,26 +17,27 @@ void GGamepad::enable(bool enable) {
 	XInputEnable(enable);
 }
 
-GGamepad::Gamepad GGamepad::getGamepad(short num) {
-	if (getAmountOfConnectedGPad() > num)
-		return Gamepad();
-	return Gamepad(num - 1);
+GGamepad::Gamepad::Gamepad(byte num) { listen(num); }
+
+void GGamepad::Gamepad::listen(byte num) {
+	if (num > 3 || num < 0)
+		THROWW("The parameter is not a valid controller number. All functions in the Gamepad class will throw an error");
+	this->num = num;
 }
 
-bool GGamepad::Gamepad::vibrate(float amount, bool leftMotor) {
+bool GGamepad::Gamepad::vibrate(unsigned short amount, byte leftMotor) {
 	XINPUT_VIBRATION vib;
-#pragma warning(suppress : 4244)
-	unsigned short m = 65535 * amount;
-	vib.wLeftMotorSpeed = leftMotor * m;
-	vib.wRightMotorSpeed = !leftMotor * m;
+	vib.wLeftMotorSpeed = (leftMotor & 0b1) * amount;
+	vib.wRightMotorSpeed = (leftMotor & 0b10) * amount;
 	return XInputSetState(num, &vib);
 }
 
 bool GGamepad::Gamepad::stopvibrate() {
-	return false;
+	XINPUT_VIBRATION vib;
+	vib.wLeftMotorSpeed = 0;
+	vib.wRightMotorSpeed = 0;
+	return XInputSetState(num, &vib);
 }
-
-#define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 
 GGamepad::GamepadState GGamepad::Gamepad::getState() {
 	XINPUT_STATE  pad;

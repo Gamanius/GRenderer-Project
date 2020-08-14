@@ -163,6 +163,10 @@ GGeneral::String& GGeneral::String::operator<<(uint16_t ui16) {
 	FORMAT("%u", ui16);
 }
 
+GGeneral::String& GGeneral::String::operator<<(long l) {
+	FORMAT("%i", l);
+}
+
 GGeneral::String& GGeneral::String::operator<<(unsigned long ul) {
 	FORMAT("%u", ul);
 }

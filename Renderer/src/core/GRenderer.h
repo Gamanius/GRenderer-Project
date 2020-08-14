@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Xinput.lib")
@@ -319,7 +319,7 @@
 
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Build Version 0.0.1.8.20"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.2.8.20"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -970,6 +970,8 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& operator<< (uint16_t ui16);
+
+		String& operator<< (long l);
 
 		String& operator<< (unsigned long ul);
 
@@ -1634,10 +1636,10 @@ namespace GWindow {
 	enum class VK {
 		LEFT_MB            /*! Left Mouse Button */
 		, RIGHT_MB		   /*! Right Mouse Button*/
-		, CANCEL		   /*! Control Breaking Key (Most likely deprecated)*/
 		, MIDDLE_MB		   /*! Middle Mouse Button */
 		, X1_MB			   /*! X1 Button (Usually on the side of the mouse)*/
 		, X2_MB			   /*! X2 Button (Usually on the side of the mouse)*/
+		, CANCEL		   /*! Control Breaking Key (Most likely deprecated)*/
 		, LEFT_SHIFT	   /*! Left Shift Key*/
 		, RIGHT_SHIFT	   /*! Right Shift Key*/
 		, LEFT_CONTROL	   /*! Left Control Key*/
@@ -1715,13 +1717,13 @@ namespace GWindow {
 		, MEDIA_LAST	   /*! Previous button for media (music, films...)*/
 		, MEDIA_STOP	   /*! Stop button for media (music, films...)*/
 		, MEDIA_PLAY_PAUSE /*! Play/Pause button for media (music, films...)*/
-		, OEM_1			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ü'*/
+		, OEM_1			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'Ã¼'*/
 		, OEM_2			   /*! Keyboard specific key. On German keyboards the OEM key is usually '#'*/
-		, OEM_3			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ö'*/
-		, OEM_4			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ß'*/
+		, OEM_3			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'Ã¶'*/
+		, OEM_4			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ÃŸ'*/
 		, OEM_5			   /*! Keyboard specific key. On German keyboards the OEM key is usually '^'*/
-		, OEM_6			   /*! Keyboard specific key. On German keyboards the OEM key is usually '´'*/
-		, OEM_7			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'ä'*/
+		, OEM_6			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'Â´'*/
+		, OEM_7			   /*! Keyboard specific key. On German keyboards the OEM key is usually 'Ã¤'*/
 		, OEM_8			   /*! Keyboard specific key.*/
 		, OEM_102		   /*! Keyboard specific key. On German keyboards the OEM key is usually '<'*/
 		, OEM_CLEAR		   /*! Clear Key*/
@@ -1776,12 +1778,16 @@ namespace GWindow {
 	};
 
 	enum class WindowEvent {
-		STATE /*! A change in the extended state of the Window*/
-		, WINDOW_RESIZE /*! A window resize */
-		, WINDOW_FOCUS
-		, WINDOW_MOVE
-		, KEY_PRESS /*! A Key or Mouse button press */
-		, KEY_RELEASE /*! A Key or Mouse button release*/
+		WINDOW_STATE /*! A change in the extended state of the Window. Possible values is a WindowState emum*/
+		, WINDOW_RESIZE /*! A window resize. Possible value is GGeneral::Dimension<long>*/
+		, WINDOW_FOCUS /*! Marks if the window is able to receive keyboard input. Possible values are true if window gained focus and false otherwise */
+		, WINDOW_MOVE /*! The Window is moving. The returned value in a callback is GGeneral::Point<long> */
+		, KEY_PRESS /*! A Key or Mouse button press. The value that will be returned, will be a VK enum */
+		, KEY_RELEASE /*! A Key or Mouse button release. The value that will be returned, will be a VK enum */
+		, MOUSE_MOVE /*! The Mouse is moving. Most of the time this message will get posted when the mouse is*
+						 inside the client area but if the mouse button has been pressed the mouse move message *
+						 can also be posted even when outside window. Possible value is GGeneral::Point<int> */
+		, WINDOW_CLOSE /*! Close Request of the window. The value returned can be ignored */
 	};
 
 	/**
@@ -1903,12 +1909,19 @@ namespace GWindow {
 		/**
 		 * Add a callback function that will be called even an Event happens. There is only one callback function per window. Use the GEventWrapper namespace for multiple functions support.
 		 * List of possible events and their parameters:
-		 *  -If the Event is either KEY_PRESS or KEY_RELEASE the void* is an integer that should be casted into a VK enum. This also includes Mouse buttons!
-		 *  -If the Event is STATE the returned value will be a WindowState enum
-		 *  -If the Event is WINDOW_RESIZE the returned value will be a GGeneral::Dimension struct
+		 *  -If the Event is WindowEvent::WINDOW_STATE the returned value will be a WindowState enum
+		 *  -If the Event is WindowEvent::WINDOW_RESIZE the returned value will be a GGeneral::Dimension struct
+		 *	-If the Event is WindowEvent::WINDOW_FOCUS the returned value will be true if the window gained focus
+		 *  -If the Event is WindowEvent::WINDOW_MOVE the returned value will be a GGeneral::Point<long>
+		 *  -If the Event is WindowEvent::either KEY_PRESS or KEY_RELEASE the void* is an integer that should be casted into a VK enum. This also includes Mouse buttons!
+		 *  -If the Event is WindowEvent::MOUSE_MOVE the returned value will be GGeneral::Point<int>
+		 *  -If the Event is WindowEvent::WINDOW_CLOSE the returned value can be ignored. This event will always be called upon receiving a close request from the window
 		 */
 		void setCallbackFunction(GWindowCallback fun);
 
+		/**
+		 * @return Internal window ID
+		 */
 		const int getID() const { return WindowID; }
 	};
 
@@ -1996,42 +2009,53 @@ namespace GWindow {
  * There may be support for DirectInput in the future
  */
 namespace GGamepad {
-	enum class GamepadKey {
-		DPAD_UP
-		, DPAD_DOWN
-		, DPAD_LEFT
-		, DPAD_RIGHT
-		, START
-		, BACK
-		, A
-		, B
-		, X
-		, Y
-	};
+	/** A number identifying the left rumble motor of an xbox gamepad. This motor is a low frequency motor */
+#define GAMEPAD_LEFT_MOTOR 0b1
+	/** A number identifying the right rumble motor of an xbox gamepad. This motor is a high frequency motor */
+#define GAMEPAD_RIGHT_MOTOR 0b10
 
+	/** A struct containing all informations about the state of the gamepad */
 	struct GamepadState : public GGeneral::BaseObject {
 		//Those two small buttons
+		/** The start button */
 		bool start = false;
+		/** back button. Sometimes also the select button */
 		bool back = false;
 		//Buttons
+		/** The a button. On dualshock its the X button */
 		bool button_a = false;
+		/** The b button. On dualshock its the O button */
 		bool button_b = false;
+		/** The x button. On dualshock its the â–„ button */
 		bool button_x = false;
+		/** The y button. On dualshock its the Î” button */
 		bool button_y = false;
 		//DPad
+		/** Down on the directional pad */
 		bool dpad_down = false;
+		/** Down left the directional pad */
 		bool dpad_left = false;
+		/** Down right the directional pad */
 		bool dpad_right = false;
+		/** Down up the directional pad */
 		bool dpad_up = false;
 		//Shoulder Buttons
+		/** Left shoulder button. Also known as LB */
 		bool button_left_shoulder = false;
+		/** Right shoulder button. Also known as RB */
 		bool button_right_shoulder = false;
+		/** Left trigger button. Also known as LT. Max value is 255 */
 		byte left_trigger = 0;
+		/** Right trigger button. Also known as RT. Max value is 255 */
 		byte right_trigger = 0;
 		//Thumb stick
+		/** Left thumbstick button press */
 		bool button_left_thumbstick = false;
+		/** Right thumbstick button press */
 		bool button_right_thumbstick = false;
+		/** The position of the left thumbstick on a digital coordinate system. Max value of any axis is 32747 and the minimum value is -32768*/
 		GGeneral::Point<short> left_thumbstick = { 0, 0 };
+		/** The position of the right thumbstick on a digital coordinate system. Max value of any axis is 32747 and the minimum value is -32768 */
 		GGeneral::Point<short> right_thumbstick = { 0, 0 };
 
 		GGeneral::String toString() const override {
@@ -2041,22 +2065,53 @@ namespace GGamepad {
 
 	class Gamepad {
 	private:
-		short num = -1;
+		byte num = -1;
 	public:
+		/** Default Constructor */
 		Gamepad() {}
-		Gamepad(short num) : num(num) {}
-		bool vibrate(float amount, bool leftMotor = true);
+		/**
+		 * Will set the listen number to the given value. The value may not be higher than 3 nor smaller than 0
+		 * @param num - The number of the gamepad
+		 */
+		Gamepad(byte num);
+		/**
+		 * Will set the listen number to the given value. The value may not be higher than 3 nor smaller than 0
+		 * @param num - The number of the gamepad
+		 */
+		void listen(byte num);
+		/**
+		 * Will make the gamepad vibrate. The amount controls the force of the vibration. The higher the value, the more the gamepad will vibrate. The max value may not be higher than 65535 nor lower than 0
+		 * @param amount - The force of the vibration
+		 * @param param - Which motor to control. Values accepter are GAMEPAD_LEFT_MOTOR, GAMEPAD_RIGHT_MOTOR or GAMEPAD_LEFT_MOTOR | GAMEPAD_RIGHT_MOTOR
+		 * @return true if the function succeeded
+		 * @return false if the function fails
+		 */
+		bool vibrate(unsigned short amount = 0xffff, byte param = GAMEPAD_LEFT_MOTOR | GAMEPAD_RIGHT_MOTOR);
+		/**
+		 * Will stop all vibration of the gamepad
+		 * @return true if the function succeeded
+		 * @return false if the function fails
+		 */
 		bool stopvibrate();
 
+		/**
+		 * @return The current state of the gamepad
+		 */
 		GamepadState getState();
 	};
 
+	/**
+	 * @return the amount of gamepads currently connected
+	 */
 	short getAmountOfConnectedGPad();
+	/**
+	 * Will enable/disable all input or output to all gamepads. Gamepad::getState will return a GamepadState struct with all values being 0.
+	 * This function can be used to disable gamepad controls if the main window looses focus.
+	 */
 	void enable(bool enable);
-	Gamepad getGamepad(short num);
 }
 
-/** Default maximum buffer siwze used by this namespace. */
+/** Default maximum buffer size used by this namespace. */
 #define MAX_NET_BUFFER_SIZE 1024
 /**
  * This namespace has the most important functions for Web Sockets. This class will only support IPv4 for now
@@ -2227,36 +2282,103 @@ namespace GNetworking {
  * This namespace contains functions and classes for receiving information from the GWindow namespace.
  */
 namespace GEventWrapper {
+	/** Separate enum class for all possible mouse button inputs */
 	enum class MouseButtons {
-		LEFT
-		, RIGTH
-		, MIDDLE
-		, X1
-		, X2
+		LEFT_BUTTON      /*! Left Mouse Button */
+		, RIGTH_BUTTON	 /*! Right Mouse Button*/
+		, MIDDLE_BUTTON	 /*! Middle Mouse Button */
+		, X1			 /*! X1 Button (Usually on the side of the mouse)*/
+		, X2			 /*! X2 Button (Usually on the side of the mouse)*/
 	};
 
-	typedef void(*GEventMouseButton)(GWindow::Window* window, bool pressed, MouseButtons);
-	typedef void(*GEventMouseMove)(GWindow::Window* window, GGeneral::Point<int> pos);
+	/** Function callback for change in extended window state */
+	typedef void(*GEventWindowState)(GWindow::Window* window, GWindow::WindowState state);
+	/** Function callback for change in window size */
+	typedef void(*GEventWindowResize)(GWindow::Window* window, GGeneral::Rectangle<long> size);
+	/** Function callback for change in window focus */
+	typedef void(*GEventWindowFocus)(GWindow::Window* window, bool focus);
+	/** Function callback for change in the position of the window */
+	typedef void(*GEventWindowMove)(GWindow::Window* window, GGeneral::Point<long> pos);
+	/** Function callback for keyboard input */
 	typedef void(*GEventKeyboard)(GWindow::Window* window, bool pressed, GWindow::VK key);
+	/** Function callback for mouse button input */
+	typedef void(*GEventMouseButton)(GWindow::Window* window, bool pressed, MouseButtons);
+	/** Function callback for change in mouse position */
+	typedef void(*GEventMouseMove)(GWindow::Window* window, GGeneral::Point<int> pos);
+	/** Function callback for the window close function */
+	typedef void(*GEventWindowClose)(GWindow::Window* window);
 
 	/**
-	 * Will only support 1 window
+	 * Class wrapper for Window callbacks. It supports multiple callback functions but only one window
 	 */
 	class Windowhandler {
 	private:
 		unsigned int ID = 0;
 	public:
+		/** Default constructor. Call registerWindow() to hook to the window callback */
 		Windowhandler();
+		/**
+		 * Will initialize the wrapper and set the callback of the window to the internal callback.
+		 * @param window - The window to listen to
+		 */
 		Windowhandler(GWindow::Window* window);
 
+		/** Default destructor. Will set the callback of the listened window to a nullptr */
 		~Windowhandler();
 
+		/**
+		 * Will set the callback function of the given window pointer to the internal callback function. Note that the user may not call the GWindow::setCallbackFunction() after calling this function or else this wrapper will stop listening to the window
+		 * @param window - The window to listen to
+		 */
 		void registerWindow(GWindow::Window* window);
 
-		void addCallback(GEventMouseButton f);
-		void addCallback(GEventMouseMove f);
-		void addCallback(GEventKeyboard f);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventWindowState callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventWindowResize callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventWindowFocus callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventWindowMove callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventKeyboard callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventMouseButton callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventMouseMove callback);
+		/**
+		 * Adds a callback function to call upon receiving events from the window
+		 * @param callback - The callback function
+		 */
+		void addCallback(GEventWindowClose callback);
 
+		/**
+		 * Note that UNKNOWN key is not a valid key and will always return false
+		 * @param key - The key to check for
+		 * @return true If the key is pressed
+		 * @return false otherwise
+		 */
 		bool isKeyPressed(GWindow::VK key);
 	};
 
@@ -2843,8 +2965,9 @@ namespace GRenderer {
 	/**
 	 * Will bind the needed VertexArrays and Textures and then render the Mesh using the currently bound shaders
 	 * @param m - The Mesh to be drawn
+	 * @param buffer - Optional buffer to draw on. If nullptr the default buffer will be used (Most likely the window buffer)
 	 */
-	void draw(Mesh& m);
+	void draw(Mesh& m, FrameBuffer* buffer = nullptr);
 }
 
 namespace GGraphics {
@@ -2891,7 +3014,7 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowEvent e) {
 	switch (e) {
-	case GWindow::WindowEvent::STATE:                 return s.append("EXTENDED WINDOW STATE");
+	case GWindow::WindowEvent::WINDOW_STATE:                 return s.append("EXTENDED WINDOW STATE");
 	case GWindow::WindowEvent::WINDOW_RESIZE:		  return s.append("WINDOW RESIZE");
 	case GWindow::WindowEvent::KEY_PRESS:			  return s.append("KEY PRESS");
 	case GWindow::WindowEvent::KEY_RELEASE:			  return s.append("KEY RELEASE");

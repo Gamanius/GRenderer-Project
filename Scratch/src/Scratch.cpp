@@ -20,6 +20,12 @@ float planeVertices[] = { // vertex attributes for a quad that fills the entire 
 		 1.0f,  1.0f,  1.0f, 1.0f
 };
 
+static void callback(GWindow::Window* w, bool pressed, GWindow::VK key) {
+	LOGI(key);
+	if (key == GWindow::VK::ESCAPE)
+		w->forceCloseRequest();
+}
+
 GWindow::Window* w;
 
 int main() {
@@ -37,6 +43,8 @@ int main() {
 	window.createOpenGLcontext();
 	window.setOpenGLContextActive(true);
 	window.setState(GWindow::WindowState::NORMAL);
+	GEventWrapper::Windowhandler handler(w);
+	handler.addCallback(callback);
 
 	GRenderer::Primitives::VertexBuffer vertexbuffer(vertices, 9);
 	GRenderer::Primitives::VertexArray varray(vertexbuffer, GRenderer::Primitives::VertexArray::VertexArrayLayout({ 3 }, GRenderer::Primitives::VertexTypes::FLOAT));
@@ -61,15 +69,16 @@ int main() {
 	GRenderer::ShaderProgram program2({ &framebuffervert, &framebufferfrag });
 	program2.link();
 
-	while (!window.getCloseRequest()) {
-		fbuffer.bind();
-		program.bind();
-		GRenderer::clear({ 50, 50, 50 });
-		GRenderer::draw(m);
+	GGamepad::Gamepad pad(0);
+	pad.vibrate(1, GAMEPAD_LEFT_MOTOR);
 
-		fbuffer.unbind();
+	while (!window.getCloseRequest()) {
+		program.bind();
+		fbuffer.bind();
+		GRenderer::clear({ 50, 50, 50 });
+		GRenderer::draw(m, &fbuffer);
+
 		program2.bind();
-		GRenderer::clear({ 255, 25, 255 });
 		GRenderer::draw(m2);
 
 		window.swapBuffers();

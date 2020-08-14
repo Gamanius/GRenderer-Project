@@ -68,9 +68,13 @@ void GRenderer::setWireFrameMode(bool b) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE + !b);
 }
 
-void GRenderer::draw(Mesh& m) {
+void GRenderer::draw(Mesh& m, GRenderer::FrameBuffer* buffer) {
 	if (m.tex != nullptr)
 		m.tex->bind();
+	if (buffer == nullptr)
+		GRenderer::FrameBuffer::unbind();
+	else
+		buffer->bind();
 	m.vertex->bind();
 	if (m.vertex->isOnlyVertex()) {
 		glDrawArrays(GL_TRIANGLES, 0, m.vertex->getAmount());
@@ -84,4 +88,6 @@ void GRenderer::draw(Mesh& m) {
 		}
 		glDrawElements(GL_TRIANGLES, m.vertex->getAmount(), type, nullptr);
 	}
+	//Unbind any buffer
+	GRenderer::FrameBuffer::unbind();
 }
