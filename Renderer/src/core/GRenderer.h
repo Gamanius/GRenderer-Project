@@ -317,9 +317,14 @@
 #define TO_RAD(deg) (deg * (G_PI / 180.0f))
 #define TO_DEG(rad) (rad * (180.0f / G_PI))
 
+#define STRING_ALPHABET_LOW "abcdefghijklmnopqrtsuvwxyz"
+#define STRING_ALPHABET_HIGH "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+#define STRING_NUMBERS "1234567890"
+
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.2.8.20"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.3.9.20"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -500,9 +505,28 @@ public:
 		memoryUsage += size;
 		allocations++;
 		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
-		mem[0] = size;
-		mem++;
-		return (void*)mem;
+		if (mem != nullptr) {
+			mem[0] = size;
+			mem++;
+			return (void*)mem;
+		}
+		return nullptr;
+	}
+
+	static void* re_alloc(void* p, size_t newsize) {
+		if (p == nullptr)
+			return alloc(newsize);
+		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
+
+		auto ptr = realloc(reinterpret_cast<unsigned int*>(p) - 1, newsize);
+		if (ptr != nullptr) {
+			memoryUsage -= size;
+			memoryUsage += newsize;
+			unsigned int* s = reinterpret_cast<unsigned int*>(ptr);
+			s[0] = newsize;
+			return (s++);
+		}
+		return nullptr;
 	}
 
 	/**
@@ -821,6 +845,7 @@ namespace GMath {
 
 namespace GGeneral {
 	struct BaseObject;
+
 	class String {
 	private:
 		/** Amount of chars without \0!! */
@@ -910,6 +935,7 @@ namespace GGeneral {
 		 */
 		String& operator+=(const char* c);
 
+		String& operator<< (char c);
 		/**
 		 * Will just call append
 		 * @param c - The chars to append
@@ -1012,6 +1038,14 @@ namespace GGeneral {
 		 * @return false - If the comparison was not successful
 		 */
 		bool compare(const char* c);
+
+		/**
+		 * Will compare both strings. If there is a char in the parameter that matches one of the chars in this string it will return true.
+		 * @param c - A list of chars
+		 * @return true - If both strings share at least one char
+		 * @return false - If both strings have no common char
+		 */
+		bool in(const char* c);
 		/**
 		 * Will erase part of the string.
 		 * @param beginning - The starting index
@@ -1044,6 +1078,7 @@ namespace GGeneral {
 		/** Will delete the buffer */
 		~String();
 	};
+
 	/**
 	 * Will try to convert given argument into a string using stringstream
 	 * @param arg - The argument to convert
@@ -1572,6 +1607,12 @@ namespace GFile {
 	File* loadFile(GGeneral::String filepath);
 
 	/**
+	 * Will load in the data and interpret it as a text file.
+	 * @returns A string
+	 */
+	GGeneral::String loadFileS(GGeneral::String filepath);
+
+	/**
 	 * Fetches and returns the filepath of the executable
 	 * @returns The file path of the .exe file
 	 */
@@ -1581,6 +1622,11 @@ namespace GFile {
 	 * This namespace contains all functions to load in images
 	 */
 	namespace Graphics {
+		enum class ImageType {
+			UNKNOWN
+			, BITMAP
+			, PORTABLE_NETWORK_GRAPHICS
+		};
 		/**
 		 * A struct containing information about a image. The data will always be:
 		 * RED, GREEN, BLUE, (if available) ALPHA
@@ -1593,24 +1639,35 @@ namespace GFile {
 			/**
 			 * Does the image contain alpha values
 			 */
+			bool hasAlpha = false;
+
+			/**
+			 * Specefies the type of the image.
+			 * NOTE: If the image type is a BITMAP the bytes will be ordered in BGR instead of RGB. This only occurs if there is no alpha
+			 */
+			ImageType type = ImageType::UNKNOWN;
 
 			GGeneral::String toString() const override {
 				return PRINT_VAR(this->size, dim);
 			}
-			bool hasAlpha = false;
+
+			/**
+			 * Will flip the image
+			 */
+			void flip();
 		};
 		/**
 		 * Check if there is an implementation to load the image. Will return false if an error occurs
 		 * @return true - The image can be parsed
 		 * @return false - An error occurred and/or the image cannot be parsed
 		 */
-		bool isParseble(GGeneral::String& filepath);
+		ImageType isParseble(GGeneral::String& filepath);
 		/**
 		 * Check if there is an implementation to load the image. Will return false if an error occurs
 		 * @return true - The image can be parsed
 		 * @return false - An error occurred and/or the image cannot be parsed
 		 */
-		bool isParseble(byte* data);
+		ImageType isParseble(byte* data);
 
 		/**
 		 * Will check if the image can be parsed. If the image can be parse it will load in the image, parse it and return a pointer to a created image struct with all information about the image
@@ -2381,8 +2438,6 @@ namespace GEventWrapper {
 		 */
 		bool isKeyPressed(GWindow::VK key);
 	};
-
-	class GamepadHandler {};
 }
 
 /**
@@ -2400,6 +2455,9 @@ namespace GRenderer {
 	 */
 	GGeneral::String getCurentOpenGLVersion();
 
+	/**
+	 * @return The time since the last call of this function. If the function is called for the first time the returned value is 0
+	 */
 	double delta();
 
 	enum class GLString {
@@ -2989,69 +3047,265 @@ namespace GGraphics {
 	 * @param r - The coordinates
 	 */
 	void drawRect(GGeneral::Rectangle<int> r);
+
+	/**
+	 * Will draw an image at the given coordinates
+	 * @param pos - The position of the image
+	 * @param img - The image to draw
+	 */
+	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img);
+
+	void drawImg(GGeneral::Point<int> pos, const GRenderer::Texture tex);
+}
+
+/**
+ * With this namespace one can interpret a script. The script has the ability to call most of the engines functions.
+ */
+namespace GScript {
+	/**
+	 * All tokens
+	 */
+	enum class TokenID {
+		UNKNOWN /*! Unknown token. Only used for the default constructor of the Token struct */
+		, DOUBLE_LITERAL /*! A Number literal with a comma '5.23', '0.2', '.23' */
+		, INTEGER_LITERAL /*! A number literal without a comma '23'*/
+		, CHAR_LITERAL /*! A char literal ' "Hello there buddy!" '*/
+		, OP_PLUS /*! Plus symbol */
+		, OP_MINUS /*! Minus symbol */
+		, OP_MULTIPLY /*! Multiply symbol */
+		, OP_DIVIDE /*! Divide symbol */
+		, LPARAN /*! Left Parenthesizes symbol '(' */
+		, RPARAN /*! Right Parenthesizes symbol ')'*/
+		, BREAK /*! End of line/statement. ';' */
+	};
+
+	struct Token : public GGeneral::BaseObject {
+		TokenID token;
+		byte type = 0;
+		double dvalue = 0;
+		int ivalue = 0;
+		GGeneral::String svalue;
+		unsigned int line = 0;
+
+		Token() : token(TokenID::UNKNOWN) {}
+		Token(TokenID token, double dvalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), dvalue(dvalue), line(line), svalue(rep) { type = 1; }
+		Token(TokenID token, int ivalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), ivalue(ivalue), line(line), svalue(rep) { type = 2; }
+		Token(TokenID token, GGeneral::String svalue, unsigned int line) : token(token), line(line), svalue(svalue) { type = 3; }
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(token, type, dvalue, ivalue, svalue, line);
+		}
+
+		~Token() {}
+	};
+
+	struct Node : public GGeneral::BaseObject {
+		/** Left side of the node */
+		Node* left;
+		/** The main Token of the node. Most likely a operator */
+		Token main;
+		/** Right side of the node. If nullptr the node is a unary node */
+		Node* right;
+
+		GGeneral::String toString() const override {
+			//Ik that this is breaking my own convention but this good
+			GGeneral::String returnValue = "[";
+			if (right != nullptr) {
+				//returnValue += "right: " + right->toString() + ", ";
+				returnValue += right->toString();
+			}
+			returnValue += main.svalue;
+			if (left != nullptr) {
+				//returnValue += ", left: " + left->toString();
+				returnValue += left->toString();
+			}
+			returnValue += "]";
+			return returnValue;
+		}
+
+		/**
+		 * Will remove all main reference to any tokens
+		 */
+		void dereference();
+
+		/** Destructor */
+		~Node() {
+			delete left;
+			delete right;
+		}
+	};
+
+	/**
+	 * Main class of this namespace. Just use this class for loading in scripts and executing them
+	 */
+	class Interpreter {
+		/** Source code */
+		GGeneral::String source;
+
+	public:
+		/** Tokeniszr will tokenize all code */
+		class Lexer {
+			const GGeneral::String* source = nullptr;
+			std::vector<Token> tokens;
+			unsigned int position = 0;
+
+		public:
+			/**
+			 * Will try to convert the given string to an array of tokens
+			 * @param source - The source code
+			 */
+			Lexer(const GGeneral::String* source);
+
+			/** Default constructor */
+			Lexer() {}
+
+			/**
+			 * Will reset the lexer and set the source to the given string
+			 * @param source - The source code
+			 */
+			void setSource(const GGeneral::String* source);
+
+			/**
+			 * Will try to tokenize the pointed source
+			 * @return true - If this operation was successful
+			 * @return false - If an error occurred while tokenizing
+			 */
+			bool createTokens();
+
+			/**
+			 * @return A vector with all tokens
+			 */
+			std::vector<Token> getTokens() { return tokens; }
+			friend class Interpreter;
+		};
+
+		/** Can parse an array of tokens and create an abstract syntax tree */
+		class Parser {
+			Node* abstractSyntaxTree = nullptr;
+			const std::vector<Token>* tokens = nullptr;
+			unsigned int position = 0;
+		public:
+			/**
+			 * Will set the tokens array. Does not create AST
+			 *
+			 * @param tok - The tokens to parse
+			 */
+			Parser(const std::vector<Token>* tok) : tokens(tok) {};
+			/** Default constructor */
+			Parser() {}
+
+			/**
+			 * Will reset the parser and the the tokens array to the given tokens
+			 * @param tok - The tokens to parse
+			 */
+			void setTokens(const std::vector<Token>* tok);
+			/**
+			 * Will try to parse the given tokens and create an AST.
+			 * @return true - If the operation was successful
+			 * @return false - If an error occurred
+			 */
+			bool createAbstractSyntaxTree();
+			friend class Interpreter;
+		};
+
+		/**
+		 * WIP
+		 * @param gprojFile
+		 */
+		Interpreter(GFile::File gprojFile);
+		/**
+		 * WIP
+		 * @param source
+		 */
+		Interpreter(GGeneral::String source);
+
+		/**
+		 * WIP
+		 * @return true
+		 * @return false
+		 */
+		bool prepare();
+	};
+}
+
+inline GGeneral::String& operator<<(GGeneral::String& s, GScript::TokenID tok) {
+	switch (tok) {
+	case GScript::TokenID::UNKNOWN:         return s.append("UNKNOWN");
+	case GScript::TokenID::DOUBLE_LITERAL:  return s.append("DOUBLE");
+	case GScript::TokenID::INTEGER_LITERAL: return s.append("INTEGER");
+	case GScript::TokenID::CHAR_LITERAL:    return s.append("CHAR");
+	case GScript::TokenID::OP_PLUS:         return s.append("OP_PLUS");
+	case GScript::TokenID::OP_MINUS:        return s.append("OP_MINUS");
+	case GScript::TokenID::OP_MULTIPLY:     return s.append("OP_MULTIPLY");
+	case GScript::TokenID::OP_DIVIDE:       return s.append("OP_DIVIDE");
+	case GScript::TokenID::LPARAN:          return s.append("LPARAN");
+	case GScript::TokenID::RPARAN:          return s.append("RPARAN");
+	case GScript::TokenID::BREAK:           return s.append("BREAK");
+	}
+	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GGeneral::Logger::Severity e) {
 	switch (e) {
-	case GGeneral::Logger::Severity::S_MSG:                     return s.append("MESSAGE");
-	case GGeneral::Logger::Severity::S_INFO:                    return s.append("INFO");
-	case GGeneral::Logger::Severity::S_SUCCESS:                 return s.append("SUCCESS");
-	case GGeneral::Logger::Severity::S_WARNING:                 return s.append("WARNING");
-	case GGeneral::Logger::Severity::S_ERROR:	                return s.append("ERROR");
-	case GGeneral::Logger::Severity::S_FATAL:                   return s.append("FATAL");
+	case GGeneral::Logger::Severity::S_MSG:     return s.append("MESSAGE");
+	case GGeneral::Logger::Severity::S_INFO:    return s.append("INFO");
+	case GGeneral::Logger::Severity::S_SUCCESS: return s.append("SUCCESS");
+	case GGeneral::Logger::Severity::S_WARNING: return s.append("WARNING");
+	case GGeneral::Logger::Severity::S_ERROR:   return s.append("ERROR");
+	case GGeneral::Logger::Severity::S_FATAL:   return s.append("FATAL");
 	}
 	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::IndexTypes e) {
 	switch (e) {
-	case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:	 return s.append("UNSIGNED BYTE");
-	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	 return s.append("UNSIGNED SHORT");
-	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:	 return s.append("UNSIGNED INT");
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_BYTE:	return s.append("UNSIGNED BYTE");
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_SHORT:	return s.append("UNSIGNED SHORT");
+	case GRenderer::Primitives::IndexTypes::UNSIGNED_INT:	return s.append("UNSIGNED INT");
 	}
 	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowEvent e) {
 	switch (e) {
-	case GWindow::WindowEvent::WINDOW_STATE:                 return s.append("EXTENDED WINDOW STATE");
-	case GWindow::WindowEvent::WINDOW_RESIZE:		  return s.append("WINDOW RESIZE");
-	case GWindow::WindowEvent::KEY_PRESS:			  return s.append("KEY PRESS");
-	case GWindow::WindowEvent::KEY_RELEASE:			  return s.append("KEY RELEASE");
+	case GWindow::WindowEvent::WINDOW_STATE:  return s.append("EXTENDED WINDOW STATE");
+	case GWindow::WindowEvent::WINDOW_RESIZE: return s.append("WINDOW RESIZE");
+	case GWindow::WindowEvent::KEY_PRESS:	  return s.append("KEY PRESS");
+	case GWindow::WindowEvent::KEY_RELEASE:	  return s.append("KEY RELEASE");
 	}
 	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::VertexTypes e) {
 	switch (e) {
-	case GRenderer::Primitives::VertexTypes::BYTE:		return s.append("BYTE");
-	case GRenderer::Primitives::VertexTypes::SHORT:		return s.append("SHORT");
-	case GRenderer::Primitives::VertexTypes::INT:		return s.append("INT");
-	case GRenderer::Primitives::VertexTypes::FLOAT:		return s.append("FLOAT");
-	case GRenderer::Primitives::VertexTypes::DOUBLE:	return s.append("DOUBLE");
+	case GRenderer::Primitives::VertexTypes::BYTE:	 return s.append("BYTE");
+	case GRenderer::Primitives::VertexTypes::SHORT:	 return s.append("SHORT");
+	case GRenderer::Primitives::VertexTypes::INT:	 return s.append("INT");
+	case GRenderer::Primitives::VertexTypes::FLOAT:	 return s.append("FLOAT");
+	case GRenderer::Primitives::VertexTypes::DOUBLE: return s.append("DOUBLE");
 	}
 	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GRenderer::Primitives::ShaderTypes e) {
 	switch (e) {
-	case GRenderer::Primitives::ShaderTypes::COMPUTE_SHADER:					return s.append("COMPUTE SHADER");
-	case GRenderer::Primitives::ShaderTypes::VERTEX_SHADER:						return s.append("VERTEX SHADER");
-	case GRenderer::Primitives::ShaderTypes::TESS_CONTROL_SHADER:				return s.append("TESS CONTROL SHADER");
-	case GRenderer::Primitives::ShaderTypes::TESS_EVALUATION_SHADER:			return s.append("TESS EVALUATION SHADER");
-	case GRenderer::Primitives::ShaderTypes::GEOMETRY_SHADER:					return s.append("GEOMETRY SHADER");
-	case GRenderer::Primitives::ShaderTypes::FRAGMENT_SHADER:					return s.append("FRAGMENT SHADER");
-	case GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER:						return s.append("UNKOWN SHADER");
+	case GRenderer::Primitives::ShaderTypes::COMPUTE_SHADER:		 return s.append("COMPUTE SHADER");
+	case GRenderer::Primitives::ShaderTypes::VERTEX_SHADER:			 return s.append("VERTEX SHADER");
+	case GRenderer::Primitives::ShaderTypes::TESS_CONTROL_SHADER:	 return s.append("TESS CONTROL SHADER");
+	case GRenderer::Primitives::ShaderTypes::TESS_EVALUATION_SHADER: return s.append("TESS EVALUATION SHADER");
+	case GRenderer::Primitives::ShaderTypes::GEOMETRY_SHADER:		 return s.append("GEOMETRY SHADER");
+	case GRenderer::Primitives::ShaderTypes::FRAGMENT_SHADER:		 return s.append("FRAGMENT SHADER");
+	case GRenderer::Primitives::ShaderTypes::UNKOWN_SHADER:			 return s.append("UNKOWN SHADER");
 	}
 	return s.append("Invalid Enum");
 }
 
 inline GGeneral::String& operator<<(GGeneral::String& s, GWindow::WindowState e) {
 	switch (e) {
-	case GWindow::WindowState::HIDDEN:                          return s.append("HIDDEN");
-	case GWindow::WindowState::MAXIMIZED:						return s.append("MAXIMIZED");
-	case GWindow::WindowState::MINIMIZED:						return s.append("MINIMIZED");
-	case GWindow::WindowState::NORMAL:							return s.append("NORMAL");
+	case GWindow::WindowState::HIDDEN:    return s.append("HIDDEN");
+	case GWindow::WindowState::MAXIMIZED: return s.append("MAXIMIZED");
+	case GWindow::WindowState::MINIMIZED: return s.append("MINIMIZED");
+	case GWindow::WindowState::NORMAL:	  return s.append("NORMAL");
 	}
 	return s.append("Invalid Enum");
 }

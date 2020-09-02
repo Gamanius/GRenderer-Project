@@ -57,5 +57,11 @@
     <Image Include="rsc\img\smile.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="rsc\img\s.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="rsc\img\a.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

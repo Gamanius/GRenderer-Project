@@ -57,7 +57,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
@@ -74,7 +74,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
@@ -97,6 +97,7 @@
     <ClInclude Include="src\dependencies\GLEW\include\GL\glew.h" />
     <ClInclude Include="src\dependencies\GLEW\include\GL\glxew.h" />
     <ClInclude Include="src\dependencies\GLEW\include\GL\wglew.h" />
+    <ClInclude Include="src\dependencies\lodePNG\lodepng.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp" />
@@ -120,8 +121,12 @@
     <ClCompile Include="src\core\renderer\Renderer.cpp" />
     <ClCompile Include="src\core\renderer\Texture.cpp" />
     <ClCompile Include="src\core\renderer\ShaderProgram.cpp" />
+    <ClCompile Include="src\core\script\Interpreter.cpp" />
+    <ClCompile Include="src\core\script\Lexer.cpp" />
+    <ClCompile Include="src\core\script\Parser.cpp" />
     <ClCompile Include="src\core\window\Monitor.cpp" />
     <ClCompile Include="src\core\window\Window.cpp" />
+    <ClCompile Include="src\dependencies\lodePNG\lodepng.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />

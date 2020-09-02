@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <iostream>
 #include <fstream>
+#include <lodepng.h>
+#include <algorithm>
 
 unsigned long long int GFile::getFileSize(GGeneral::String& relativeFilepath) {
 	File returnValue = {};
@@ -34,6 +36,25 @@ GFile::File* GFile::loadFile(GGeneral::String relativeFilepath) {
 	return returnValue;
 }
 
+GGeneral::String GFile::loadFileS(GGeneral::String filepath) {
+	File* returnValue = new File();
+	std::fstream file(filepath, std::ios_base::binary | std::ios_base::in);
+	if (file.fail()) {
+		THROW("Error while trying to load from relative path ", filepath, ". Maybe the Path is wrong?");
+		return "";
+	}
+	file.seekg(0, std::ios_base::end);
+	unsigned int size = static_cast<unsigned int>(file.tellg());
+	file.seekg(0, 0);
+
+	char* buffer = new char[size + 1];//MALLOC new char[static_cast<unsigned int>(size)];
+	buffer[size] = '\0';
+	file.read(buffer, size);
+	file.close();
+	GGeneral::String s(buffer);
+	return s;
+}
+
 GGeneral::String GFile::getWorkingDirectionary() {
 	char buffer[MAX_PATH];
 	auto error = GetModuleFileName(NULL, buffer, MAX_PATH);
@@ -43,21 +64,33 @@ GGeneral::String GFile::getWorkingDirectionary() {
 	return GGeneral::String(buffer);
 }
 
-bool GFile::Graphics::isParseble(GGeneral::String& filepath) {
+GFile::Graphics::ImageType GFile::Graphics::isParseble(GGeneral::String& filepath) {
 	auto file = loadFile(filepath);
 	return isParseble(file->data);
 }
 
-static byte BMPSig[] = { 0x42, 0x4d };
-bool GFile::Graphics::isParseble(byte* data) {
-	if (data[0] == BMPSig[0] && data[1] == BMPSig[1])
-		return true;
-	return false;
+constexpr byte BMPSig[] = { 0x42, 0x4d };
+constexpr byte PNGSig[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+GFile::Graphics::ImageType GFile::Graphics::isParseble(byte* data) {
+	bool is = true;
+	for (size_t i = 0; i < 2; i++) {
+		is = is && data[i] == BMPSig[i];
+	}
+	if (is)
+		return GFile::Graphics::ImageType::BITMAP;
+	is = true;
+	for (size_t i = 0; i < 8; i++) {
+		is = is && data[i] == PNGSig[i];
+	}
+	if (is)
+		return GFile::Graphics::ImageType::PORTABLE_NETWORK_GRAPHICS;
+	return GFile::Graphics::ImageType::UNKNOWN;
 }
 
 GFile::Graphics::Image* doBMP(GFile::File* f) {
 	using namespace GFile::Graphics;
 	Image* returnValue = new Image;
+	returnValue->type = ImageType::BITMAP;
 	//Check for header
 	//only support for 32 and 24 bit BMP's
 	int height = reinterpret_cast<int*>(&f->data[0x16])[0];
@@ -82,19 +115,61 @@ GFile::Graphics::Image* doBMP(GFile::File* f) {
 	return returnValue;
 }
 
+GFile::Graphics::Image* doPNG(GFile::File* f) {
+	using namespace GFile::Graphics;
+	Image* returnValue = new Image;
+	returnValue->type = ImageType::PORTABLE_NETWORK_GRAPHICS;
+
+	unsigned int error;
+	LodePNGState state = {};
+	error = lodepng_inspect(&returnValue->dim.width, &returnValue->dim.height, &state, f->data, f->size);
+	if (error != 0) {
+		THROW("An error occurred while parsing a PNG image: '", lodepng_error_text(error), "'");
+	}
+
+	//error = lodepng_decode_memory(&returnValue->data, &returnValue->dim.width, &returnValue->dim.height, f->data, f->size, (LodePNGColorType)color, depth);
+	error = lodepng_decode(&returnValue->data, &returnValue->dim.width, &returnValue->dim.height, &state, f->data, f->size);
+
+	if (state.info_png.color.colortype == LodePNGColorType::LCT_RGBA || state.info_png.color.colortype == LodePNGColorType::LCT_GREY_ALPHA) {
+		returnValue->size = returnValue->dim.width * returnValue->dim.height * 4;
+		returnValue->hasAlpha = true;
+	}
+	else
+		returnValue->size = returnValue->dim.width * returnValue->dim.height * 3;
+
+	if (error != 0) {
+		THROW("An error occurred while parsing a PNG image: '", lodepng_error_text(error), "'");
+	}
+
+	return returnValue;
+}
+
 GFile::Graphics::Image* GFile::Graphics::loadImage(GGeneral::String filepath) {
 	auto file = loadFile(filepath);
 	if (file->data == nullptr) {
 		delete file;
 		return nullptr;
-	}	if (!isParseble(file->data)) {
+	}
+	auto type = isParseble(file->data);
+	switch (type) {
+	case GFile::Graphics::ImageType::UNKNOWN:
+	{
 		delete file;
+		THROWW("File is possibly corrupt or not supported");
 		return nullptr;
 	}
-	if (file->operator[](0) == BMPSig[0] && file->operator[](1) == BMPSig[1]) {
+	case GFile::Graphics::ImageType::BITMAP:
+	{
 		return doBMP(file);
+	}
+	case GFile::Graphics::ImageType::PORTABLE_NETWORK_GRAPHICS:
+	{
+		return doPNG(file);
+	}
 	}
 	delete file;
 	THROWW("File is possibly corrupt or not supported");
 	return nullptr;
 }
+
+void GFile::Graphics::Image::flip() { std::reverse(this->data, this->data + this->size); }

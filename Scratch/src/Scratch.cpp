@@ -19,13 +19,6 @@ float planeVertices[] = { // vertex attributes for a quad that fills the entire 
 		 1.0f, -1.0f,  1.0f, 0.0f,
 		 1.0f,  1.0f,  1.0f, 1.0f
 };
-
-static void callback(GWindow::Window* w, bool pressed, GWindow::VK key) {
-	LOGI(key);
-	if (key == GWindow::VK::ESCAPE)
-		w->forceCloseRequest();
-}
-
 GWindow::Window* w;
 
 int main() {
@@ -38,57 +31,39 @@ int main() {
 	LOGS("Initialized successfully");
 	LOGI("Using GRenderer Version: ", G_RENDERER_VERSION);
 
-	w = new GWindow::Window();
+	w = new GWindow::Window("Heyo", { 100, 100 }, { 1920, 1080 });
 	auto window = *w;
 	window.createOpenGLcontext();
 	window.setOpenGLContextActive(true);
 	window.setState(GWindow::WindowState::NORMAL);
-	GEventWrapper::Windowhandler handler(w);
-	handler.addCallback(callback);
 
-	GRenderer::Primitives::VertexBuffer vertexbuffer(vertices, 9);
-	GRenderer::Primitives::VertexArray varray(vertexbuffer, GRenderer::Primitives::VertexArray::VertexArrayLayout({ 3 }, GRenderer::Primitives::VertexTypes::FLOAT));
-	GRenderer::Mesh m(&varray, nullptr);
-
-	GRenderer::Primitives::VertexBuffer planevertexbuffer(planeVertices, 24, 6);
-	GRenderer::Primitives::VertexArray planevarray(planevertexbuffer, GRenderer::Primitives::VertexArray::VertexArrayLayout({ 2, 2 }, GRenderer::Primitives::VertexTypes::FLOAT));
-	GRenderer::Mesh m2(&planevarray, nullptr);
-
-	GRenderer::Primitives::Shader frag("rsc/shader/frag.frag");
-	GRenderer::Primitives::Shader vert("rsc/shader/vert.vert");
-	GRenderer::ShaderProgram program({ &vert, &frag });
+	GRenderer::Primitives::Shader frag("rsc/shader/framebuffer.frag");
+	GRenderer::Primitives::Shader vert("rsc/shader/framebuffer.vert");
+	GRenderer::ShaderProgram program({ &frag, &vert });
 	program.link();
+	program.bind();
 
-	GRenderer::FrameBuffer fbuffer;
-	fbuffer.attachTex(window.getWindowDrawSize());
-	fbuffer.unbind();
-	m2.tex = const_cast<GRenderer::Texture*>(fbuffer.getBoundTexture());
+	GRenderer::Primitives::VertexBuffer buffer(planeVertices, 24, 6);
+	GRenderer::Primitives::VertexArray array(buffer, GRenderer::Primitives::VertexArray::VertexArrayLayout({ 2, 2 }, GRenderer::Primitives::VertexTypes::FLOAT));
+	array.bind();
 
-	GRenderer::Primitives::Shader framebuffervert("rsc/shader/framebuffer.frag");
-	GRenderer::Primitives::Shader framebufferfrag("rsc/shader/framebuffer.vert");
-	GRenderer::ShaderProgram program2({ &framebuffervert, &framebufferfrag });
-	program2.link();
+	GGeneral::String filepath = "rsc/img/s.png";
+	auto test = GFile::Graphics::isParseble(filepath);
+	auto img = GFile::Graphics::loadImage(filepath);
+	img->flip();
+	auto tex = GRenderer::Texture(*img);
 
-	GGamepad::Gamepad pad(0);
-	pad.vibrate(1, GAMEPAD_LEFT_MOTOR);
+	GRenderer::Mesh mesh(&array, &tex);
 
 	while (!window.getCloseRequest()) {
-		program.bind();
-		fbuffer.bind();
-		GRenderer::clear({ 50, 50, 50 });
-		GRenderer::draw(m, &fbuffer);
-
-		program2.bind();
-		GRenderer::draw(m2);
-
+		GRenderer::clear({ 50 });
+		GRenderer::draw(mesh);
 		window.swapBuffers();
 		window.fetchEvents();
 	}
 
-	//Don't call the destructor twice!
-	m.vertex = nullptr;
-	m2.tex = nullptr;
-	m2.vertex = nullptr;
+	mesh.vertex = nullptr;
+	mesh.tex = nullptr;
 	GGeneral::ErrorHandler::printAll();
 	LOGS("Good bye");
 	GGeneral::Logger::wait();

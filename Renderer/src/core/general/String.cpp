@@ -110,6 +110,28 @@ GGeneral::String& GGeneral::String::operator+=(const char* c) {
 	return this->append(c);
 }
 
+GGeneral::String& GGeneral::String::operator<<(char c) {
+	if (bytesize > size + 2) {
+		memcpy(buffer + size, &c, 2);
+	}
+	else {
+		auto temp = buffer;
+		auto lastbytesize = bytesize;
+		bytesize = size + 1;
+		if (!precise)
+			bytesize *= 2;
+		buffer = new char[bytesize + 1];
+
+		if (temp != nullptr) {
+			memcpy(buffer, temp, size);
+			delete[] temp;
+		}
+		memcpy(buffer + size, &c, 2);
+	}
+	size++;
+	return *this;
+}
+
 GGeneral::String& GGeneral::String::operator<<(const char* c) {
 	return this->append(c);
 }
@@ -203,6 +225,19 @@ bool GGeneral::String::compare(const char* c) {
 	if (strlen(c) != size)
 		return false;
 	return memcmp(c, buffer, size /*leaving the \0 out*/) == 0;
+}
+
+bool GGeneral::String::in(const char* c) {
+	unsigned int ssize = size;
+	unsigned int csize = strlen(c);
+	for (size_t i = 0; i < ssize; i++) {
+		auto tc = this->operator[](i);
+		for (size_t j = 0; j < csize; j++) {
+			if (c[j] == tc)
+				return true;
+		}
+	}
+	return false;
 }
 
 GGeneral::String& GGeneral::String::erase(size_t begining, size_t offset) {

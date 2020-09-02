@@ -22,4 +22,7 @@
   <ItemGroup>
     <Text Include="src\test.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="src\source.gproj" />
+  </ItemGroup>
 </Project>
