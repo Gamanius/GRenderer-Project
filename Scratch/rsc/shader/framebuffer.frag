@@ -1,13 +1,12 @@
 //#shader frag
 
 #version 330 
-out vec4 FragColor;
+out vec4 fragcolor;
 
-in vec2 TexCoords;
+in vec2 texcoord;
 
-uniform sampler2D texture1;
+uniform sampler2D _texture;
 
-void main()
-{    
-	FragColor = texture(texture1, TexCoords);
+void main() {    
+	fragcolor = texture(_texture, texcoord);
 }

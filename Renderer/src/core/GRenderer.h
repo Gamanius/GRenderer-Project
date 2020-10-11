@@ -8,6 +8,7 @@
 #include <atomic>
 #include <initializer_list>
 #include <vector>
+#include <map>
 #include <cmath>
 
 #ifndef _WIN32
@@ -324,7 +325,7 @@
 
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.3.9.20"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.4.10.20"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -897,6 +898,16 @@ namespace GGeneral {
 		 * @return this string
 		 */
 		String& append(BaseObject& obj);
+
+		/**
+		 * Will delete the current buffer and take over the given pointer instead of copying it. This also means that the pointer must not be manually freed. If the String class
+		 * gets destructed it will free the buffer.
+		 * @param string - The pointer to take over
+		 * @param size - The size of the buffer in bytes
+		 * @param create_null - Should a null termination char be created. If false no null termination char will be created but the size MUST include the null termination char
+		 *						If true a null termination char will be created. The size should only describe the amount of chars in the current pointer without the null termination char
+		 */
+		void take(void* string, size_t size, bool create_null = false);
 
 		/**
 		 * @param i - The index
@@ -1567,10 +1578,16 @@ namespace GFile {
 		 * The data of the file
 		 */
 		byte* data = nullptr;
+
 		/**
 		 * The size of data in bytes
 		 */
 		unsigned int size = 0;
+
+		/**
+		 * The filepath of this file
+		 */
+		GGeneral::String filepath;
 
 		/** Default constructor */
 		File() {}
@@ -1608,7 +1625,7 @@ namespace GFile {
 
 	/**
 	 * Will load in the data and interpret it as a text file.
-	 * @returns A string
+	 * @returns The String information of the file
 	 */
 	GGeneral::String loadFileS(GGeneral::String filepath);
 
@@ -1626,6 +1643,7 @@ namespace GFile {
 			UNKNOWN
 			, BITMAP
 			, PORTABLE_NETWORK_GRAPHICS
+			, CURSOR
 		};
 		/**
 		 * A struct containing information about a image. The data will always be:
@@ -1642,7 +1660,7 @@ namespace GFile {
 			bool hasAlpha = false;
 
 			/**
-			 * Specefies the type of the image.
+			 * Specifies the type of the image.
 			 * NOTE: If the image type is a BITMAP the bytes will be ordered in BGR instead of RGB. This only occurs if there is no alpha
 			 */
 			ImageType type = ImageType::UNKNOWN;
@@ -1656,6 +1674,7 @@ namespace GFile {
 			 */
 			void flip();
 		};
+
 		/**
 		 * Check if there is an implementation to load the image. Will return false if an error occurs
 		 * @return true - The image can be parsed
@@ -1674,11 +1693,28 @@ namespace GFile {
 		 * @returns If successful a image struct
 		 */
 		Image* loadImage(GGeneral::String filepath);
+
+		struct Cursor : public Image {
+			void* instance = nullptr;
+
+			GGeneral::String toString() const override {
+				return PRINT_VAR(this->size, this->dim, instance);
+			}
+
+			void flip() = delete;
+
+			~Cursor();
+		};
+
+		Cursor* loadCursor(GGeneral::String filepath);
 	}
 }
 
 /**
  * The GWindow namespace is for all window specific calls
+ *
+ * A REWRITE IS IN CONSIDERATION
+ *
  */
 namespace GWindow {
 	/*! An Enum describing the different states the window can be in */
@@ -1907,7 +1943,7 @@ namespace GWindow {
 		 * Will set the context active/inactive
 		 * @param b - If true the context will be made active
 		 */
-		void setOpenGLContextActive(bool b);
+		void setOpenGLContextActive(bool b = true);
 
 		/**
 		 * Will swap the buffers of the windows
@@ -1942,6 +1978,12 @@ namespace GWindow {
 		 * @param capture - Set the capture
 		 */
 		void setCaptureMouseMode(bool capture);
+
+		/**
+		 * Will set a new Cursor
+		 * @param c - The Cursor
+		 */
+		void setCursor(GFile::Graphics::Cursor* c);
 
 		/**
 		 * Will fetch the current window state and return it. If an error occurs the window state will be "NORMAL"
@@ -2161,6 +2203,7 @@ namespace GGamepad {
 	 * @return the amount of gamepads currently connected
 	 */
 	short getAmountOfConnectedGPad();
+
 	/**
 	 * Will enable/disable all input or output to all gamepads. Gamepad::getState will return a GamepadState struct with all values being 0.
 	 * This function can be used to disable gamepad controls if the main window looses focus.
@@ -2288,6 +2331,7 @@ namespace GNetworking {
 		 * @return If successful a unsigned int representing the socket. If not the return value will be ~0
 		 */
 		unsigned int accept();
+
 		/**
 		 * Will create a socket that will listen on the port given.
 		 * @param port - The port to listen on
@@ -2302,6 +2346,14 @@ namespace GNetworking {
 		void disconnect(unsigned int socket);
 
 		/**
+		 * Will check if messages can still be received or send to the socket. This function may not deliever correct results.
+		 * @param socket - The socket to check for
+		 * @return true - The socket is still connected
+		 * @return false - The socket is not connected anymore
+		 */
+		bool isConnected(unsigned int socket);
+
+		/**
 		 * Will set the blocking mode of the listening socket
 		 * @param block - True if the socket should be marked as blocking. false otherwise
 		 * @return true if the function was successful
@@ -2314,7 +2366,9 @@ namespace GNetworking {
 		 * @return true if the function was successful
 		 */
 		bool setBlockingMode(bool block, unsigned int socket);
+
 		/**
+		 * Always call receive(unsigned int) before calling this function
 		 * @return The amount of connected sockets. May be higher or lower than the real value
 		 */
 		unsigned int getConnectedAmount() const;
@@ -2326,6 +2380,7 @@ namespace GNetworking {
 		 * @param size - The size in bytes of the data
 		 */
 		void send(unsigned int socket, byte* data, unsigned int size = MAX_NET_BUFFER_SIZE);
+
 		/**
 		 * Will receive the data of the connected socket
 		 * @param socket - The socket to receive from
@@ -2779,6 +2834,7 @@ namespace GRenderer {
 	class Texture {
 		unsigned int ID = 0;
 		unsigned int textureSlot = 0;
+		GGeneral::Dimension<unsigned int> defaultSize;
 
 	public:
 		/**
@@ -2794,7 +2850,7 @@ namespace GRenderer {
 		 * Will create a new Texture with the given image
 		 * @param i
 		 */
-		Texture(GFile::Graphics::Image& i);
+		Texture(const GFile::Graphics::Image& i);
 
 		Texture& operator=(const Texture& other);
 
@@ -2805,7 +2861,7 @@ namespace GRenderer {
 		 * @param i - The Image to convert to a texture
 		 * @return Always true
 		 */
-		const bool createTexture(GFile::Graphics::Image& i);
+		const bool createTexture(const GFile::Graphics::Image& i);
 
 		void createTexture(GGeneral::Dimension<int> size, bool alpha = false);
 
@@ -2826,6 +2882,8 @@ namespace GRenderer {
 		void bind();
 
 		void setTextureSlot(unsigned int slot);
+
+		GGeneral::Dimension<unsigned int> getSize() const;
 
 		/**
 		 * Will unbind the current texture from the texture slot
@@ -3055,7 +3113,12 @@ namespace GGraphics {
 	 */
 	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img);
 
-	void drawImg(GGeneral::Point<int> pos, const GRenderer::Texture tex);
+	/**
+	 * Will draw an image at the given coordinates.
+	 * @param pos - The position of the image
+	 * @param img - The image to draw
+	 */
+	void drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex);
 }
 
 /**
@@ -3070,10 +3133,15 @@ namespace GScript {
 		, DOUBLE_LITERAL /*! A Number literal with a comma '5.23', '0.2', '.23' */
 		, INTEGER_LITERAL /*! A number literal without a comma '23'*/
 		, CHAR_LITERAL /*! A char literal ' "Hello there buddy!" '*/
+		, IDENTIFIER_VAR
+		, IDENTIFIER_INT
+		, IDENTIFIER_DOUBLE
+		, FUNCTION_PRINT
 		, OP_PLUS /*! Plus symbol */
 		, OP_MINUS /*! Minus symbol */
 		, OP_MULTIPLY /*! Multiply symbol */
 		, OP_DIVIDE /*! Divide symbol */
+		, EQUALS
 		, LPARAN /*! Left Parenthesizes symbol '(' */
 		, RPARAN /*! Right Parenthesizes symbol ')'*/
 		, BREAK /*! End of line/statement. ';' */
@@ -3082,9 +3150,9 @@ namespace GScript {
 	struct Token : public GGeneral::BaseObject {
 		TokenID token;
 		byte type = 0;
-		double dvalue = 0;
-		int ivalue = 0;
-		GGeneral::String svalue;
+		double dvalue = 0; //type 1
+		int ivalue = 0; //type 2
+		GGeneral::String svalue; //type 3
 		unsigned int line = 0;
 
 		Token() : token(TokenID::UNKNOWN) {}
@@ -3141,9 +3209,18 @@ namespace GScript {
 	class Interpreter {
 		/** Source code */
 		GGeneral::String source;
+	public:
+		struct Var {
+			byte type = 0;
+			double dvalue = 0;
+			int ivalue = 0;
+			GGeneral::String svalue;
+		};
+	private:
+		std::map<GGeneral::String, Var> variables;
 
 	public:
-		/** Tokeniszr will tokenize all code */
+		/** Tokenizer will tokenize all code */
 		class Lexer {
 			const GGeneral::String* source = nullptr;
 			std::vector<Token> tokens;
@@ -3179,34 +3256,37 @@ namespace GScript {
 			friend class Interpreter;
 		};
 
-		/** Can parse an array of tokens and create an abstract syntax tree */
-		class Parser {
-			Node* abstractSyntaxTree = nullptr;
-			const std::vector<Token>* tokens = nullptr;
-			unsigned int position = 0;
-		public:
-			/**
-			 * Will set the tokens array. Does not create AST
-			 *
-			 * @param tok - The tokens to parse
-			 */
-			Parser(const std::vector<Token>* tok) : tokens(tok) {};
-			/** Default constructor */
-			Parser() {}
-
-			/**
-			 * Will reset the parser and the the tokens array to the given tokens
-			 * @param tok - The tokens to parse
-			 */
-			void setTokens(const std::vector<Token>* tok);
-			/**
-			 * Will try to parse the given tokens and create an AST.
-			 * @return true - If the operation was successful
-			 * @return false - If an error occurred
-			 */
-			bool createAbstractSyntaxTree();
-			friend class Interpreter;
-		};
+		// WILL BE REWRITTEN
+		///** Can parse an array of tokens and create an abstract syntax tree */
+		//class Parser {
+		//	Node* abstractSyntaxTree = nullptr;
+		//	const std::vector<Token>* tokens = nullptr;
+		//	std::map<GGeneral::String, Var>* variables = nullptr;
+		//	unsigned int position = 0;
+		//public:
+		//	/**
+		//	 * Will set the tokens array. Does not create AST
+		//	 *
+		//	 * @param tok - The tokens to parse
+		//	 */
+		//	Parser(const std::vector<Token>* tok) : tokens(tok) {};
+		//	/** Default constructor */
+		//	Parser() {}
+		//
+		//	/**
+		//	 * Will reset the parser and the the tokens array to the given tokens
+		//	 * @param tok - The tokens to parse
+		//	 */
+		//	void setTokens(const std::vector<Token>* tok);
+		//
+		//	/**
+		//	 * Will try to parse the given tokens and create an AST. Only run this method if there is a valid variable table and token vector set
+		//	 * @return true - If the operation was successful
+		//	 * @return false - If an error occurred
+		//	 */
+		//	bool createAbstractSyntaxTree();
+		//	friend class Interpreter;
+		//};
 
 		/**
 		 * WIP
@@ -3225,6 +3305,8 @@ namespace GScript {
 		 * @return false
 		 */
 		bool prepare();
+
+		bool execute();
 	};
 }
 

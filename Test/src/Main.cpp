@@ -1,21 +1,19 @@
 #include <GRenderer.h>
+#include <iostream>
 
 int main() {
-	GRenderer::init();
-
-	GWindow::Window window;
-	window.setState(GWindow::WindowState::NORMAL);
-	window.createOpenGLcontext();
-	window.setOpenGLContextActive(true);
-
-	GGraphics::init();
-
-	while (!window.getCloseRequest()) {
-		GRenderer::clear({ 255, 255, 255 });
-		GGraphics::setColor({ 0 });
-		GGraphics::drawRect(GGeneral::Rectangle<int>(0, 0, 50, 50));
-
-		window.swapBuffers();
-		window.fetchEvents();
+	auto error = GRenderer::init();
+	error = error & GNetworking::init();
+	if (error == 0) {
+		LOGF("A fatal error occurred");
+		exit(-1);
 	}
+
+	auto source = GFile::loadFileS("src/source.gproj");
+	GScript::Interpreter i(source);
+	auto test = i.prepare();
+
+	GGeneral::ErrorHandler::printAll();
+	GGeneral::Logger::wait();
+
 }

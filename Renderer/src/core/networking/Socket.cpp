@@ -2,6 +2,14 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+#define FORMAT_THROW(msg, error)\
+{LPVOID lpMsgBuf = nullptr;\
+\
+FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |	FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, 0, (LPTSTR)&lpMsgBuf, 0, NULL);\
+THROWW(msg, (char*)lpMsgBuf);\
+LocalFree(lpMsgBuf);}
+
 GNetworking::Socket::Socket() {}
 
 GNetworking::Socket::Socket(GGeneral::String ip, unsigned int port) {
@@ -12,7 +20,7 @@ GNetworking::Socket::~Socket() {
 	shutdown(this->socketNr, SD_BOTH);
 	auto error = closesocket(this->socketNr);
 	if (error != 0)
-		THROW("WSA error while trying to close socket: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to close socket: ", WSAGetLastError());
 }
 
 int socketConnect(SOCKET s, const sockaddr* addr, int n) {
@@ -55,7 +63,7 @@ void GNetworking::Socket::disconnect() {
 	connected = false;
 	auto error = shutdown(this->socketNr, SD_SEND);
 	if (error != 0)
-		THROWW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
 	byte* buffer = new byte[MAX_NET_BUFFER_SIZE];
 	auto size = recv(socketNr, (char*)buffer, MAX_NET_BUFFER_SIZE, 0);
 	while (size > 0) {
@@ -68,7 +76,7 @@ void GNetworking::Socket::disconnect() {
 
 	error = closesocket(this->socketNr);
 	if (error != 0)
-		THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
 }
 
 void windowsSSend(SOCKET s, byte* data, unsigned int size) {
@@ -87,7 +95,7 @@ bool GNetworking::Socket::setBlockingMode(bool block) {
 	blocking = !block;
 	auto error = ioctlsocket(socketNr, FIONBIO, (unsigned long*)&blocking);
 	if (error != 0) {
-		THROWW("WSA error while trying to set IO mode on Socket: ", error);
+		FORMAT_THROW("WSA error while trying to set IO mode on Socket: ", error);
 	}
 	return error == 0;
 }
@@ -112,7 +120,7 @@ GNetworking::Package GNetworking::Socket::receive() {
 
 		this->connected = false;
 		if (p.size != 0)
-			THROWW("WSA error while trying to receive data: ", WSAGetLastError());
+			FORMAT_THROW("WSA error while trying to receive data: ", WSAGetLastError());
 	}
 	else if (p.size == 0) {
 		connected = false;

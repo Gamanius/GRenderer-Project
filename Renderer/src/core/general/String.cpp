@@ -33,6 +33,8 @@ GGeneral::String::String(String&& other) noexcept {
 
 GGeneral::String::String(const String& other) {
 	size = other.size;
+	if (size == 0)
+		return;
 	buffer = new char[size + 1];
 	memcpy(buffer, other.buffer, size + 1);
 	bytesize = size + 1;
@@ -61,6 +63,20 @@ GGeneral::String& GGeneral::String::append(const char* c) {
 }
 
 GGeneral::String& GGeneral::String::append(GGeneral::BaseObject& obj) { return append(obj.toString()); }
+
+void GGeneral::String::take(void* string, size_t size, bool create_null) {
+	delete buffer;
+	buffer = (char*)string;
+	if (create_null) {
+		bytesize = size + 1;
+		this->size = size;
+		buffer[size] = '\0';
+	}
+	else {
+		bytesize = size;
+		this->size = size - 1;
+	}
+}
 
 char GGeneral::String::operator[](size_t i) {
 	return buffer[i];

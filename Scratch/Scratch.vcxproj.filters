@@ -43,6 +43,9 @@
     <None Include="rsc\shader\framebuffer.frag">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="rsc\img\cursor.cur">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="rsc\img\a.bmp">
@@ -61,6 +64,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="rsc\img\a.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="rsc\img\test.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

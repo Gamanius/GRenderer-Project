@@ -4,23 +4,34 @@
 GRenderer::Texture::Texture(const Texture& t) {
 	ID = t.ID;
 	textureSlot = t.textureSlot;
+
+	defaultSize.width = t.defaultSize.width;
+	defaultSize.height = t.defaultSize.height;
 }
 
 GRenderer::Texture::Texture(Texture&& t) noexcept {
 	ID = t.ID;
 	textureSlot = t.textureSlot;
+	defaultSize.width = t.defaultSize.width;
+	defaultSize.height = t.defaultSize.height;
 
 	t.ID = 0;
 	t.textureSlot = 0;
+	t.defaultSize.width = 0;
+	t.defaultSize.height = 0;
 }
 
-GRenderer::Texture::Texture(GFile::Graphics::Image& i) {
+GRenderer::Texture::Texture(const GFile::Graphics::Image& i) {
 	createTexture(i);
 }
 
 GRenderer::Texture& GRenderer::Texture::operator=(const Texture& other) {
 	textureSlot = other.textureSlot;
 	ID = other.ID;
+
+	defaultSize.width = other.defaultSize.width;
+	defaultSize.height = other.defaultSize.height;
+
 	return *this;
 }
 
@@ -30,13 +41,17 @@ GRenderer::Texture& GRenderer::Texture::operator=(Texture&& t) noexcept {
 
 	ID = t.ID;
 	textureSlot = t.textureSlot;
+	defaultSize.width = t.defaultSize.width;
+	defaultSize.height = t.defaultSize.height;
 
 	t.ID = 0;
 	t.textureSlot = 0;
+	t.defaultSize.width = 0;
+	t.defaultSize.height = 0;
 	return *this;
 }
 
-const bool GRenderer::Texture::createTexture(GFile::Graphics::Image& i) {
+const bool GRenderer::Texture::createTexture(const GFile::Graphics::Image& i) {
 	glGenTextures(1, &ID);
 	bind();
 
@@ -55,6 +70,8 @@ const bool GRenderer::Texture::createTexture(GFile::Graphics::Image& i) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, i.dim.width, i.dim.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, i.data);
 	}
 	glGenerateMipmap(GL_IMAGE_2D);
+
+	defaultSize = i.dim;
 	return true;
 }
 
@@ -80,6 +97,10 @@ void GRenderer::Texture::bind(unsigned int slot) {
 void GRenderer::Texture::bind() {
 	glActiveTexture(textureSlot);
 	glBindTexture(GL_TEXTURE_2D, ID);
+}
+
+GGeneral::Dimension<unsigned int> GRenderer::Texture::getSize() const {
+	return defaultSize;
 }
 
 void GRenderer::Texture::unbind() {
