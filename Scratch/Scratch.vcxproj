@@ -158,6 +158,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="rsc\img\cursor.cur" />
     <None Include="rsc\shader\framebuffer.frag">
       <FileType>Document</FileType>
     </None>
@@ -187,6 +188,7 @@
     <Image Include="rsc\img\a.png" />
     <Image Include="rsc\img\b.bmp" />
     <Image Include="rsc\img\color.bmp" />
+    <Image Include="rsc\img\test.png" />
     <Image Include="rsc\img\s.png" />
     <Image Include="rsc\img\smile.bmp" />
   </ItemGroup>

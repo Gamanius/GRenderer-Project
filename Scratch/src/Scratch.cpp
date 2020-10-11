@@ -2,69 +2,42 @@
 
 #include <GRenderer.h>
 #include <iostream>
-
-float vertices[] = {
-   -0.5f, -0.5f, 0.0f,
-	0.5f, -0.5f, 0.0f,
-	0.0f,  0.5f, 0.0f
-};
-
-float planeVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f
-};
-GWindow::Window* w;
+#include <Windows.h>
 
 int main() {
-	if (!GRenderer::init()) {
+	auto error = GRenderer::init();
+	error = error & GNetworking::init();
+	if (error == 0)
 		LOGF("Couldn't init");
-		GGeneral::ErrorHandler::printAll();
-		GGeneral::Logger::wait();
-		return -1;
-	}
-	LOGS("Initialized successfully");
-	LOGI("Using GRenderer Version: ", G_RENDERER_VERSION);
 
-	w = new GWindow::Window("Heyo", { 100, 100 }, { 1920, 1080 });
-	auto window = *w;
+	GWindow::Window window("heyo", { 100, 100 }, { 1280, 720 });
 	window.createOpenGLcontext();
-	window.setOpenGLContextActive(true);
-	window.setState(GWindow::WindowState::NORMAL);
+	window.setOpenGLContextActive();
+	window.setState(GWindow::WindowState::MAXIMIZED);
+	GGraphics::init();
+	GGraphics::setViewport(window.getWindowDrawSize());
 
-	GRenderer::Primitives::Shader frag("rsc/shader/framebuffer.frag");
-	GRenderer::Primitives::Shader vert("rsc/shader/framebuffer.vert");
-	GRenderer::ShaderProgram program({ &frag, &vert });
-	program.link();
-	program.bind();
+	GRenderer::setWireFrameMode(false);
 
-	GRenderer::Primitives::VertexBuffer buffer(planeVertices, 24, 6);
-	GRenderer::Primitives::VertexArray array(buffer, GRenderer::Primitives::VertexArray::VertexArrayLayout({ 2, 2 }, GRenderer::Primitives::VertexTypes::FLOAT));
-	array.bind();
+	auto t = GFile::Graphics::loadCursor("rsc/img/cursor.cur");
+	window.setCursor(t);
+	GGeneral::ErrorHandler::printAll();
+	GGeneral::Logger::wait();
 
-	GGeneral::String filepath = "rsc/img/s.png";
-	auto test = GFile::Graphics::isParseble(filepath);
-	auto img = GFile::Graphics::loadImage(filepath);
+	auto img = GFile::Graphics::loadImage("rsc/img/s.png");
 	img->flip();
-	auto tex = GRenderer::Texture(*img);
-
-	GRenderer::Mesh mesh(&array, &tex);
+	//auto tex = GRenderer::Texture(*img);
 
 	while (!window.getCloseRequest()) {
-		GRenderer::clear({ 50 });
-		GRenderer::draw(mesh);
+		GRenderer::clear({ 50, 50, 50 });
+		using namespace GGraphics;
+		setColor({ 0,0,0 });
+		drawImg({ 50, 50 }, *img);
+		drawRect({ 50, 50, 50, 50 });
 		window.swapBuffers();
 		window.fetchEvents();
 	}
 
-	mesh.vertex = nullptr;
-	mesh.tex = nullptr;
 	GGeneral::ErrorHandler::printAll();
-	LOGS("Good bye");
 	GGeneral::Logger::wait();
 }

@@ -39,6 +39,8 @@ struct WindowClass {
 	GWindow::GWindowCallback callbackfun = nullptr;
 	//Should be deprecated soon
 	bool isFree = false;
+
+	GFile::Graphics::Cursor* c = nullptr;
 };
 
 //All window classes
@@ -625,7 +627,10 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	//Do something when the mouse wants some juicy pics
 	case WM_SETCURSOR:
 		if (LOWORD(lParam) == HTCLIENT) {
-			SetCursor(LoadCursorA(NULL, IDC_ARROW));
+			if (allWindowsInstances[getIndex(hWnd)].c != nullptr)
+				SetCursor((HCURSOR)allWindowsInstances[getIndex(hWnd)].c->instance);
+			else
+				SetCursor(LoadCursorA(NULL, IDC_ARROW));
 			return true;
 		}
 	}
@@ -772,6 +777,10 @@ const bool GWindow::Window::getCloseRequest() const {
 
 void GWindow::Window::forceCloseRequest() {
 	SendMessage(THIS_INSTANCE.hWnd, WM_CLOSE, 0, 0);
+}
+
+void GWindow::Window::setCursor(GFile::Graphics::Cursor* c) {
+	THIS_INSTANCE.c = c;
 }
 
 GWindow::WindowState GWindow::Window::getCurrentWindowState() const {

@@ -3,6 +3,13 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#define FORMAT_THROW(msg, error)\
+{LPVOID lpMsgBuf = nullptr;\
+\
+FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |	FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, 0, (LPTSTR)&lpMsgBuf, 0, NULL);\
+THROWW(msg, (char*)lpMsgBuf);\
+LocalFree(lpMsgBuf);}
+
 GNetworking::ServerSocket::ServerSocket() {}
 
 GNetworking::ServerSocket::ServerSocket(unsigned int port) {
@@ -27,7 +34,7 @@ unsigned int GNetworking::ServerSocket::accept() {
 	if (newSocket == INVALID_SOCKET) {
 		auto error = WSAGetLastError();
 		if (error != WSAEWOULDBLOCK)
-			THROW("WSA error while trying to accept a new Socket: ", WSAGetLastError());
+			FORMAT_THROW("WSA error while trying to accept a new Socket: ", error);
 	}
 	else {
 		sockets.push_back(newSocket);
@@ -41,7 +48,7 @@ bool GNetworking::ServerSocket::listen(unsigned short port) {
 
 	listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenSocket == INVALID_SOCKET) {
-		THROW("Invalid Socket: ", WSAGetLastError());
+		FORMAT_THROW("Invalid Socket: ", WSAGetLastError());
 		return false;
 	}
 
@@ -52,12 +59,12 @@ bool GNetworking::ServerSocket::listen(unsigned short port) {
 
 	auto error = bind(listenSocket, (sockaddr*)&info, sizeof(info));
 	if (error != 0) {
-		THROW("Couldn't bind Socket: ", WSAGetLastError());
+		FORMAT_THROW("Couldn't bind Socket: ", WSAGetLastError());
 		return false;
 	}
 
 	if (wListen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
-		THROW("Listen failed with error: ", WSAGetLastError());
+		FORMAT_THROW("Listen failed with error: ", WSAGetLastError());
 		closesocket(listenSocket);
 		WSACleanup();
 		return false;
@@ -68,7 +75,7 @@ bool GNetworking::ServerSocket::listen(unsigned short port) {
 void GNetworking::ServerSocket::disconnect(unsigned int socket) {
 	auto error = shutdown(socket, SD_SEND);
 	if (error != 0)
-		THROWW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
 	byte* buffer = new byte[MAX_NET_BUFFER_SIZE];
 	auto size = recv(socket, (char*)buffer, MAX_NET_BUFFER_SIZE, 0);
 	while (size > 0) {
@@ -81,7 +88,15 @@ void GNetworking::ServerSocket::disconnect(unsigned int socket) {
 
 	error = closesocket(socket);
 	if (error != 0)
-		THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
+}
+
+bool GNetworking::ServerSocket::isConnected(unsigned int socket) {
+	for (auto i : sockets) {
+		if (i == socket)
+			return true;
+	}
+	return false;
 }
 
 bool GNetworking::ServerSocket::setBlockingMode(bool block) {
@@ -131,9 +146,16 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 		error = WSAGetLastError();
 		if (error == WSAEWOULDBLOCK)
 			goto FINISH;
+		//if (p.size != 0)
 
-		if (p.size != 0)
-			THROWW("WSA error while trying to receive data: ", WSAGetLastError());
+		FORMAT_THROW("WSA error while trying to receive data: ", error);
+
+		for (size_t i = 0; i < sockets.size(); i++) {
+			if (sockets[i] == socket) {
+				sockets.erase(sockets.begin() + i);
+				break;
+			}
+		}
 	}
 	else if (p.size == 0) {
 		p.size = -1;

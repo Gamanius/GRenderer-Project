@@ -15,12 +15,17 @@ bool GScript::Interpreter::prepare() {
 		THROW("An error occurred while trying to parse the given source");
 		return false;
 	}
-	Parser p;
-	p.setTokens(&l.tokens);
-	if (!p.createAbstractSyntaxTree()) {
-		THROW("An error occurred while trying to parse the given source");
-		return false;
-	}
+	//Parser p;
+	//p.setTokens(&l.tokens);
+	//p.variables = &variables;
+	//if (!p.createAbstractSyntaxTree()) {
+	//	THROW("An error occurred while trying to parse the given source");
+	//	return false;
+	//}
 
 	return true;
+}
+
+bool GScript::Interpreter::execute() {
+	return false;
 }
