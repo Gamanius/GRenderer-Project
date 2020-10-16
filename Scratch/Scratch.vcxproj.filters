@@ -46,6 +46,9 @@
     <None Include="rsc\img\cursor.cur">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="rsc\img\cursor-better.cur">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="rsc\img\a.bmp">
