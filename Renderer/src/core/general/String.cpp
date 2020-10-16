@@ -243,6 +243,15 @@ bool GGeneral::String::compare(const char* c) {
 	return memcmp(c, buffer, size /*leaving the \0 out*/) == 0;
 }
 
+void GGeneral::String::clear(bool alloc) {
+	if (!alloc) {
+		delete[] buffer;
+		bytesize = 0;
+		buffer = nullptr;
+	}
+	size = 0;
+}
+
 bool GGeneral::String::in(const char* c) {
 	unsigned int ssize = size;
 	unsigned int csize = strlen(c);

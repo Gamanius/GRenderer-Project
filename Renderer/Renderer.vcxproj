@@ -101,6 +101,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp" />
+    <ClCompile Include="src\core\fastscript\FInterpreter.cpp" />
+    <ClCompile Include="src\core\fastscript\FTokenizer.cpp" />
     <ClCompile Include="src\core\file\File.cpp" />
     <ClCompile Include="src\core\gamepad\Gamepad.cpp" />
     <ClCompile Include="src\core\general\Color.cpp" />
@@ -121,9 +123,6 @@
     <ClCompile Include="src\core\renderer\Renderer.cpp" />
     <ClCompile Include="src\core\renderer\Texture.cpp" />
     <ClCompile Include="src\core\renderer\ShaderProgram.cpp" />
-    <ClCompile Include="src\core\script\Interpreter.cpp" />
-    <ClCompile Include="src\core\script\Lexer.cpp" />
-    <ClCompile Include="src\core\script\Parser.cpp" />
     <ClCompile Include="src\core\window\Monitor.cpp" />
     <ClCompile Include="src\core\window\Window.cpp" />
     <ClCompile Include="src\dependencies\lodePNG\lodepng.cpp" />

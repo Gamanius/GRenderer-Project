@@ -325,7 +325,7 @@
 
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.4.10.20"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.5.10.20"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -449,7 +449,7 @@ public:
 		AllocInfo* mem = reinterpret_cast<AllocInfo*>(malloc(size + sizeof(AllocInfo)));
 		auto info = mem;
 		mem++;
-		info[0] = { mem, size, file, function, line };
+		info[0] = {mem, size, file, function, line};
 		if (extendedAllocations == nullptr) {
 			extendedAllocations = reinterpret_cast<List*>(malloc(sizeof(List)));
 			extendedAllocations->address = info;
@@ -914,6 +914,13 @@ namespace GGeneral {
 		 * @return The char at this position
 		 */
 		char operator[](size_t i);
+
+		/**
+		 * @param i - The index
+		 * @return The char of the index
+		 */
+		const char operator[] (size_t i) const;
+
 		/**
 		 * Will just copy the String
 		 * @param s - The other string
@@ -1051,6 +1058,12 @@ namespace GGeneral {
 		bool compare(const char* c);
 
 		/**
+		 * Will clear the contents of the String
+		 * @param alloc - If set to true, the buffer will stay the same size and will not be deleted. If set to false the buffer will be completely deleted
+		 */
+		void clear(bool alloc);
+
+		/**
 		 * Will compare both strings. If there is a char in the parameter that matches one of the chars in this string it will return true.
 		 * @param c - A list of chars
 		 * @return true - If both strings share at least one char
@@ -1080,11 +1093,6 @@ namespace GGeneral {
 		 * @return The memory address of the buffer
 		 */
 		operator const char* () const;
-		/**
-		 * @param i - The index
-		 * @return The char of the index
-		 */
-		const char operator[] (size_t i) const;
 
 		/** Will delete the buffer */
 		~String();
@@ -1358,7 +1366,7 @@ namespace GGeneral {
 		void printMessage(T_TYPE message, Severity sev) {
 			String s;
 			s << message;
-			printMessage({ s, sev, Time::getNanoTime() });
+			printMessage({s, sev, Time::getNanoTime()});
 		}
 
 		/**
@@ -1904,7 +1912,7 @@ namespace GWindow {
 		int WindowID = -1;
 	public:
 		/*! Creates a new Window with default values */
-		Window() : Window("G-Renderer Window Instance", { 50, 50 }, { 1280,  720 }) {}
+		Window() : Window("G-Renderer Window Instance", {50, 50}, {1280,  720}) {}
 		/**
 		 * Creates a new window and enables input for it
 		 * @param name - The name of the window to be displayed
@@ -2044,7 +2052,7 @@ namespace GWindow {
 			 * @param sdim - The screenDimension
 			 * @param wdim - The workDimension
 			 */
-			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = { 0,0 }, GGeneral::Dimension<int> sdim = { 0,0 }, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
+			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = {0,0}, GGeneral::Dimension<int> sdim = {0,0}, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
 
 			/**
 			 * @return A string representing the Screen struct
@@ -2153,9 +2161,9 @@ namespace GGamepad {
 		/** Right thumbstick button press */
 		bool button_right_thumbstick = false;
 		/** The position of the left thumbstick on a digital coordinate system. Max value of any axis is 32747 and the minimum value is -32768*/
-		GGeneral::Point<short> left_thumbstick = { 0, 0 };
+		GGeneral::Point<short> left_thumbstick = {0, 0};
 		/** The position of the right thumbstick on a digital coordinate system. Max value of any axis is 32747 and the minimum value is -32768 */
-		GGeneral::Point<short> right_thumbstick = { 0, 0 };
+		GGeneral::Point<short> right_thumbstick = {0, 0};
 
 		GGeneral::String toString() const override {
 			return PRINT_VAR(start, back, button_a, button_b, button_x, button_y, dpad_down, dpad_left, dpad_right, dpad_up, button_left_shoulder, button_right_shoulder, left_trigger, right_trigger, button_left_thumbstick, button_right_thumbstick, left_thumbstick, right_thumbstick);
@@ -3122,20 +3130,19 @@ namespace GGraphics {
 }
 
 /**
- * With this namespace one can interpret a script. The script has the ability to call most of the engines functions.
+ * Special :>
  */
-namespace GScript {
+namespace GFScript {
 	/**
 	 * All tokens
 	 */
 	enum class TokenID {
 		UNKNOWN /*! Unknown token. Only used for the default constructor of the Token struct */
-		, DOUBLE_LITERAL /*! A Number literal with a comma '5.23', '0.2', '.23' */
-		, INTEGER_LITERAL /*! A number literal without a comma '23'*/
-		, CHAR_LITERAL /*! A char literal ' "Hello there buddy!" '*/
+		, NUMBER_LITERAL /*! A Number literal with a comma '5.23', '0.2', '.23' */
+		, STRING_LITERAL /*! A char literal ' "Hello there buddy!" '*/
 		, IDENTIFIER_VAR
-		, IDENTIFIER_INT
-		, IDENTIFIER_DOUBLE
+		, NUM_IDENTIFIER
+		, STRING_IDENTIFIER
 		, FUNCTION_PRINT
 		, OP_PLUS /*! Plus symbol */
 		, OP_MINUS /*! Minus symbol */
@@ -3147,182 +3154,333 @@ namespace GScript {
 		, BREAK /*! End of line/statement. ';' */
 	};
 
-	struct Token : public GGeneral::BaseObject {
-		TokenID token;
-		byte type = 0;
-		double dvalue = 0; //type 1
-		int ivalue = 0; //type 2
-		GGeneral::String svalue; //type 3
+	struct Token : GGeneral::BaseObject {
+		TokenID type = TokenID::UNKNOWN;
 		unsigned int line = 0;
+		void* data = nullptr;
 
-		Token() : token(TokenID::UNKNOWN) {}
-		Token(TokenID token, double dvalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), dvalue(dvalue), line(line), svalue(rep) { type = 1; }
-		Token(TokenID token, int ivalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), ivalue(ivalue), line(line), svalue(rep) { type = 2; }
-		Token(TokenID token, GGeneral::String svalue, unsigned int line) : token(token), line(line), svalue(svalue) { type = 3; }
+		Token(TokenID t = TokenID::UNKNOWN, unsigned int line = 0, void* data = nullptr) : type(t), line(line), data(data) {}
 
-		GGeneral::String toString() const override {
-			return PRINT_VAR(token, type, dvalue, ivalue, svalue, line);
-		}
-
-		~Token() {}
-	};
-
-	struct Node : public GGeneral::BaseObject {
-		/** Left side of the node */
-		Node* left;
-		/** The main Token of the node. Most likely a operator */
-		Token main;
-		/** Right side of the node. If nullptr the node is a unary node */
-		Node* right;
-
-		GGeneral::String toString() const override {
-			//Ik that this is breaking my own convention but this good
-			GGeneral::String returnValue = "[";
-			if (right != nullptr) {
-				//returnValue += "right: " + right->toString() + ", ";
-				returnValue += right->toString();
-			}
-			returnValue += main.svalue;
-			if (left != nullptr) {
-				//returnValue += ", left: " + left->toString();
-				returnValue += left->toString();
-			}
-			returnValue += "]";
-			return returnValue;
+		/**
+		 * Mover constructor. Will dereference the other Object
+		 */
+		Token(Token&& other) noexcept {
+			data = other.data;
+			type = other.type;
+			other.data = nullptr;
+			other.type = TokenID::UNKNOWN;
 		}
 
 		/**
-		 * Will remove all main reference to any tokens
+		 * Mover operator. Will dereference the other Object
 		 */
-		void dereference();
-
-		/** Destructor */
-		~Node() {
-			delete left;
-			delete right;
+		Token& operator=(Token&& other) noexcept {
+			data = other.data;
+			type = other.type;
+			other.data = nullptr;
+			other.type = TokenID::UNKNOWN;
 		}
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(type, line, data);
+		}
+
+		~Token() { delete data; }
 	};
 
-	/**
-	 * Main class of this namespace. Just use this class for loading in scripts and executing them
-	 */
-	class Interpreter {
-		/** Source code */
+	enum class VarType {
+		INVALID
+		, NUM
+		, STRING
+	};
+
+	struct Variable : GGeneral::BaseObject {
+		VarType type = VarType::INVALID;
+		void* data = nullptr;
+
+		Variable(VarType t, void* data = nullptr) : type(t), data(data) {}
+
+		/**
+		 * Mover constructor. Will dereference the other Object
+		 */
+		Variable(Variable&& other) noexcept {
+			data = other.data;
+			type = other.type;
+			other.data = nullptr;
+			other.type = VarType::INVALID;
+		}
+
+		/**
+		 * Mover operator. Will dereference the other Object
+		 */
+		Variable& operator=(Variable&& other) noexcept {
+			data = other.data;
+			type = other.type;
+			other.data = nullptr;
+			other.type = VarType::INVALID;
+		}
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(type, data);
+		}
+
+		~Variable() { delete data; }
+	};
+
+	class Tokenizer {
 		GGeneral::String source;
 	public:
-		struct Var {
-			byte type = 0;
-			double dvalue = 0;
-			int ivalue = 0;
-			GGeneral::String svalue;
-		};
-	private:
-		std::map<GGeneral::String, Var> variables;
+		Tokenizer(GGeneral::String source) : source(source) {}
 
-	public:
-		/** Tokenizer will tokenize all code */
-		class Lexer {
-			const GGeneral::String* source = nullptr;
-			std::vector<Token> tokens;
-			unsigned int position = 0;
+		void setSource(GGeneral::String source) { this->source = source; }
+		std::vector<Token>* createTokens();
+	};
 
-		public:
-			/**
-			 * Will try to convert the given string to an array of tokens
-			 * @param source - The source code
-			 */
-			Lexer(const GGeneral::String* source);
+	class Interpreter {
+		std::vector<Token>* tokens;
+		std::map<GGeneral::String*, Variable*> variableValues;
+		std::vector<GGeneral::String*> variablesNames;
 
-			/** Default constructor */
-			Lexer() {}
+		std::vector<void*> functions;
+		static void op_plus1(Interpreter* i, Token* var, Token* num);
+		static void op_minus1(Interpreter* i, Token* var, Token* num);
+		static void op_multiply1(Interpreter* i, Token* var, Token* num);
+		static void op_divide1(Interpreter* i, Token* var, Token* num);
+		static void op_equal1(Interpreter* i, Token* type, Token* identefier, Token* data);
+		static void fun_print(Interpreter* i, Token* data);
 
-			/**
-			 * Will reset the lexer and set the source to the given string
-			 * @param source - The source code
-			 */
-			void setSource(const GGeneral::String* source);
-
-			/**
-			 * Will try to tokenize the pointed source
-			 * @return true - If this operation was successful
-			 * @return false - If an error occurred while tokenizing
-			 */
-			bool createTokens();
-
-			/**
-			 * @return A vector with all tokens
-			 */
-			std::vector<Token> getTokens() { return tokens; }
+		class Parser {
 			friend class Interpreter;
+			Interpreter* instance;
+			Parser(Interpreter* instance) : instance(instance) {}
+
+			bool createCode();
 		};
+		friend class Parser;
+	public:
 
-		// WILL BE REWRITTEN
-		///** Can parse an array of tokens and create an abstract syntax tree */
-		//class Parser {
-		//	Node* abstractSyntaxTree = nullptr;
-		//	const std::vector<Token>* tokens = nullptr;
-		//	std::map<GGeneral::String, Var>* variables = nullptr;
-		//	unsigned int position = 0;
-		//public:
-		//	/**
-		//	 * Will set the tokens array. Does not create AST
-		//	 *
-		//	 * @param tok - The tokens to parse
-		//	 */
-		//	Parser(const std::vector<Token>* tok) : tokens(tok) {};
-		//	/** Default constructor */
-		//	Parser() {}
-		//
-		//	/**
-		//	 * Will reset the parser and the the tokens array to the given tokens
-		//	 * @param tok - The tokens to parse
-		//	 */
-		//	void setTokens(const std::vector<Token>* tok);
-		//
-		//	/**
-		//	 * Will try to parse the given tokens and create an AST. Only run this method if there is a valid variable table and token vector set
-		//	 * @return true - If the operation was successful
-		//	 * @return false - If an error occurred
-		//	 */
-		//	bool createAbstractSyntaxTree();
-		//	friend class Interpreter;
-		//};
+		Interpreter(std::vector<Token>* tokens) : tokens(tokens) {}
 
-		/**
-		 * WIP
-		 * @param gprojFile
-		 */
-		Interpreter(GFile::File gprojFile);
-		/**
-		 * WIP
-		 * @param source
-		 */
-		Interpreter(GGeneral::String source);
-
-		/**
-		 * WIP
-		 * @return true
-		 * @return false
-		 */
 		bool prepare();
-
-		bool execute();
+		void execute();
 	};
 }
 
-inline GGeneral::String& operator<<(GGeneral::String& s, GScript::TokenID tok) {
+/**
+ * With this namespace one can interpret a script. The script has the ability to call most of the engines functions.
+ */
+
+ //namespace GScript {
+ //	/**
+ //	 * All tokens
+ //	 */
+ //	enum class TokenID {
+ //		UNKNOWN /*! Unknown token. Only used for the default constructor of the Token struct */
+ //		, DOUBLE_LITERAL /*! A Number literal with a comma '5.23', '0.2', '.23' */
+ //		, INTEGER_LITERAL /*! A number literal without a comma '23'*/
+ //		, CHAR_LITERAL /*! A char literal ' "Hello there buddy!" '*/
+ //		, IDENTIFIER_VAR
+ //		, IDENTIFIER_INT
+ //		, IDENTIFIER_DOUBLE
+ //		, FUNCTION_PRINT
+ //		, OP_PLUS /*! Plus symbol */
+ //		, OP_MINUS /*! Minus symbol */
+ //		, OP_MULTIPLY /*! Multiply symbol */
+ //		, OP_DIVIDE /*! Divide symbol */
+ //		, EQUALS
+ //		, LPARAN /*! Left Parenthesizes symbol '(' */
+ //		, RPARAN /*! Right Parenthesizes symbol ')'*/
+ //		, BREAK /*! End of line/statement. ';' */
+ //	};
+ //
+ //	struct Token : public GGeneral::BaseObject {
+ //		TokenID token;
+ //		byte type = 0;
+ //		double dvalue = 0; //type 1
+ //		int ivalue = 0; //type 2
+ //		GGeneral::String svalue; //type 3
+ //		unsigned int line = 0;
+ //
+ //		Token() : token(TokenID::UNKNOWN) {}
+ //		Token(TokenID token, double dvalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), dvalue(dvalue), line(line), svalue(rep) { type = 1; }
+ //		Token(TokenID token, int ivalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), ivalue(ivalue), line(line), svalue(rep) { type = 2; }
+ //		Token(TokenID token, GGeneral::String svalue, unsigned int line) : token(token), line(line), svalue(svalue) { type = 3; }
+ //
+ //		GGeneral::String toString() const override {
+ //			return PRINT_VAR(token, type, dvalue, ivalue, svalue, line);
+ //		}
+ //
+ //		~Token() {}
+ //	};
+ //
+ //	struct Node : public GGeneral::BaseObject {
+ //		/** Left side of the node */
+ //		Node* left;
+ //		/** The main Token of the node. Most likely a operator */
+ //		Token main;
+ //		/** Right side of the node. If nullptr the node is a unary node */
+ //		Node* right;
+ //
+ //		GGeneral::String toString() const override {
+ //			//Ik that this is breaking my own convention but this good
+ //			GGeneral::String returnValue = "[";
+ //			if (right != nullptr) {
+ //				//returnValue += "right: " + right->toString() + ", ";
+ //				returnValue += right->toString();
+ //			}
+ //			returnValue += main.svalue;
+ //			if (left != nullptr) {
+ //				//returnValue += ", left: " + left->toString();
+ //				returnValue += left->toString();
+ //			}
+ //			returnValue += "]";
+ //			return returnValue;
+ //		}
+ //
+ //		/**
+ //		 * Will remove all main reference to any tokens
+ //		 */
+ //		void dereference();
+ //
+ //		/** Destructor */
+ //		~Node() {
+ //			delete left;
+ //			delete right;
+ //		}
+ //	};
+ //
+ //	/**
+ //	 * Main class of this namespace. Just use this class for loading in scripts and executing them
+ //	 */
+ //	class Interpreter {
+ //		/** Source code */
+ //		GGeneral::String source;
+ //	public:
+ //		struct Var {
+ //			byte type = 0;
+ //			double dvalue = 0;
+ //			int ivalue = 0;
+ //			GGeneral::String svalue;
+ //		};
+ //	private:
+ //		std::map<GGeneral::String, Var> variables;
+ //
+ //	public:
+ //		/** Tokenizer will tokenize all code */
+ //		class Lexer {
+ //			const GGeneral::String* source = nullptr;
+ //			std::vector<Token> tokens;
+ //			unsigned int position = 0;
+ //
+ //		public:
+ //			/**
+ //			 * Will try to convert the given string to an array of tokens
+ //			 * @param source - The source code
+ //			 */
+ //			Lexer(const GGeneral::String* source);
+ //
+ //			/** Default constructor */
+ //			Lexer() {}
+ //
+ //			/**
+ //			 * Will reset the lexer and set the source to the given string
+ //			 * @param source - The source code
+ //			 */
+ //			void setSource(const GGeneral::String* source);
+ //
+ //			/**
+ //			 * Will try to tokenize the pointed source
+ //			 * @return true - If this operation was successful
+ //			 * @return false - If an error occurred while tokenizing
+ //			 */
+ //			bool createTokens();
+ //
+ //			/**
+ //			 * @return A vector with all tokens
+ //			 */
+ //			std::vector<Token> getTokens() { return tokens; }
+ //			friend class Interpreter;
+ //		};
+ //
+ //		// WILL BE REWRITTEN
+ //		///** Can parse an array of tokens and create an abstract syntax tree */
+ //		//class Parser {
+ //		//	Node* abstractSyntaxTree = nullptr;
+ //		//	const std::vector<Token>* tokens = nullptr;
+ //		//	std::map<GGeneral::String, Var>* variables = nullptr;
+ //		//	unsigned int position = 0;
+ //		//public:
+ //		//	/**
+ //		//	 * Will set the tokens array. Does not create AST
+ //		//	 *
+ //		//	 * @param tok - The tokens to parse
+ //		//	 */
+ //		//	Parser(const std::vector<Token>* tok) : tokens(tok) {};
+ //		//	/** Default constructor */
+ //		//	Parser() {}
+ //		//
+ //		//	/**
+ //		//	 * Will reset the parser and the the tokens array to the given tokens
+ //		//	 * @param tok - The tokens to parse
+ //		//	 */
+ //		//	void setTokens(const std::vector<Token>* tok);
+ //		//
+ //		//	/**
+ //		//	 * Will try to parse the given tokens and create an AST. Only run this method if there is a valid variable table and token vector set
+ //		//	 * @return true - If the operation was successful
+ //		//	 * @return false - If an error occurred
+ //		//	 */
+ //		//	bool createAbstractSyntaxTree();
+ //		//	friend class Interpreter;
+ //		//};
+ //
+ //		/**
+ //		 * WIP
+ //		 * @param gprojFile
+ //		 */
+ //		Interpreter(GFile::File gprojFile);
+ //		/**
+ //		 * WIP
+ //		 * @param source
+ //		 */
+ //		Interpreter(GGeneral::String source);
+ //
+ //		/**
+ //		 * WIP
+ //		 * @return true
+ //		 * @return false
+ //		 */
+ //		bool prepare();
+ //
+ //		bool execute();
+ //	};
+ //}
+inline GGeneral::String& operator<<(GGeneral::String& s, GFScript::VarType tok) {
 	switch (tok) {
-	case GScript::TokenID::UNKNOWN:         return s.append("UNKNOWN");
-	case GScript::TokenID::DOUBLE_LITERAL:  return s.append("DOUBLE");
-	case GScript::TokenID::INTEGER_LITERAL: return s.append("INTEGER");
-	case GScript::TokenID::CHAR_LITERAL:    return s.append("CHAR");
-	case GScript::TokenID::OP_PLUS:         return s.append("OP_PLUS");
-	case GScript::TokenID::OP_MINUS:        return s.append("OP_MINUS");
-	case GScript::TokenID::OP_MULTIPLY:     return s.append("OP_MULTIPLY");
-	case GScript::TokenID::OP_DIVIDE:       return s.append("OP_DIVIDE");
-	case GScript::TokenID::LPARAN:          return s.append("LPARAN");
-	case GScript::TokenID::RPARAN:          return s.append("RPARAN");
-	case GScript::TokenID::BREAK:           return s.append("BREAK");
+	case GFScript::VarType::INVALID:  return s.append("INVALID");
+	case GFScript::VarType::NUM:	  return s.append("NUM");
+	case GFScript::VarType::STRING:	  return s.append("STRING");
+	}
+	return s.append("Invalid Enum");
+}
+
+inline GGeneral::String& operator<<(GGeneral::String& s, GFScript::TokenID tok) {
+	switch (tok) {
+	case GFScript::TokenID::UNKNOWN:           return s.append("UNKNOWN");
+	case GFScript::TokenID::NUMBER_LITERAL:   return s.append("NUMBER_LITERAL");
+	case GFScript::TokenID::STRING_LITERAL:      return s.append("CHAR");
+	case GFScript::TokenID::IDENTIFIER_VAR:    return s.append("IDENTIFIER_VAR");
+	case GFScript::TokenID::STRING_IDENTIFIER:    return s.append("STRING_IDENTIFIER");
+	case GFScript::TokenID::NUM_IDENTIFIER: return s.append("NUM_IDENTIFIER");
+	case GFScript::TokenID::FUNCTION_PRINT:    return s.append("FUNCTION_PRINT");
+	case GFScript::TokenID::OP_PLUS:           return s.append("OP_PLUS");
+	case GFScript::TokenID::OP_MINUS:          return s.append("OP_MINUS");
+	case GFScript::TokenID::OP_MULTIPLY:       return s.append("OP_MULTIPLY");
+	case GFScript::TokenID::OP_DIVIDE:         return s.append("OP_DIVIDE");
+	case GFScript::TokenID::EQUALS:            return s.append("EQUALS");
+	case GFScript::TokenID::LPARAN:            return s.append("LPARAN");
+	case GFScript::TokenID::RPARAN:            return s.append("RPARAN");
+	case GFScript::TokenID::BREAK:             return s.append("BREAK");
 	}
 	return s.append("Invalid Enum");
 }

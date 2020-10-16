@@ -19,7 +19,7 @@ int main() {
 
 	GRenderer::setWireFrameMode(false);
 
-	auto t = GFile::Graphics::loadCursor("rsc/img/cursor.cur");
+	auto t = GFile::Graphics::loadCursor("rsc/img/cursor-better.cur");
 	window.setCursor(t);
 	GGeneral::ErrorHandler::printAll();
 	GGeneral::Logger::wait();

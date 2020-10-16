@@ -46,15 +46,26 @@ GFile::File* GFile::loadFile(GGeneral::String relativeFilepath) {
 
 GGeneral::String GFile::loadFileS(GGeneral::String filepath) {
 	GGeneral::String s;
-	auto file = loadFile(filepath);
-	if (file == nullptr)
-		return s;
 
-	file->data[file->size] = '\0';
-	s.take(file->data, file->size + 1);
-	//Don delete the actual data!
-	file->data = 0;
-	delete file;
+	//Things that you should NOT do
+	//file->data[file->size] = '\0';
+
+	std::fstream file(filepath, std::ios_base::binary | std::ios_base::in);
+	if (file.fail()) {
+		THROW("Error while trying to load from relative path ", filepath, ". Maybe the Path is wrong?");
+		return s;
+	}
+	file.seekg(0, std::ios_base::end);
+	unsigned int size = static_cast<unsigned int>(file.tellg());
+	file.seekg(0, 0);
+
+	char* buffer = new char[size + 1];//MALLOC new char[static_cast<unsigned int>(size)];
+	buffer[size] = '\0';
+	file.read(buffer, size);
+	file.close();
+
+	s.take(buffer, size + 1);
+
 	return s;
 }
 
