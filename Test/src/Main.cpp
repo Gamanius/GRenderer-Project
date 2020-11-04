@@ -10,6 +10,7 @@ int main(int argv, char** argc) {
 		exit(-1);
 	}
 	LOGS("Successful!");
+	LOGI("Using Version: ", G_RENDERER_VERSION);
 
 	GGeneral::String source;
 	if (argv > 1)
@@ -26,20 +27,22 @@ int main(int argv, char** argc) {
 		GFScript::Interpreter i(test);
 
 		start = (double)(GGeneral::Time::getNanoTime()) / 1000000.0;
-		bool d = i.prepare();
+		bool d = i.prepare(true);
 		end = (double)(GGeneral::Time::getNanoTime()) / 1000000.0;
-		LOGS("Created byte code in ", (end - start), "ms");
 
 		if (d) {
+			LOGS("Created byte code in ", (end - start), "ms");
 			start = (double)(GGeneral::Time::getNanoTime()) / 1000000.0;
 			i.execute();
 			end = (double)(GGeneral::Time::getNanoTime()) / 1000000.0;
 			LOGS("Executed code in ", (end - start), "ms");
 		}
+		else
+			LOGE("An error occurred: ");
 	}
 
 	GGeneral::ErrorHandler::printAll();
 	GGeneral::Logger::wait();
 	if (argv > 1)
-		std::cin.get();
+		system("pause");
 }

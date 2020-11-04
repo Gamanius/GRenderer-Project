@@ -102,6 +102,7 @@
   <ItemGroup>
     <ClCompile Include="src\core\eventswrapper\Windowhandler.cpp" />
     <ClCompile Include="src\core\fastscript\FInterpreter.cpp" />
+    <ClCompile Include="src\core\fastscript\FParser.cpp" />
     <ClCompile Include="src\core\fastscript\FTokenizer.cpp" />
     <ClCompile Include="src\core\file\File.cpp" />
     <ClCompile Include="src\core\gamepad\Gamepad.cpp" />
@@ -129,6 +130,9 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\core\fastscript\Syntax Documentation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

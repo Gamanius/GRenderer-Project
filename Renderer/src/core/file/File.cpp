@@ -83,8 +83,8 @@ GFile::Graphics::ImageType GFile::Graphics::isParseble(GGeneral::String& filepat
 	return isParseble(file->data);
 }
 
-constexpr byte BMPSig[] = { 0x42, 0x4d };
-constexpr byte PNGSig[] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+constexpr byte BMPSig[] = {0x42, 0x4d};
+constexpr byte PNGSig[] = {137, 80, 78, 71, 13, 10, 26, 10};
 GFile::Graphics::ImageType GFile::Graphics::isParseble(byte* data) {
 	bool is = true;
 	for (size_t i = 0; i < 2; i++) {
@@ -99,6 +99,26 @@ GFile::Graphics::ImageType GFile::Graphics::isParseble(byte* data) {
 	if (is)
 		return GFile::Graphics::ImageType::PORTABLE_NETWORK_GRAPHICS;
 	return GFile::Graphics::ImageType::UNKNOWN;
+}
+
+GFile::Graphics::Image* GFile::Graphics::resizeImage(const Image& img, GGeneral::Dimension<unsigned int> newSize) {
+	Image* returnValue = new Image();
+	unsigned int size = (3 + img.hasAlpha) * newSize.width * newSize.height;
+	returnValue->data = (byte*)GMemory::alloc(size);
+	returnValue->size = size;
+
+	returnValue->dim = newSize;
+	returnValue->hasAlpha = img.hasAlpha;
+
+	for (size_t i = 0; i < returnValue->dim.width; i++) {
+		for (size_t j = 0; j < returnValue->dim.height; j++) {
+			double y = (((double)j) / (double)returnValue->dim.height) * (img.dim.height);
+			double x = (((double)i) / (double)returnValue->dim.width) * (img.dim.width);
+			//LOG(GGeneral::Point<double>(x, y));
+			returnValue->data[(i * returnValue->dim.width) + j] = img.data[(int)((x * img.dim.width) + y)];
+		}
+	}
+	return returnValue;
 }
 
 GFile::Graphics::Image* doBMP(GFile::File* f) {
@@ -203,4 +223,19 @@ GFile::Graphics::Cursor::~Cursor() {
 	DestroyIcon((HICON)instance);
 }
 
-void GFile::Graphics::Image::flip() { std::reverse(this->data, this->data + this->size); }
+void GFile::Graphics::Image::flip() {
+	if (this->hasAlpha) {
+		struct alpha {
+			byte r, g, b, a;
+		};
+
+		std::reverse<alpha*>((alpha*)this->data, ((alpha*)this->data + (this->size / 4)));
+	}
+	else {
+		struct color {
+			byte r, g, b;
+		};
+
+		std::reverse<color*>((color*)this->data, ((color*)this->data + (this->size / 3)));
+	}
+}

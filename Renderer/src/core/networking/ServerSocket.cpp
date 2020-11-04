@@ -146,6 +146,14 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 		error = WSAGetLastError();
 		if (error == WSAEWOULDBLOCK)
 			goto FINISH;
+		else if (error == WSAECONNRESET) {
+			for (size_t i = 0; i < sockets.size(); i++) {
+				if (sockets[i] == socket) {
+					sockets.erase(sockets.begin() + i);
+				}
+			}
+			goto FINISH;
+		}
 		//if (p.size != 0)
 
 		FORMAT_THROW("WSA error while trying to receive data: ", error);

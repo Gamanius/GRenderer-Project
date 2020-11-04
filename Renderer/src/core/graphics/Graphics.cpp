@@ -77,7 +77,7 @@ const char* textureFrag =
 "	fragcolor = texture(_texture, o_texc); \n"
 "}											 \n";
 
-GGeneral::Dimension<int> defaultViewportSize = { 1280, 720 };
+GGeneral::Dimension<int> defaultViewportSize = {1280, 720};
 
 const bool GGraphics::init() {
 	GRenderer::Primitives::Shader v;
@@ -87,7 +87,7 @@ const bool GGraphics::init() {
 	v.compileShader();
 	f.compileShader();
 
-	recProgram = *(new GRenderer::ShaderProgram({ &v, &f }));
+	recProgram = *(new GRenderer::ShaderProgram({&v, &f}));
 	recProgram.link();
 	recProgram.bind();
 
@@ -103,7 +103,7 @@ const bool GGraphics::init() {
 	v.compileShader();
 	f.compileShader();
 
-	texProgram = *(new GRenderer::ShaderProgram({ &v, &f }));
+	texProgram = *(new GRenderer::ShaderProgram({&v, &f}));
 	texProgram.link();
 	texProgram.bind();
 	texProgram.set("u_size", size);
@@ -126,7 +126,9 @@ void GGraphics::setViewport(GGeneral::Dimension<int> s) {
 	size[0] = defaultViewportSize.width;
 	size[1] = defaultViewportSize.height;
 	glViewport(0, 0, size[0], size[1]);
+	recProgram.bind();
 	recProgram.set("u_size", size);
+	texProgram.bind();
 	texProgram.set("u_size", size);
 }
 
@@ -134,18 +136,18 @@ void GGraphics::drawRect(GGeneral::Rectangle<int> r) {
 	recProgram.bind();
 
 	//Prepare the buffer
-	recVertex[0] = r.position.x;
-	recVertex[1] = r.position.y;
-	recVertex[2] = r.position.x;
-	recVertex[3] = r.dimension.height + r.position.y;
-	recVertex[4] = r.dimension.width + r.position.x;
-	recVertex[5] = r.dimension.height + r.position.y;
-	recVertex[6] = r.position.x + r.dimension.width;
-	recVertex[7] = r.position.y;
+	recVertex[0] = (float)r.position.x;
+	recVertex[1] = (float)r.position.y;
+	recVertex[2] = (float)r.position.x;
+	recVertex[3] = (float)r.dimension.height + r.position.y;
+	recVertex[4] = (float)r.dimension.width + r.position.x;
+	recVertex[5] = (float)r.dimension.height + r.position.y;
+	recVertex[6] = (float)r.position.x + r.dimension.width;
+	recVertex[7] = (float)r.position.y;
 
 	GRenderer::Primitives::VertexBuffer vbuffer(recVertex, 8);
 	GRenderer::Primitives::IndexBuffer ibuffer(recIndex, 6);
-	GRenderer::Primitives::VertexArray::VertexArrayLayout layout({ 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
+	GRenderer::Primitives::VertexArray::VertexArrayLayout layout({2}, GRenderer::Primitives::VertexTypes::FLOAT);
 	GRenderer::Primitives::VertexArray vertex = GRenderer::Primitives::VertexArray(vbuffer, ibuffer, layout);
 
 	GRenderer::Mesh m(&vertex, nullptr);
@@ -154,15 +156,20 @@ void GGraphics::drawRect(GGeneral::Rectangle<int> r) {
 	m.vertex = nullptr;
 }
 
-void GGraphics::drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img) {
+void GGraphics::drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<unsigned int> dim) {
 	auto t = GRenderer::Texture(img);
-	drawImg(pos, t);
+	drawImg(pos, t, dim);
 }
 
-void GGraphics::drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex) {
+void GGraphics::drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<unsigned int> dim) {
 	texProgram.bind();
 
-	auto r = GGeneral::Rectangle<int>(pos, tex.getSize().width, tex.getSize().height);
+	GGeneral::Rectangle<int> r;
+	if (dim.width + dim.height == 0) {
+		r = GGeneral::Rectangle<int>(pos, tex.getSize().width, tex.getSize().height);
+	}
+	else
+		r = GGeneral::Rectangle<int>(pos, dim.width, dim.height);
 
 	//Prepare the buffer
 	texVertex[0] = r.position.x;
@@ -187,7 +194,7 @@ void GGraphics::drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex) {
 
 	GRenderer::Primitives::VertexBuffer vbuffer(texVertex, 16);
 	GRenderer::Primitives::IndexBuffer ibuffer(recIndex, 6);
-	GRenderer::Primitives::VertexArray::VertexArrayLayout layout({ 2, 2 }, GRenderer::Primitives::VertexTypes::FLOAT);
+	GRenderer::Primitives::VertexArray::VertexArrayLayout layout({2, 2}, GRenderer::Primitives::VertexTypes::FLOAT);
 	GRenderer::Primitives::VertexArray vertex = GRenderer::Primitives::VertexArray(vbuffer, ibuffer, layout);
 
 	GRenderer::Mesh m(&vertex, &tex);

@@ -113,8 +113,14 @@
     <ClCompile Include="src\core\fastscript\FInterpreter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\fastscript\FParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\core\fastscript\Syntax Documentation.h" />
   </ItemGroup>
 </Project>

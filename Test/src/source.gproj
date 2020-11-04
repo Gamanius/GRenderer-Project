@@ -1,5 +1,2 @@
-string s = "daw"
-string hallo = "awkjegajwzegazuwefgfaizefdawefdjazhwgfdha
-jsdvfahg\}n
-print s
-print hallo
+numarray test = 1 2 3 4 5
+print test

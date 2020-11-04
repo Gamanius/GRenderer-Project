@@ -265,14 +265,9 @@ bool GGeneral::String::in(const char* c) {
 	return false;
 }
 
-GGeneral::String& GGeneral::String::erase(size_t begining, size_t offset) {
-	auto temp = buffer;
-	buffer = new char[bytesize];//TMALLOC(char*, bytesize);
-	if (begining > 0)
-		memcpy(buffer, temp, begining);
-	memcpy(buffer + begining, temp + offset + begining + 1, (size - (offset + begining)) + 1);
-	size -= offset + 1;
-	delete[]temp;// (temp, bytesize);
+GGeneral::String& GGeneral::String::erase(size_t begining, size_t amount) {
+	memmove(buffer + begining, buffer + begining + amount, size - (begining + amount) + 1);
+	size -= amount;
 	return *this;
 }
 

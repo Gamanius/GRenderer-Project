@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 
 unsigned long lastDeltaT = 0;
+unsigned long lastDDeltaT = 0;
 
 const bool GRenderer::init() {
 	if (!GGeneral::Logger::init()) {
@@ -34,6 +35,11 @@ GGeneral::String GRenderer::getCurentOpenGLVersion() {
 	return r;
 }
 
+void GRenderer::enableBlend() {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
 double GRenderer::delta() {
 	if (lastDeltaT == 0) {
 		lastDeltaT = GGeneral::Time::getNanoTime() / 1000000;
@@ -42,6 +48,12 @@ double GRenderer::delta() {
 	unsigned long t = GGeneral::Time::getNanoTime() / 1000000;
 	auto temp = t - lastDeltaT;
 	lastDeltaT = t;
+	return temp;
+}
+
+double GRenderer::ddelta() {
+	unsigned long t = GGeneral::Time::getNanoTime() / 1000000;
+	auto temp = t - lastDDeltaT;
 	return temp;
 }
 
@@ -90,4 +102,7 @@ void GRenderer::draw(Mesh& m, GRenderer::FrameBuffer* buffer) {
 	}
 	//Unbind any buffer
 	GRenderer::FrameBuffer::unbind();
+
+	//Time
+	lastDDeltaT = GGeneral::Time::getNanoTime() / 1000000;
 }

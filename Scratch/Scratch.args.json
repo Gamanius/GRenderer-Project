@@ -1,0 +1,34 @@
+{
+  "FileVersion": 2,
+  "Id": "1b05aa1c-1119-40a3-9024-da67d6966266",
+  "Items": [
+    {
+      "Id": "29a1640a-789f-4b5d-80ac-bb31099ac206",
+      "Command": "not a server",
+      "Items": [
+        {
+          "Id": "a19a5b02-3371-4af9-90f5-524f409a6449",
+          "Command": "noserver"
+        },
+        {
+          "Id": "4af187aa-c5f4-41f2-9035-7c85b1c5c548",
+          "Command": "63935"
+        }
+      ]
+    },
+    {
+      "Id": "6cce0f9e-3e3c-4e12-9e54-47a009cfa56c",
+      "Command": "server",
+      "Items": [
+        {
+          "Id": "d9e83168-2c9d-4977-b7a3-37379ce4d656",
+          "Command": "server"
+        },
+        {
+          "Id": "7e93e104-6da5-4b01-a237-0e22c4066f30",
+          "Command": "7340"
+        }
+      ]
+    }
+  ]
+}

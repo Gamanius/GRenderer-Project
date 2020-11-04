@@ -163,6 +163,7 @@ struct WrapperClass {
 	std::vector<GEventWrapper::GEventWindowClose> windowCloseFun;
 
 	bool* keyPressed = nullptr;
+	GGeneral::Point<int> mousePos;
 
 	~WrapperClass() { delete[] keyPressed; }
 };
@@ -259,6 +260,7 @@ void globalCallback(int id, GWindow::WindowEvent event, void* data) {
 		for (size_t i = 0; i < wrapper->mouseMoveFun.size(); i++) {
 			wrapper->mouseMoveFun[i](wrapper->window, *(GGeneral::Point<int>*)data);
 		}
+		wrapper->mousePos = *(GGeneral::Point<int>*)data;
 		break;
 	}
 	case GWindow::WindowEvent::WINDOW_CLOSE:
@@ -334,4 +336,8 @@ bool GEventWrapper::Windowhandler::isKeyPressed(GWindow::VK key) {
 	if (key == GWindow::VK::UNKWON)
 		return false;
 	return THIS_INSTANCE.keyPressed[(int)key];
+}
+
+GGeneral::Point<int> GEventWrapper::Windowhandler::getMousePosition() {
+	return THIS_INSTANCE.mousePos;
 }

@@ -467,12 +467,11 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		callback = allWindowsInstances[getIndex(hWnd)].callbackfun;
 	switch (uMsg) {
 	case WM_CLOSE:
-	case WM_DESTROY:
 	{
 		//Window close/destroy event
 		allWindowsInstances[getIndex(hWnd)].closeRequest = true;
 		if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_CLOSE, (void*)true);
-		break;
+		return 0;
 	}
 	case WM_ERASEBKGND: return 0;
 	case WM_SIZING:
@@ -664,7 +663,7 @@ GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGenera
 	//	}
 	//}
 	this->WindowID = allWindowsInstances.size();
-	allWindowsInstances.push_back({ false, hdc, hWnd, wc, nullptr });
+	allWindowsInstances.push_back({false, hdc, hWnd, wc, nullptr});
 DONE:
 	EnableWindow(hWnd, true);
 	//Pixel format
@@ -813,6 +812,14 @@ GGeneral::Dimension<int> GWindow::Window::getWindowDrawSize() const {
 	RECT rect = {};
 	GetClientRect(THIS_INSTANCE.hWnd, &rect);
 	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+void GWindow::Window::setIcon(GGeneral::String filepath) const {
+	auto handle = LoadImage(NULL, filepath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+	if (handle == nullptr) {
+		THROW("An Error occurred while loading image from filepath: '", filepath, "'. #", GetLastError());
+	}
+	SetClassLong(THIS_INSTANCE.hWnd, GCL_HICON, (LONG)handle);
 }
 
 void GWindow::Window::setCallbackFunction(GWindowCallback fun) {

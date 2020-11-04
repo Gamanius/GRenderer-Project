@@ -3,24 +3,6 @@
   "Id": "1f4874a7-2253-4151-8d16-36d03f11fa18",
   "Items": [
     {
-      "Id": "61d93d5b-dbe6-42b1-81f9-864086c39af5",
-      "Command": "client",
-      "Items": [
-        {
-          "Id": "ab6240d5-08df-4dc7-9700-501fb82deded",
-          "Command": "noserver"
-        },
-        {
-          "Id": "8edaa9b1-554d-4cae-9353-3f56a61bcc8b",
-          "Command": "jlb734-47100.portmap.host"
-        },
-        {
-          "Id": "84e12d47-25ae-44f0-bbf5-a5024a1e7499",
-          "Command": "47100"
-        }
-      ]
-    },
-    {
       "Id": "684a0d2f-a416-458b-b85d-82e45d6bdd21",
       "Command": "server",
       "Items": [

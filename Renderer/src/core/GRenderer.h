@@ -325,27 +325,23 @@
 
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.5.10.20"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.6.11.20GFS0.1"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
 #define G_RENDERER
 #endif // !G_RENDERER
 
- //Documentation can be (and is) created using doxygen
+//Documentation is created using doxygen
 
- /** \mainpage The SREP
-  *  <p> This project is just a simple a try to create a Renderer that can, given the right data, make some beautiful pictures.The hope is that it can be used to create simple games and visualizations.The Renderer can only be used on Windows machines because of the inclusion of the <em>Win32</em> API. </p>
+ /**
+  * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
   */
 
   /**
-   * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
+   * A class whose main purpose is to track memory. It will process all allocation done with the MALLOC/FREE define or with the
+   * new/delete operator. Note that every allocation will allocate 4 more bytes than needed to save the size.
    */
-
-   /**
-	* A class whose main purpose is to track memory. It will process all allocation done with the MALLOC/FREE define or with the
-	* new/delete operator. Note that every allocation will allocate 4 more bytes than needed to save the size.
-	*/
 class GMemory {
 private:
 	inline static std::atomic_uint32_t memoryUsage = 0;
@@ -1076,7 +1072,7 @@ namespace GGeneral {
 		 * @param offset - The amount of chars to be deleted
 		 * @return this string
 		 */
-		String& erase(size_t beginning, size_t offset);
+		String& erase(size_t beginning, size_t amount);
 
 		/**
 		 * Will return the memory address of this buffer
@@ -1148,6 +1144,11 @@ namespace GGeneral {
 		 * @param blue - The blue value
 		 */
 		Color(byte red = 0, byte green = 0, byte blue = 0);
+		
+		Color(const Color& other) = default;
+		Color(Color&& other) noexcept = default;
+		Color& operator=(const Color& other) = default;
+		Color& operator=(Color&& other) noexcept = default;
 
 		/**
 		 * Returns the red, green or blue color values depending on the given index. Index may not be higher than 2 nor lower than 0
@@ -1155,6 +1156,8 @@ namespace GGeneral {
 		 * @return A color value
 		 */
 		byte operator[](byte i);
+
+		static Color HSVtoRGB(byte r, byte g, byte b) {}
 
 		GGeneral::String toString() const override {
 			return PRINT_VAR(red, green, blue);
@@ -1166,6 +1169,11 @@ namespace GGeneral {
 		byte alpha;
 
 		aColor(byte red = 0, byte green = 0, byte blue = 0, byte alpha = 255);
+
+		aColor(const aColor& other) = default;
+		aColor(aColor&& other) noexcept = default;
+		aColor& operator=(const aColor& other) = default;
+		aColor& operator=(aColor&& other) noexcept = default;
 
 		byte operator[](byte i);
 
@@ -1208,7 +1216,11 @@ namespace GGeneral {
 			/**
 			 * Will initialize all members to the value 0
 			 */
-			TimePoint() {}
+			TimePoint() = default;
+			TimePoint(const TimePoint& other) = default;
+			TimePoint(TimePoint&& other) noexcept = default;
+			TimePoint& operator=(const TimePoint& other) = default;
+			TimePoint& operator=(TimePoint&& other) noexcept = default;
 
 			/**
 			 * Will return the current timepoint
@@ -1406,6 +1418,12 @@ namespace GGeneral {
 		/*! Creates a new Dimension with the given width and height. The type is up to the user but floats and doubles are recommended. Default values are 0 */
 		Dimension(T w = 0, T h = 0) : width(w), height(h) {}
 
+		Dimension(const Dimension& other) = default;
+		Dimension(Dimension&& other) noexcept = default;
+		Dimension& operator=(const Dimension& other) = default;
+		Dimension& operator=(Dimension&& other) noexcept = default;
+
+
 		/**
 		 * @return A string with the current values of the Dimension struct
 		 */
@@ -1423,6 +1441,11 @@ namespace GGeneral {
 			this->width = w;
 			this->height = h;
 		}
+
+		Dimension3D(const Dimension3D& other) = default;
+		Dimension3D(Dimension3D&& other) noexcept = default;
+		Dimension3D& operator=(const Dimension3D& other) = default;
+		Dimension3D& operator=(Dimension3D&& other) noexcept = default;
 
 		/**
 		 * @return A string with the current values of the Point struct
@@ -1444,6 +1467,15 @@ namespace GGeneral {
 		/*! Creates a new Point with the given coordinates. The type is up to the user but floats and doubles are recommended. Default values are 0*/
 		Point(T x = 0, T y = 0) : x(x), y(y) {}
 
+		Point(const Point& other) = default;
+		Point(Point&& other) noexcept = default;
+		Point& operator=(const Point& other) = default;
+		Point& operator=(Point&& other) noexcept = default;
+
+		bool operator==(GGeneral::Point<T> point) {
+			return point.x == x && point.y == y;
+		}
+
 		/**
 		 * @return A string with the current values of the Point struct
 		 */
@@ -1464,6 +1496,11 @@ namespace GGeneral {
 			this->x = x;
 			this->y = y;
 		}
+
+		Point3D(const Point3D& other) = default;
+		Point3D(Point3D&& other) noexcept = default;
+		Point3D& operator=(const Point3D& other) = default;
+		Point3D& operator=(Point3D&& other) noexcept = default;
 
 		/**
 		 * @return A string with the current values of the Point struct
@@ -1494,6 +1531,11 @@ namespace GGeneral {
 			this->position = p;
 			this->dimension = d;
 		}
+
+		Rectangle(const Rectangle& other) = default;
+		Rectangle(Rectangle&& other) noexcept = default;
+		Rectangle& operator=(const Rectangle& other) = default;
+		Rectangle& operator=(Rectangle&& other) noexcept = default;
 
 		/**
 		 * Will check if this rectangle is overlapping or touching with the other rectangle
@@ -1597,10 +1639,15 @@ namespace GFile {
 		 */
 		GGeneral::String filepath;
 
-		/** Default constructor */
-		File() {}
 
 		File(byte* data, unsigned int size) : data(data), size(size) {}
+
+		/** Default constructor */
+		File() = default;
+		File(const File& other) = default;
+		File(File&& other) noexcept = default;
+		File& operator=(const File& other) = default;
+		File& operator=(File&& other) noexcept = default;
 
 		/**
 		 * Returns the data of the given index. The index may not be higher than the size nor lower than 0
@@ -1617,6 +1664,7 @@ namespace GFile {
 
 		/** Deletes all data allocated */
 		~File() { delete[] data; }
+
 	};
 
 	/**
@@ -1681,6 +1729,12 @@ namespace GFile {
 			 * Will flip the image
 			 */
 			void flip();
+
+			Image() = default;
+			Image(const Image& other) = default;
+			Image(Image&& other) noexcept = default;
+			Image& operator=(const Image& other) = default;
+			Image& operator=(Image&& other) noexcept = default;
 		};
 
 		/**
@@ -1695,6 +1749,8 @@ namespace GFile {
 		 * @return false - An error occurred and/or the image cannot be parsed
 		 */
 		ImageType isParseble(byte* data);
+
+		Image* resizeImage(const Image& i, GGeneral::Dimension<unsigned int> newSize);
 
 		/**
 		 * Will check if the image can be parsed. If the image can be parse it will load in the image, parse it and return a pointer to a created image struct with all information about the image
@@ -1711,6 +1767,12 @@ namespace GFile {
 
 			void flip() = delete;
 
+
+			Cursor() = default;
+			Cursor(const Cursor& other) = default;
+			Cursor(Cursor&& other) noexcept = default;
+			Cursor& operator=(const Cursor& other) = default;
+			Cursor& operator=(Cursor&& other) noexcept = default;
 			~Cursor();
 		};
 
@@ -2007,6 +2069,8 @@ namespace GWindow {
 		 */
 		GGeneral::Dimension<int> getWindowSize() const;
 
+		void setIcon(GGeneral::String filepath) const;
+
 		/**
 		 * Will fetch the size of the client region
 		 * @return Client size
@@ -2054,12 +2118,18 @@ namespace GWindow {
 			 */
 			Screen(GGeneral::String name = "", GGeneral::Point<int> pos = {0,0}, GGeneral::Dimension<int> sdim = {0,0}, GGeneral::Dimension<int> wdim = {}) : screenName(name), digitalPosition(pos), screenDimension(sdim), workDimension(wdim) {}
 
+			Screen(const Screen& other) = default;
+			Screen(Screen&& other) noexcept = default;
+			Screen& operator=(const Screen& other) = default;
+			Screen& operator=(Screen&& other) noexcept = default;
+
 			/**
 			 * @return A string representing the Screen struct
 			 */
 			GGeneral::String toString() const override {
 				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
 			}
+
 		};
 
 		/**
@@ -2168,6 +2238,12 @@ namespace GGamepad {
 		GGeneral::String toString() const override {
 			return PRINT_VAR(start, back, button_a, button_b, button_x, button_y, dpad_down, dpad_left, dpad_right, dpad_up, button_left_shoulder, button_right_shoulder, left_trigger, right_trigger, button_left_thumbstick, button_right_thumbstick, left_thumbstick, right_thumbstick);
 		}
+
+		GamepadState() = default;
+		GamepadState(const GamepadState& other) = default;
+		GamepadState(GamepadState&& other) noexcept = default;
+		GamepadState& operator=(const GamepadState& other) = default;
+		GamepadState& operator=(GamepadState&& other) noexcept = default;
 	};
 
 	class Gamepad {
@@ -2500,6 +2576,8 @@ namespace GEventWrapper {
 		 * @return false otherwise
 		 */
 		bool isKeyPressed(GWindow::VK key);
+
+		GGeneral::Point<int> getMousePosition();
 	};
 }
 
@@ -2518,10 +2596,17 @@ namespace GRenderer {
 	 */
 	GGeneral::String getCurentOpenGLVersion();
 
+	void enableBlend();
+
 	/**
 	 * @return The time since the last call of this function. If the function is called for the first time the returned value is 0
 	 */
 	double delta();
+
+	/**
+	 * @return The time since the very last call of draw()
+	 */
+	double ddelta();
 
 	enum class GLString {
 		VENDOR,
@@ -3119,14 +3204,14 @@ namespace GGraphics {
 	 * @param pos - The position of the image
 	 * @param img - The image to draw
 	 */
-	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img);
+	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<unsigned int> dim = {0,0});
 
 	/**
 	 * Will draw an image at the given coordinates.
 	 * @param pos - The position of the image
 	 * @param img - The image to draw
 	 */
-	void drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex);
+	void drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<unsigned int> dim = {0,0});
 }
 
 /**
@@ -3143,7 +3228,14 @@ namespace GFScript {
 		, IDENTIFIER_VAR
 		, NUM_IDENTIFIER
 		, STRING_IDENTIFIER
+		, NUMARRAY_IDENTIFIER
+		, STRINGARRAY_IDENTIFIER
 		, FUNCTION_PRINT
+		, FUNCTION_RANDOM
+		, FUNCTION_SETARRAY
+		, FUNCTION_ADDARRAY
+		, FUNCTION_GETARRAY
+		, FUNCTION_SIZEARRAY
 		, OP_PLUS /*! Plus symbol */
 		, OP_MINUS /*! Minus symbol */
 		, OP_MULTIPLY /*! Multiply symbol */
@@ -3154,7 +3246,13 @@ namespace GFScript {
 		, BREAK /*! End of line/statement. ';' */
 	};
 
+	/**
+	 * A token struct that holds the information of one token
+	 */
 	struct Token : GGeneral::BaseObject {
+		/**
+		 * The type of the token
+		 */
 		TokenID type = TokenID::UNKNOWN;
 		unsigned int line = 0;
 		void* data = nullptr;
@@ -3162,11 +3260,21 @@ namespace GFScript {
 		Token(TokenID t = TokenID::UNKNOWN, unsigned int line = 0, void* data = nullptr) : type(t), line(line), data(data) {}
 
 		/**
+		 * Copy constructor will only copy the mem address
+		 */
+		Token(const Token& other) {
+			data = other.data;
+			type = other.type;
+			line = other.line;
+		}
+
+		/**
 		 * Mover constructor. Will dereference the other Object
 		 */
 		Token(Token&& other) noexcept {
 			data = other.data;
 			type = other.type;
+			line = other.line;
 			other.data = nullptr;
 			other.type = TokenID::UNKNOWN;
 		}
@@ -3177,8 +3285,15 @@ namespace GFScript {
 		Token& operator=(Token&& other) noexcept {
 			data = other.data;
 			type = other.type;
+			line = other.line;
 			other.data = nullptr;
 			other.type = TokenID::UNKNOWN;
+		}
+
+		Token& operator= (const Token& other) {
+			data = other.data;
+			type = other.type;
+			line = other.line;
 		}
 
 		GGeneral::String toString() const override {
@@ -3191,7 +3306,9 @@ namespace GFScript {
 	enum class VarType {
 		INVALID
 		, NUM
+		, NUMARRAY
 		, STRING
+		, STRINGARRAY
 	};
 
 	struct Variable : GGeneral::BaseObject {
@@ -3199,6 +3316,14 @@ namespace GFScript {
 		void* data = nullptr;
 
 		Variable(VarType t, void* data = nullptr) : type(t), data(data) {}
+
+		/**
+		 * Will only copy the mem adress
+		 */
+		Variable(const Variable& other) {
+			type = other.type;
+			data = other.data;
+		}
 
 		/**
 		 * Mover constructor. Will dereference the other Object
@@ -3220,6 +3345,11 @@ namespace GFScript {
 			other.type = VarType::INVALID;
 		}
 
+		Variable& operator=(const Variable& other) {
+			type = other.type;
+			data = other.data;
+		}
+
 		GGeneral::String toString() const override {
 			return PRINT_VAR(type, data);
 		}
@@ -3227,42 +3357,130 @@ namespace GFScript {
 		~Variable() { delete data; }
 	};
 
+	/**
+	 * With this class one can tokenize a whole file. The tokens ca be given the Parser
+	 */
 	class Tokenizer {
 		GGeneral::String source;
 	public:
+		/**
+		 * Creates a new instance and sets the source
+		 * @param source - Source code
+		 */
 		Tokenizer(GGeneral::String source) : source(source) {}
 
+		/**
+		 * @param source - Source code
+		 */
 		void setSource(GGeneral::String source) { this->source = source; }
+		/**
+		 * Will take the source and create the tokens
+		 * @return -  An array filled with tokens. If nullptr a error occurred
+		 */
 		std::vector<Token>* createTokens();
 	};
 
+	/**
+	 * The Interpreter class can execute the GFSL code. All graphical calls are made from the GGraphics namespace
+	 */
 	class Interpreter {
 		std::vector<Token>* tokens;
 		std::map<GGeneral::String*, Variable*> variableValues;
 		std::vector<GGeneral::String*> variablesNames;
 
 		std::vector<void*> functions;
+
+		bool d_error = false;
+		/**
+		 * Number arithmetic
+		 */
 		static void op_plus1(Interpreter* i, Token* var, Token* num);
+		static void d_op_plus1(Interpreter* i, Token* var, Token* num);
 		static void op_minus1(Interpreter* i, Token* var, Token* num);
+		static void d_op_minus1(Interpreter* i, Token* var, Token* num);
 		static void op_multiply1(Interpreter* i, Token* var, Token* num);
+		static void d_op_multiply1(Interpreter* i, Token* var, Token* num);
 		static void op_divide1(Interpreter* i, Token* var, Token* num);
-		static void op_equal1(Interpreter* i, Token* type, Token* identefier, Token* data);
+		static void d_op_divide1(Interpreter* i, Token* var, Token* num);
+		/**
+		 * create var num
+		 */
+		static void op_equalnum(Interpreter* i, Token* type, Token* identifier, Token* data);
+		static void d_op_equalnum(Interpreter* i, Token* type, Token* identifier, Token* data);
+		/**
+		 * create var string
+		 */
+		static void op_equalstr(Interpreter* i, Token* type, Token* identifier, Token* data);
+		static void d_op_equalstr(Interpreter* i, Token* type, Token* identifier, Token* data);
+		/**
+		 * create array num and string
+		 */
+		static void op_equalnumarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
+		static void d_op_equalnumarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
+		static void op_equalstrarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
+		static void d_op_equalstrarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
+		/**
+		 * set value
+		 */
+		static void op_equalset(Interpreter* i, Token* identifier, Token* data);
+		static void d_op_equalset(Interpreter* i, Token* identifier, Token* data);
+		/**
+		 * print function
+		 */
 		static void fun_print(Interpreter* i, Token* data);
+		static void d_fun_print(Interpreter* i, Token* data);
+		/**
+		 * used to modify array
+		 */
+		static void fun_set_a(Interpreter* i, Token* var, Token* index, Token* data);
+		static void d_fun_set_a(Interpreter* i, Token* var, Token* index, Token* data);
+		/**
+		 * used to add to array
+		 */
+		static void fun_add_a(Interpreter* i, Token* var, Token* data);
+		static void d_fun_add_a(Interpreter* i, Token* var, Token* data);
+		/**
+		 * used to get value of array
+		 */
+		static void fun_get_a(Interpreter* i, Token* var, Token* index, Token* var2);
+		static void d_fun_get_a(Interpreter* i, Token* var, Token* index, Token* var2);
+		/**
+		 * Get the size of the vector and save it in var2
+		 */
+		static void fun_size_a(Interpreter* i, Token* var, Token* var2);
+		static void d_fun_size_a(Interpreter* i, Token* var, Token* var2);
 
 		class Parser {
 			friend class Interpreter;
 			Interpreter* instance;
 			Parser(Interpreter* instance) : instance(instance) {}
 
-			bool createCode();
+			bool createCode(bool debug = false);
 		};
 		friend class Parser;
 	public:
 
+		/**
+		 * Creates a new instance with the tokens as source
+		 * @param tokens - The tokens
+		 */
 		Interpreter(std::vector<Token>* tokens) : tokens(tokens) {}
 
-		bool prepare();
-		void execute();
+		/**
+		  * Will take the tokens and create the byte code that can be read and executed by the Interpreter. If the debug bool is set to true
+		  * the code generated will be slower to execute, but safer. The byte code is also better to debug. If the debug bool is set to false
+		  * the code generated will be faster but there will not be any safety meaning the Interpreter could crash at all times if bad code has been written.
+		  * @param debug - Set to true to enable debug code
+		  * @return true - If the code generation was successful. False otherwise
+		  */
+		bool prepare(bool debug = false);
+
+		/**
+		 * Will execute the internal byte code generated by the built in parser. prepare() must be called before hand and it must return true
+		 * @return true - If the execution was successful
+		 * @return false - Only if the code was generated with the debug flag and an error occured during the execution
+		 */
+		bool execute();
 	};
 }
 
