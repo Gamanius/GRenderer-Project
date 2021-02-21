@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <gl/glew.h>
 
 GRenderer::ShaderProgram::ShaderProgram(std::initializer_list<Primitives::Shader*> shaders) {

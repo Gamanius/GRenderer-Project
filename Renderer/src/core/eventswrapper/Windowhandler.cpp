@@ -1,5 +1,5 @@
 #pragma once
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <Windows.h>
 //This is because ID:0 should not be a valid id and is reserved
 #define THIS_INSTANCE allWrapper[this->ID - 1]
@@ -172,7 +172,7 @@ std::vector<WrapperClass> allWrapper;
 
 WrapperClass* getWrapperfromWindowID(int ID) {
 	for (size_t i = 0; i < allWrapper.size(); i++) {
-		if (allWrapper[i].window->getID() == ID)
+		if ((int)allWrapper[i].window->getID() == ID)
 			return &allWrapper[i];
 	}
 	return nullptr;

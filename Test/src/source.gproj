@@ -1,2 +1,17 @@
-numarray test = 1 2 3 4 5
+num test = 1
+num size = 0
+num temp = 0
+numarray anotherTest = 1 2 3 4 5
+test - 5
+addarray anotherTest test
+sizearray anotherTest size
 print test
+print anotherTest
+
+print size
+setarray anotherTest 0 size
+
+getarray anotherTest size temp
+
+print anotherTest
+print temp

@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 GScript::Interpreter::Interpreter(GFile::File gprojFile) {
 	this->source = GGeneral::String(gprojFile.data);

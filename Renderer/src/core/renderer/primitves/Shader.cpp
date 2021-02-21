@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../GRenderer.h"
+#include "GRenderer.h"
 #include <GL/glew.h>
 #include <fstream>
 #include <vector>

@@ -55,7 +55,7 @@ void callback(int id, GWindow::WindowEvent events, void* data) {
 			}
 		}
 		if (k == GWindow::VK::ESCAPE) {
-			window->forceCloseRequest();
+			window->sendCloseRequest();
 		}
 	}
 	if (events == GWindow::WindowEvent::KEY_RELEASE) {

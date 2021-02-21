@@ -116,6 +116,15 @@
     <ClCompile Include="src\core\fastscript\FParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\fastscript\functions\GFSArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\fastscript\functions\GFSSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\fastscript\functions\GFSMath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />

@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <Windows.h>
 #include <lmcons.h>
 

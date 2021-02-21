@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <string>
 
 #define CLEANRETURN()\
@@ -38,13 +38,13 @@ std::vector<GFScript::Token>* GFScript::Tokenizer::createTokens() {
 
 		if (stok.getSize() == 1) {
 			switch (firstChar) {
-			case '/':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_DIVIDE, line));  goto DONE;
-			case '-':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_MINUS, line));	goto DONE;
-			case '+':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_PLUS, line));	goto DONE;
+			case '/':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_DIVIDE, line));   goto DONE;
+			case '-':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_MINUS, line));	 goto DONE;
+			case '+':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_PLUS, line));	 goto DONE;
 			case '*':  tokens->push_back(GFScript::Token(GFScript::TokenID::OP_MULTIPLY, line)); goto DONE;
-			case '(':  tokens->push_back(GFScript::Token(GFScript::TokenID::LPARAN, line));		goto DONE;
-			case ')':  tokens->push_back(GFScript::Token(GFScript::TokenID::RPARAN, line));		goto DONE;
-			case '=':  tokens->push_back(GFScript::Token(GFScript::TokenID::EQUALS, line));		goto DONE;
+			case '(':  tokens->push_back(GFScript::Token(GFScript::TokenID::LPARAN, line));		 goto DONE;
+			case ')':  tokens->push_back(GFScript::Token(GFScript::TokenID::RPARAN, line));		 goto DONE;
+			case '=':  tokens->push_back(GFScript::Token(GFScript::TokenID::EQUALS, line));		 goto DONE;
 			}
 		}
 		if (firstChar == '#') {
@@ -120,6 +120,14 @@ std::vector<GFScript::Token>* GFScript::Tokenizer::createTokens() {
 				tokens->push_back(GFScript::Token(GFScript::TokenID::NUMARRAY_IDENTIFIER, line, nullptr));
 			else if (stok.compare("stringarray"))
 				tokens->push_back(GFScript::Token(GFScript::TokenID::STRINGARRAY_IDENTIFIER, line, nullptr));
+			else if (stok.compare("floor"))
+				tokens->push_back(GFScript::Token(GFScript::TokenID::FUNTION_FLOOR, line, nullptr));
+			else if (stok.compare("ceil"))
+				tokens->push_back(GFScript::Token(GFScript::TokenID::FUNTION_CEIL, line, nullptr));
+			else if (stok.compare("round"))
+				tokens->push_back(GFScript::Token(GFScript::TokenID::FUNCTION_ROUND, line, nullptr));
+			else if (stok.compare("abs"))
+				tokens->push_back(GFScript::Token(GFScript::TokenID::FUNCTION_ABS, line, nullptr));
 			else if (stok.compare("num"))
 				tokens->push_back(GFScript::Token(GFScript::TokenID::NUM_IDENTIFIER, line, nullptr));
 			else if (stok.compare("string"))

@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 #include <iostream>
 #include <thread>

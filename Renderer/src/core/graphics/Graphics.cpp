@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <GL/glew.h>
 
 GRenderer::ShaderProgram recProgram;
@@ -110,7 +110,7 @@ const bool GGraphics::init() {
 	return true;
 }
 
-void GGraphics::setColor(GGeneral::aColor c) {
+void GGraphics::setColor(GGeneral::aRGBColor c) {
 	recProgram.bind();
 	GMath::vec4<float> v;
 	v[0] = c[0] / 255.0f;

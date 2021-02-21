@@ -1,5 +1,4 @@
-﻿#pragma once
-#pragma comment(lib, "opengl32.lib")
+﻿#pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Xinput.lib")
 #pragma warning(disable : 4595)
@@ -325,7 +324,7 @@
 
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.6.11.20GFS0.1"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.7.02.21GFS0.1"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -1126,10 +1125,11 @@ namespace GGeneral {
 		virtual GGeneral::String toString() const = 0;
 	};
 
+	struct HSVColor;
 	/**
 	 * A struct containing Red Green and Blue values
 	 */
-	struct Color : public GGeneral::BaseObject {
+	struct RGBColor : public GGeneral::BaseObject {
 		/** The red component */
 		byte red;
 		/** The green component */
@@ -1143,12 +1143,12 @@ namespace GGeneral {
 		 * @param green - The green value
 		 * @param blue - The blue value
 		 */
-		Color(byte red = 0, byte green = 0, byte blue = 0);
-		
-		Color(const Color& other) = default;
-		Color(Color&& other) noexcept = default;
-		Color& operator=(const Color& other) = default;
-		Color& operator=(Color&& other) noexcept = default;
+		RGBColor(byte red = 0, byte green = 0, byte blue = 0);
+
+		RGBColor(const RGBColor& other) = default;
+		RGBColor(RGBColor&& other) noexcept = default;
+		RGBColor& operator=(const RGBColor& other) = default;
+		RGBColor& operator=(RGBColor&& other) noexcept = default;
 
 		/**
 		 * Returns the red, green or blue color values depending on the given index. Index may not be higher than 2 nor lower than 0
@@ -1157,23 +1157,51 @@ namespace GGeneral {
 		 */
 		byte operator[](byte i);
 
-		static Color HSVtoRGB(byte r, byte g, byte b) {}
+		static RGBColor HSVtoRGB(HSVColor color);
 
 		GGeneral::String toString() const override {
 			return PRINT_VAR(red, green, blue);
 		}
 	};
 
-	struct aColor : public GGeneral::Color {
+	struct HSVColor : public GGeneral::BaseObject {
+		/** The hue component */
+		int h;
+		/** The saturation */
+		float s;
+		/** The value or brightness */
+		float v;
+
+		/**
+		 * Creates a new Color struct with given values
+		 * @param red - The red value
+		 * @param green - The green value
+		 * @param blue - The blue value
+		 */
+		HSVColor(int hue = 0, float saturation = 0, float value = 0);
+		
+		HSVColor(const HSVColor& other) = default;
+		HSVColor(HSVColor&& other) noexcept = default;
+		HSVColor& operator=(const HSVColor& other) = default;
+		HSVColor& operator=(HSVColor&& other) noexcept = default;
+
+		RGBColor HSVtoRGB();
+
+		GGeneral::String toString() const override {
+			return PRINT_VAR(h, s, v);
+		}
+	};
+
+	struct aRGBColor : public GGeneral::RGBColor {
 		/** Alpha component */
 		byte alpha;
 
-		aColor(byte red = 0, byte green = 0, byte blue = 0, byte alpha = 255);
+		aRGBColor(byte red = 0, byte green = 0, byte blue = 0, byte alpha = 255);
 
-		aColor(const aColor& other) = default;
-		aColor(aColor&& other) noexcept = default;
-		aColor& operator=(const aColor& other) = default;
-		aColor& operator=(aColor&& other) noexcept = default;
+		aRGBColor(const aRGBColor& other) = default;
+		aRGBColor(aRGBColor&& other) noexcept = default;
+		aRGBColor& operator=(const aRGBColor& other) = default;
+		aRGBColor& operator=(aRGBColor&& other) noexcept = default;
 
 		byte operator[](byte i);
 
@@ -1423,7 +1451,6 @@ namespace GGeneral {
 		Dimension& operator=(const Dimension& other) = default;
 		Dimension& operator=(Dimension&& other) noexcept = default;
 
-
 		/**
 		 * @return A string with the current values of the Dimension struct
 		 */
@@ -1639,7 +1666,6 @@ namespace GFile {
 		 */
 		GGeneral::String filepath;
 
-
 		File(byte* data, unsigned int size) : data(data), size(size) {}
 
 		/** Default constructor */
@@ -1664,7 +1690,6 @@ namespace GFile {
 
 		/** Deletes all data allocated */
 		~File() { delete[] data; }
-
 	};
 
 	/**
@@ -1684,6 +1709,11 @@ namespace GFile {
 	 * @returns The String information of the file
 	 */
 	GGeneral::String loadFileS(GGeneral::String filepath);
+
+	/**
+	 * Will try to write the file to the given filepath.
+	 */
+	void writeFile(File* f);
 
 	/**
 	 * Fetches and returns the filepath of the executable
@@ -1766,7 +1796,6 @@ namespace GFile {
 			}
 
 			void flip() = delete;
-
 
 			Cursor() = default;
 			Cursor(const Cursor& other) = default;
@@ -1971,7 +2000,10 @@ namespace GWindow {
 	class Window {
 	private:
 		/*! Window ID used to identify any window */
-		int WindowID = -1;
+		bool closeRequest                = false;
+		void* deviceContext              = nullptr;
+		void* WindowID                   = nullptr;
+		GWindowCallback callbackFunction = nullptr;
 	public:
 		/*! Creates a new Window with default values */
 		Window() : Window("G-Renderer Window Instance", {50, 50}, {1280,  720}) {}
@@ -1987,9 +2019,10 @@ namespace GWindow {
 		~Window();
 
 		enum class ContextHints {
-			MAJOR_VERSION /*! The major part of the version ->3.3*/
-			, MINOR_VERSION /*! The minor part of the version 3.3 <-*/
-			, PROFILE_MASK /*! The Profile. Can be either Core or Compatibility profile.*/
+			MAJOR_VERSION /*! The major part of the version ->3.4*/,
+			MINOR_VERSION /*! The minor part of the version 3.4 <-*/,
+			PROFILE_MASK  /*! The Profile. Can be either Core or Compatibility profile.*/,
+		    CONTEXT_FLAGS /*! The context that will be created. Can be either null(0), debug(1) or forward compatible(2)*/
 		};
 
 		/**
@@ -1997,11 +2030,12 @@ namespace GWindow {
 		 * Always call the function before calling createOpenGLcontext() else it wouldn't have any effect.
 		 * If c has either the value MAJOR_VERSION or MINOR_VERSION an integer specifying the new version is expected.
 		 * If c has the value PROFILE_MASK the value 1 or 0 is expected. If the value has the value 1 than the CORE_PROFILE is chosen else the COMPATIBILITY_PROFILE is chosen.
+		 * If c is CONTEXT_FLAGS the value could be either 0, 1 or 2. 
 		 * The default values are Version 3.3 CORE_PROFILE
 		 * @param c - The context hint to modify
 		 * @param value - The new value
 		 */
-		static void hint(ContextHints c, unsigned int value);
+		static void setWindowHints(ContextHints c, unsigned int value);
 
 		/**
 		 * This will create a global OpenGL context. Only use this function once! If the function was successful the context can be used with any window.
@@ -2040,20 +2074,7 @@ namespace GWindow {
 		/**
 		 * Will immediately sent a close request to the Window and wait until it processed it.
 		 */
-		void forceCloseRequest();
-
-		/**
-		 * TODO
-		 * Will set the Mouse capture flag to true or false. If the mouse is captured, it cannot exit the window while the window has the focus. The mouse itself will be invisible and in a virtual window space
-		 * @param capture - Set the capture
-		 */
-		void setCaptureMouseMode(bool capture);
-
-		/**
-		 * Will set a new Cursor
-		 * @param c - The Cursor
-		 */
-		void setCursor(GFile::Graphics::Cursor* c);
+		void sendCloseRequest();
 
 		/**
 		 * Will fetch the current window state and return it. If an error occurs the window state will be "NORMAL"
@@ -2061,6 +2082,10 @@ namespace GWindow {
 		 */
 		WindowState getCurrentWindowState() const;
 
+		/**
+		 * Will set change if the user can resize the window or not
+		 * @param b - If set to true the user will be able to resize the window
+		 */
 		void setResizable(bool b);
 
 		/**
@@ -2091,9 +2116,11 @@ namespace GWindow {
 		void setCallbackFunction(GWindowCallback fun);
 
 		/**
-		 * @return Internal window ID
+		 * @return Internal window ID. Can be casted into a HWND Handle
 		 */
-		const int getID() const { return WindowID; }
+		const void* getID() const { return WindowID; }
+
+		void sendMessage(WindowEvent event, void* data);
 	};
 
 	/*! This namespace contains all important functions for getting informations of all virtual monitors. The init() function must be called before any other functions. if init() is not called before any other functions they will return 0*/
@@ -2129,7 +2156,6 @@ namespace GWindow {
 			GGeneral::String toString() const override {
 				return PRINT_VAR(screenName, digitalPosition, screenDimension, workDimension);
 			}
-
 		};
 
 		/**
@@ -2619,7 +2645,7 @@ namespace GRenderer {
 	/**
 	 * Clears the current active OpenGL context with the given color
 	 */
-	void clear(GGeneral::Color color);
+	void clear(GGeneral::RGBColor color);
 
 	//definition for shaderprogram so friendships work
 	class ShaderProgram;
@@ -3189,7 +3215,7 @@ namespace GGraphics {
 	 * Will set the default color to the given color. All draw calls in the namespace will draw with the default color
 	 * @param c - The Color to use
 	 */
-	void setColor(GGeneral::aColor c);
+	void setColor(GGeneral::aRGBColor c);
 
 	void setViewport(GGeneral::Dimension<int> size);
 
@@ -3236,6 +3262,10 @@ namespace GFScript {
 		, FUNCTION_ADDARRAY
 		, FUNCTION_GETARRAY
 		, FUNCTION_SIZEARRAY
+		, FUNTION_FLOOR
+		, FUNTION_CEIL
+		, FUNCTION_ABS
+		, FUNCTION_ROUND
 		, OP_PLUS /*! Plus symbol */
 		, OP_MINUS /*! Minus symbol */
 		, OP_MULTIPLY /*! Multiply symbol */
@@ -3288,12 +3318,16 @@ namespace GFScript {
 			line = other.line;
 			other.data = nullptr;
 			other.type = TokenID::UNKNOWN;
+
+			return *this;
 		}
 
 		Token& operator= (const Token& other) {
 			data = other.data;
 			type = other.type;
 			line = other.line;
+
+			return *this;
 		}
 
 		GGeneral::String toString() const override {
@@ -3343,11 +3377,15 @@ namespace GFScript {
 			type = other.type;
 			other.data = nullptr;
 			other.type = VarType::INVALID;
+
+			return *this;
 		}
 
 		Variable& operator=(const Variable& other) {
 			type = other.type;
 			data = other.data;
+
+			return *this;
 		}
 
 		GGeneral::String toString() const override {
@@ -3403,10 +3441,26 @@ namespace GFScript {
 		static void op_divide1(Interpreter* i, Token* var, Token* num);
 		static void d_op_divide1(Interpreter* i, Token* var, Token* num);
 		/**
+		 * abs round ceil...i think you get it
+		 */
+		static void fun_abs(Interpreter* i, Token* var);
+		static void d_fun_abs(Interpreter* i, Token* var);
+		static void fun_ceil(Interpreter* i, Token* var);
+		static void d_fun_ceil(Interpreter* i, Token* var);
+		static void fun_floor(Interpreter* i, Token* var);
+		static void d_fun_floor(Interpreter* i, Token* var);
+		static void fun_round(Interpreter* i, Token* var);
+		static void d_fun_round(Interpreter* i, Token* var);
+		/**
 		 * create var num
 		 */
 		static void op_equalnum(Interpreter* i, Token* type, Token* identifier, Token* data);
 		static void d_op_equalnum(Interpreter* i, Token* type, Token* identifier, Token* data);
+		/**
+		 * set value
+		 */
+		static void op_equalset(Interpreter* i, Token* identifier, Token* data);
+		static void d_op_equalset(Interpreter* i, Token* identifier, Token* data);
 		/**
 		 * create var string
 		 */
@@ -3420,11 +3474,6 @@ namespace GFScript {
 		static void op_equalstrarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
 		static void d_op_equalstrarray(Interpreter* i, Token* type, Token* identifier, Token* amount, std::vector<double*>* data);
 		/**
-		 * set value
-		 */
-		static void op_equalset(Interpreter* i, Token* identifier, Token* data);
-		static void d_op_equalset(Interpreter* i, Token* identifier, Token* data);
-		/**
 		 * print function
 		 */
 		static void fun_print(Interpreter* i, Token* data);
@@ -3432,23 +3481,23 @@ namespace GFScript {
 		/**
 		 * used to modify array
 		 */
-		static void fun_set_a(Interpreter* i, Token* var, Token* index, Token* data);
-		static void d_fun_set_a(Interpreter* i, Token* var, Token* index, Token* data);
+		static void fun_set_array(Interpreter* i, Token* var, Token* index, Token* data);
+		static void d_fun_set_array(Interpreter* i, Token* var, Token* index, Token* data);
 		/**
 		 * used to add to array
 		 */
-		static void fun_add_a(Interpreter* i, Token* var, Token* data);
-		static void d_fun_add_a(Interpreter* i, Token* var, Token* data);
+		static void fun_add_array(Interpreter* i, Token* var, Token* data);
+		static void d_fun_add_array(Interpreter* i, Token* var, Token* data);
 		/**
 		 * used to get value of array
 		 */
-		static void fun_get_a(Interpreter* i, Token* var, Token* index, Token* var2);
-		static void d_fun_get_a(Interpreter* i, Token* var, Token* index, Token* var2);
+		static void fun_get_array(Interpreter* i, Token* var, Token* index, Token* var2);
+		static void d_fun_get_array(Interpreter* i, Token* var, Token* index, Token* var2);
 		/**
 		 * Get the size of the vector and save it in var2
 		 */
-		static void fun_size_a(Interpreter* i, Token* var, Token* var2);
-		static void d_fun_size_a(Interpreter* i, Token* var, Token* var2);
+		static void fun_size_array(Interpreter* i, Token* var, Token* var2);
+		static void d_fun_size_array(Interpreter* i, Token* var, Token* var2);
 
 		class Parser {
 			friend class Interpreter;
@@ -3685,11 +3734,11 @@ inline GGeneral::String& operator<<(GGeneral::String& s, GFScript::VarType tok) 
 inline GGeneral::String& operator<<(GGeneral::String& s, GFScript::TokenID tok) {
 	switch (tok) {
 	case GFScript::TokenID::UNKNOWN:           return s.append("UNKNOWN");
-	case GFScript::TokenID::NUMBER_LITERAL:   return s.append("NUMBER_LITERAL");
-	case GFScript::TokenID::STRING_LITERAL:      return s.append("CHAR");
+	case GFScript::TokenID::NUMBER_LITERAL:    return s.append("NUMBER_LITERAL");
+	case GFScript::TokenID::STRING_LITERAL:    return s.append("CHAR");
 	case GFScript::TokenID::IDENTIFIER_VAR:    return s.append("IDENTIFIER_VAR");
-	case GFScript::TokenID::STRING_IDENTIFIER:    return s.append("STRING_IDENTIFIER");
-	case GFScript::TokenID::NUM_IDENTIFIER: return s.append("NUM_IDENTIFIER");
+	case GFScript::TokenID::STRING_IDENTIFIER: return s.append("STRING_IDENTIFIER");
+	case GFScript::TokenID::NUM_IDENTIFIER:    return s.append("NUM_IDENTIFIER");
 	case GFScript::TokenID::FUNCTION_PRINT:    return s.append("FUNCTION_PRINT");
 	case GFScript::TokenID::OP_PLUS:           return s.append("OP_PLUS");
 	case GFScript::TokenID::OP_MINUS:          return s.append("OP_MINUS");

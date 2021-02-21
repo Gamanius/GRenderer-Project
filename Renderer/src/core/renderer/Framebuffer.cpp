@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <gl/glew.h>
 
 GRenderer::FrameBuffer::FrameBuffer() {

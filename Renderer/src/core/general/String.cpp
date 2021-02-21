@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 GGeneral::String::String() {
 	size = 0;
@@ -238,9 +238,11 @@ size_t GGeneral::String::find(const char* c) {
 }
 
 bool GGeneral::String::compare(const char* c) {
-	if (strlen(c) != size)
-		return false;
-	return memcmp(c, buffer, size /*leaving the \0 out*/) == 0;
+	//if (strlen(c) != size)
+	//	return false;
+	if (strlen(c) <= size)
+		return memcmp(c, buffer, strlen(c) /*leaving the \0 out*/) == 0;
+	else return false;
 }
 
 void GGeneral::String::clear(bool alloc) {

@@ -2,7 +2,7 @@
 
 	DUE TO THIS BEING A FUCKING DUMPSTER (SOME MIGHT EVEN CALL THIS MOIST GARBAGE) FIRE IT WILL BE REWRITTEN AT SOME POINT
 
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 #define GET_TOKEN tokens->operator[](*position).token
 #define ASS(x, y) x = y; if(x == nullptr) { if(node != nullptr) node->dereference(); delete node; return nullptr; }

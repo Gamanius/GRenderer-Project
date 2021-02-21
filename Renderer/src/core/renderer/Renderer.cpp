@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <GL/glew.h>
 
 unsigned long lastDeltaT = 0;
@@ -71,7 +71,7 @@ GGeneral::String GRenderer::getGLString(GLString s) {
 	return string;
 }
 
-void GRenderer::clear(GGeneral::Color color) {
+void GRenderer::clear(GGeneral::RGBColor color) {
 	glClearColor(((float)color[0]) / 255, ((float)color[1]) / 255, ((float)color[2]) / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 }

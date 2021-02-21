@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #undef UNICODE
 #include <Windows.h>
 #include <iostream>
@@ -67,6 +67,14 @@ GGeneral::String GFile::loadFileS(GGeneral::String filepath) {
 	s.take(buffer, size + 1);
 
 	return s;
+}
+
+void GFile::writeFile(GFile::File* f) {
+	if (f->size == 0)
+		return;
+	std::ofstream out(f->filepath);
+	out.write(reinterpret_cast<const char*>(f->data), f->size);
+	out.close();
 }
 
 GGeneral::String GFile::getWorkingDirectionary() {

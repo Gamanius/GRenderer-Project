@@ -1,52 +1,542 @@
-#include "../GRenderer.h"
 #undef UNICODE
 #include <Windows.h>
 #include <Windowsx.h>
+#include "GRenderer.h"
+#include <map>
 #include <gl/glew.h>
-//#include "../../dependencies/header/wglext.h"
-//#include <wglext.h>
 
-#include <iostream>
-#include <vector>
 
-#define THIS_INSTANCE allWindowsInstances[this->WindowID]
+//https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_create_context.txt
+#define WGL_CONTEXT_MAJOR_VERSION_ARB             0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB             0x2092
+#define WGL_CONTEXT_LAYER_PLANE_ARB               0x2093
+#define WGL_CONTEXT_FLAGS_ARB                     0x2094
+#define WGL_CONTEXT_PROFILE_MASK_ARB              0x9126
 
-typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext,
-	const int* attribList);
-wglCreateContextAttribsARB_type* wglCreateContextAttribsARB;
-
-#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
-#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
-#define WGL_CONTEXT_FLAGS_ARB                   0x2094
-#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
-
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
+#define WGL_CONTEXT_DEBUG_BIT_ARB                 0x0001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB    0x0002
+
+//need to load this function in
+typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext, const int* attribList);
+wglCreateContextAttribsARB_type* wglCreateContextAttribsARB;
 
 //WinAPI specific variables
 static MSG msg;
 HINSTANCE hInstance = GetModuleHandle(0);
 HGLRC hglrc = NULL;
 
-struct WindowClass {
-	//General Stuff
-	bool closeRequest = false;
-	//WinAPI stuff
-	HDC hdc;
-	HWND hWnd;
-	WNDCLASS wc;
-	GWindow::GWindowCallback callbackfun = nullptr;
-	//Should be deprecated soon
-	bool isFree = false;
+//static vars needed to keep track of all instances
+std::map<HWND, GWindow::Window*> allWindowInstances;
 
-	GFile::Graphics::Cursor* c = nullptr;
-};
+//OpenGL hints
+byte CONTEXT_MAJOR = 3;
+byte CONTEXT_MINOR = 3;
+byte PROFILE_FLAG  = 1;
+byte CONTEXT_FLAG  = 0;
 
-//All window classes
-std::vector<WindowClass> allWindowsInstances;
+//declare function that is at the end of this document
+static int getWindowsVirtualKeyCode(GWindow::VK key);
+static GWindow::VK getVirtualKeyCode(int windowsKey);
 
-//Some event variables
+bool GWindow::init() {
+	//Need to create a dummy window class
+	WNDCLASSA dummyWindowClass = {};
+	dummyWindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	dummyWindowClass.lpfnWndProc = DefWindowProcA;
+	dummyWindowClass.hInstance = GetModuleHandle(0);
+	dummyWindowClass.lpszClassName = "Dummy_WGL_djuasiodwa";
+
+	if (!RegisterClassA(&dummyWindowClass)) {
+		THROW("Couldn't register window");
+		return false;
+	}
+
+	HWND dummyWindow = CreateWindowExA(
+		0,
+		dummyWindowClass.lpszClassName,
+		"Dummy OpenGL Window",
+		0,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		0,
+		0,
+		dummyWindowClass.hInstance,
+		0);
+
+	if (!dummyWindow) {
+		THROW("Couldn't create window");
+		return false;
+	}
+
+	HDC dummy_dc = GetDC(dummyWindow);
+
+	PIXELFORMATDESCRIPTOR pfd = {};
+	pfd.nSize = sizeof(pfd);
+	pfd.nVersion = 1;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.cColorBits = 32;
+	pfd.cAlphaBits = 8;
+	pfd.iLayerType = PFD_MAIN_PLANE;
+	pfd.cDepthBits = 24;
+	pfd.cStencilBits = 8;
+
+	int pixel_format = ChoosePixelFormat(dummy_dc, &pfd);
+	if (!pixel_format) {
+		THROW("Couldn't choose pixel format");
+		return false;
+	}
+	if (!SetPixelFormat(dummy_dc, pixel_format, &pfd)) {
+		THROW("Couldn't set pixel format");
+		return false;
+	}
+
+	HGLRC dummy_context = wglCreateContext(dummy_dc);
+	if (!dummy_context) {
+		THROW("Couldn't create context");
+		return false;
+	}
+
+	if (!wglMakeCurrent(dummy_dc, dummy_context)) {
+		THROW("Couldn't set context active");
+		return false;
+	}
+
+	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*) wglGetProcAddress("wglCreateContextAttribsARB");
+	if (glewInit() != GLEW_OK) {
+		THROWF("Couldn't load OpenGL functions");
+		return false;
+	}
+
+	wglMakeCurrent(dummy_dc, 0);
+	wglDeleteContext(dummy_context);
+	ReleaseDC(dummyWindow, dummy_dc);
+	DestroyWindow(dummyWindow);
+	return true;
+}
+
+GGeneral::Rectangle<long> rectToGRectangle(const RECT& a) {
+	GGeneral::Rectangle<long> rec;
+	rec.dimension.width = a.right - a.left;
+	rec.dimension.height = a.bottom - a.top;
+	rec.position.x = a.left;
+	rec.position.y = a.top;
+
+	return rec;
+}
+
+//Will only check for CTRL, ALT and SHIFT. It is rather ugly but it gets the job done
+std::vector<GWindow::VK> processUnknownKeys(bool pressed) {
+	std::vector<GWindow::VK> returnValue;
+	static int keyToCheck[6] = {
+		//Shift               //Control                 //Alt
+		VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU
+	};
+
+	static bool wasPressed[] = {
+		0, 0, 0, 0, 0, 0
+	};
+
+	for (byte i = 0; i < 6; i++) {
+		auto key = GetKeyState(keyToCheck[i]);
+		char isPressed = (key & -128) + 129;
+		if (isPressed == 1 && pressed) {
+			wasPressed[i] = true;
+			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
+		}
+		else if (isPressed != 1 && !pressed && wasPressed[i]) {
+			wasPressed[i] = false;
+			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
+		}
+	}
+
+	return returnValue;
+}
+
+//window call back
+LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	//Send close message
+	case WM_CLOSE:
+	{
+		allWindowInstances[hWnd]->sendCloseRequest();
+		return 0;
+	}
+	//do this to stop the flashin while resizing a window
+	case WM_ERASEBKGND: return 0;
+	//This will be called if the actual size has been changed by the user
+	case WM_SIZING:
+	{
+		auto area = (RECT*)lParam;
+
+		GGeneral::Rectangle<long> rec = rectToGRectangle(*area);
+
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
+		return MAKELRESULT(1, 1);
+	}
+	//Will be sent if the size has been changed...or rather the state?
+	case WM_SIZE:
+	{
+		if (wParam == 0 || wParam == 2) {
+			if (!wParam)
+				allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::NORMAL);
+			else
+				allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MAXIMIZED);
+			RECT area = {};
+			GetWindowRect(hWnd, &area);
+			GGeneral::Rectangle<long> rec = rectToGRectangle(area);
+
+			allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
+		}
+		else if (wParam) {
+			allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MINIMIZED);
+		}
+		
+		return 0;
+	}
+	//Will be sent if the user is changing the postion of the window
+	case WM_MOVING:
+	{
+		auto pos = (RECT*)lParam;
+		auto p = GGeneral::Point<long>(pos->left, pos->top);
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_MOVE, (void*)&p);
+		return 0;
+	}
+	//focus things
+	case WM_SETFOCUS:
+	{
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_FOCUS, (void*)true);
+		return 0;
+	}
+	case WM_KILLFOCUS:
+	{
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::WINDOW_FOCUS, (void*)false);
+		return 0;
+	}
+	//key up and down events
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+	{
+		//Window press event
+		auto key = getVirtualKeyCode(wParam);
+		if (key == GWindow::VK::UNKWON) {
+			auto moreKeys = processUnknownKeys(true);
+			for (size_t i = 0; i < moreKeys.size(); i++) {
+				allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+			}
+		}
+		else
+			allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+	{
+		auto key = getVirtualKeyCode(wParam);
+		if (key == GWindow::VK::UNKWON) {
+			auto moreKeys = processUnknownKeys(false);
+			for (size_t i = 0; i < moreKeys.size(); i++) {
+				allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
+			}
+		}
+		else
+			allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+		return MAKELRESULT(1, 1);
+	}
+	//mouse move event
+	case WM_MOUSEMOVE:
+	{
+		auto p = GGeneral::Point<int>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::MOUSE_MOVE, (void*)&p);
+		return 0;
+	}
+	//even more mouse stuff
+	case WM_LBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_RBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_XBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+
+		GWindow::VK key;
+		if (GET_XBUTTON_WPARAM(wParam) == 1)
+			 key = GWindow::VK::X1_MB;
+		else
+			key = GWindow::VK::X2_MB;
+
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)key);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_MBUTTONDOWN:
+	{
+		SetCapture(hWnd);
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::MIDDLE_MB);
+		return MAKELRESULT(1, 1);
+	}
+	//mouse button release messages
+	case WM_LBUTTONUP:
+	{
+		ReleaseCapture();
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::LEFT_MB);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_RBUTTONUP:
+	{
+		ReleaseCapture();
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::RIGHT_MB);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_XBUTTONUP:
+	{
+		ReleaseCapture();
+		GWindow::VK key;
+		if (GET_XBUTTON_WPARAM(wParam) == 1)
+			key = GWindow::VK::X1_MB;
+		else
+			key = GWindow::VK::X2_MB;
+
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_RELEASE, (void*)key);
+		return MAKELRESULT(1, 1);
+	}
+	case WM_MBUTTONUP:
+	{
+		ReleaseCapture();
+		allWindowInstances[hWnd]->sendMessage(GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::MIDDLE_MB);
+		return MAKELRESULT(1, 1);
+	}
+	//Do this so the cursor looks good i guess???
+	case WM_SETCURSOR:
+	{
+		if (LOWORD(lParam) == HTCLIENT) {
+			SetCursor(LoadCursorA(NULL, IDC_ARROW));
+			return true;
+		}
+	}
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim) {
+	//Initialize the toilet
+	WNDCLASS wc = {};
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = (WNDPROC)Callback;
+	wc.hInstance = hInstance;
+	wc.hbrBackground = CreateSolidBrush(3289650); //Some wonderfull gray shade!
+	GGeneral::String s = "G-Renderer Instance " + name;
+	wc.lpszClassName = s.cStr();
+
+	if (!RegisterClassA(&wc)) THROW("An error occurred while registering the window");
+
+	HWND hWnd = CreateWindowA(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
+	if (!hWnd) {
+		THROW("An error occurred while creating the window");
+		return;
+	}
+
+	HDC hdc = GetDC(hWnd);
+
+	this->WindowID = hWnd;
+	this->deviceContext = hdc;
+	EnableWindow(hWnd, true);
+
+	//Pixel format
+	PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    // Flags
+		PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
+		32,                   // Colordepth of the framebuffer.
+		0, 0, 0, 0, 0, 0,
+		0,
+		0,
+		0,
+		0, 0, 0, 0,
+		24,                   // Number of bits for the depthbuffer
+		8,                    // Number of bits for the stencilbuffer
+		0,                    // Number of Aux buffers in the framebuffer.
+		PFD_MAIN_PLANE,
+		0,
+		0, 0, 0
+	};
+	//Set pixel format
+	auto iPixelFormat = ChoosePixelFormat((HDC)this->deviceContext, &pfd);
+	if (!iPixelFormat) THROW("Couldn't choose pixel format");
+	if (!SetPixelFormat((HDC)this->deviceContext, iPixelFormat, &pfd)) THROW("Couldn't set pixel format");
+
+	allWindowInstances[hWnd] = this;
+}
+
+GWindow::Window::~Window() {
+	allWindowInstances.erase((HWND)this->WindowID);
+	this->setOpenGLContextActive(false);
+	ReleaseDC((HWND)this->WindowID, (HDC)this->deviceContext);
+	DeleteDC((HDC)this->deviceContext);
+	DestroyWindow((HWND)this->WindowID);
+}
+
+void GWindow::Window::setWindowHints(ContextHints c, unsigned int value) {
+	switch (c) {
+	case GWindow::Window::ContextHints::MAJOR_VERSION:
+		CONTEXT_MAJOR = value;
+		break;
+	case GWindow::Window::ContextHints::MINOR_VERSION:
+		CONTEXT_MINOR = value;
+		break;
+	case GWindow::Window::ContextHints::PROFILE_MASK:
+		if (value == 1)
+			PROFILE_FLAG = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+		else if (value == 0)
+			PROFILE_FLAG = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+		break;
+	case GWindow::Window::ContextHints::CONTEXT_FLAGS:
+		switch (value) {
+		case 1:
+			CONTEXT_FLAG = WGL_CONTEXT_DEBUG_BIT_ARB; break;
+		case 2:
+			CONTEXT_FLAG = WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB; break;
+		default:
+			CONTEXT_FLAG = 0; 
+		}
+		break;
+	}
+}
+
+bool GWindow::Window::createOpenGLcontext() {
+	if (CONTEXT_FLAG != 0) {
+		int gl33_attribs[] = {
+			WGL_CONTEXT_MAJOR_VERSION_ARB, CONTEXT_MAJOR,
+			WGL_CONTEXT_MINOR_VERSION_ARB, CONTEXT_MINOR,
+			WGL_CONTEXT_PROFILE_MASK_ARB,  PROFILE_FLAG,
+			WGL_CONTEXT_FLAGS_ARB,         CONTEXT_FLAG,
+			0,
+		};
+		hglrc = wglCreateContextAttribsARB((HDC)this->deviceContext, 0, gl33_attribs);
+	}
+
+	if (hglrc == NULL) {
+		if (CONTEXT_FLAG == 0) 
+			THROWW("Couldn't create OpenGL context with given Context flags");
+		int gl33_attribs[] = {
+			WGL_CONTEXT_MAJOR_VERSION_ARB, CONTEXT_MAJOR,
+			WGL_CONTEXT_MINOR_VERSION_ARB, CONTEXT_MINOR,
+			WGL_CONTEXT_PROFILE_MASK_ARB,  PROFILE_FLAG,
+			0,                             0,
+			0,
+		};
+		hglrc = wglCreateContextAttribsARB((HDC)this->deviceContext, 0, gl33_attribs);
+	}
+
+
+	if (hglrc == NULL) {
+		THROW("Couldn't create OpenGL context");
+		return false;
+	}
+
+	return true;
+}
+
+void GWindow::Window::setOpenGLContextActive(bool b) {
+	wglMakeCurrent((HDC)this->deviceContext, b ? hglrc : NULL);
+}
+
+void GWindow::Window::swapBuffers() {
+	SwapBuffers((HDC)this->deviceContext);
+}
+
+void GWindow::Window::setState(GWindow::WindowState state) {
+	int nCmdShow = 0;
+	switch (state) {
+	case WindowState::HIDDEN:    nCmdShow = SW_HIDE;     break;
+	case WindowState::MAXIMIZED: nCmdShow = SW_MAXIMIZE; break;
+	case WindowState::NORMAL:    nCmdShow = SW_RESTORE;  break;
+	case WindowState::MINIMIZED: nCmdShow = SW_MINIMIZE; break;
+	}
+	ShowWindow((HWND)this->WindowID, nCmdShow);
+}
+
+void GWindow::Window::fetchEvents() {
+	BOOL result;
+	do {
+		result = PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
+		if (result != 0) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	} while (result != 0);
+}
+
+const bool GWindow::Window::getCloseRequest() const {
+	return this->closeRequest;
+}
+
+void GWindow::Window::sendCloseRequest() {
+	this->closeRequest = true;
+}
+
+GWindow::WindowState GWindow::Window::getCurrentWindowState() const {
+	WINDOWPLACEMENT state;
+	state.length = sizeof(state);
+	GetWindowPlacement((HWND)this->WindowID, &state);
+	switch (state.showCmd) {
+	case SW_HIDE: return GWindow::WindowState::HIDDEN;
+	case SW_MAXIMIZE: return GWindow::WindowState::MAXIMIZED;
+	case SW_SHOWMINIMIZED:
+	case SW_MINIMIZE: return GWindow::WindowState::MINIMIZED;
+	default: return GWindow::WindowState::NORMAL;
+	};
+}
+
+void GWindow::Window::setResizable(bool b) {
+	if (!b)
+		SetWindowLong((HWND)this->WindowID, GWL_STYLE, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX);
+	else
+		SetWindowLong((HWND)this->WindowID, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+}
+
+GGeneral::Dimension<int> GWindow::Window::getWindowSize() const {
+	RECT rect = {};
+	GetWindowRect((HWND)this->WindowID, &rect);
+	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+GGeneral::Dimension<int> GWindow::Window::getWindowDrawSize() const {
+	RECT rect = {};
+	GetClientRect((HWND)this->WindowID, &rect);
+	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+void GWindow::Window::setIcon(GGeneral::String filepath) const {
+	auto handle = LoadImage(NULL, filepath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+	if (handle == nullptr) {
+		THROW("An Error occurred while loading image from filepath: '", filepath, "'. #", GetLastError());
+	}
+	SetClassLong((HWND)this->WindowID, GCL_HICON, (LONG)handle);
+}
+
+void GWindow::Window::setCallbackFunction(GWindowCallback fun) {
+	this->callbackFunction = fun;
+}
+
+void GWindow::Window::sendMessage(WindowEvent event, void* data) {
+	if(callbackFunction != nullptr)
+		callbackFunction((int)this->WindowID, event, data);
+}
 
 static GWindow::VK getVirtualKeyCode(int windowsKey) {
 	switch (windowsKey) {
@@ -338,490 +828,4 @@ static int getWindowsVirtualKeyCode(GWindow::VK key) {
 	case GWindow::VK::ZOOM:			       return VK_ZOOM;
 	case GWindow::VK::UNKWON:              return -1;
 	}
-}
-
-static const unsigned int getIndex(HWND hWnd) {
-	for (unsigned int i = 0; i < allWindowsInstances.size(); i++) {
-		if (hWnd == allWindowsInstances[i].hWnd)
-			return i;
-	}
-	return 0;
-}
-
-bool GWindow::init() {
-	//Taken from StackOverflow somewhere
-	WNDCLASSA window_class = {};
-	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	window_class.lpfnWndProc = DefWindowProcA;
-	window_class.hInstance = GetModuleHandle(0);
-	window_class.lpszClassName = "Dummy_WGL_djuasiodwa";
-
-	if (!RegisterClassA(&window_class)) {
-		THROW("Couldn't register window");
-		return false;
-	}
-
-	HWND dummy_window = CreateWindowExA(
-		0,
-		window_class.lpszClassName,
-		"Dummy OpenGL Window",
-		0,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		window_class.hInstance,
-		0);
-
-	if (!dummy_window) {
-		THROW("Couldn't create window");
-		return false;
-	}
-
-	HDC dummy_dc = GetDC(dummy_window);
-
-	PIXELFORMATDESCRIPTOR pfd = {};
-	pfd.nSize = sizeof(pfd);
-	pfd.nVersion = 1;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.cColorBits = 32;
-	pfd.cAlphaBits = 8;
-	pfd.iLayerType = PFD_MAIN_PLANE;
-	pfd.cDepthBits = 24;
-	pfd.cStencilBits = 8;
-
-	int pixel_format = ChoosePixelFormat(dummy_dc, &pfd);
-	if (!pixel_format) {
-		THROW("Couldn't choose pixel format");
-		return false;
-	}
-	if (!SetPixelFormat(dummy_dc, pixel_format, &pfd)) {
-		THROW("Couldn't set pixel format");
-		return false;
-	}
-
-	HGLRC dummy_context = wglCreateContext(dummy_dc);
-	if (!dummy_context) {
-		THROW("Couldn't create context");
-		return false;
-	}
-
-	if (!wglMakeCurrent(dummy_dc, dummy_context)) {
-		THROW("Couldn't set context active");
-		return false;
-	}
-
-	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)wglGetProcAddress(
-		"wglCreateContextAttribsARB");
-	if (glewInit() != GLEW_OK) {
-		THROWF("Couldn't load OpenGL functions");
-		return false;
-	}
-	wglMakeCurrent(dummy_dc, 0);
-	wglDeleteContext(dummy_context);
-	ReleaseDC(dummy_window, dummy_dc);
-	DestroyWindow(dummy_window);
-	return true;
-}
-
-//Will only check for CTRL, ALT and SHIFT
-std::vector<GWindow::VK> processUnknownKeys(bool pressed) {
-	std::vector<GWindow::VK> returnValue;
-	static int keyToCheck[6] = {
-		//Shift               //Control                 //Alt
-		VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU
-	};
-
-	static bool wasPressed[] = {
-		0, 0, 0, 0, 0, 0
-	};
-
-	for (byte i = 0; i < 6; i++) {
-		auto key = GetKeyState(keyToCheck[i]);
-		char isPressed = (key & -128) + 129;
-		if (isPressed == 1 && pressed) {
-			wasPressed[i] = true;
-			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
-		}
-		else if (isPressed != 1 && !pressed && wasPressed[i]) {
-			wasPressed[i] = false;
-			returnValue.push_back(getVirtualKeyCode(keyToCheck[i]));
-		}
-	}
-
-	return returnValue;
-}
-
-void* proccessXButton(WPARAM button) {
-	if (GET_XBUTTON_WPARAM(button) == 1)
-		return (void*)GWindow::VK::X1_MB;
-	return (void*)GWindow::VK::X2_MB;
-}
-
-LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	auto callback = GWindow::GWindowCallback();
-	if (allWindowsInstances.size() >= 1)
-		callback = allWindowsInstances[getIndex(hWnd)].callbackfun;
-	switch (uMsg) {
-	case WM_CLOSE:
-	{
-		//Window close/destroy event
-		allWindowsInstances[getIndex(hWnd)].closeRequest = true;
-		if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_CLOSE, (void*)true);
-		return 0;
-	}
-	case WM_ERASEBKGND: return 0;
-	case WM_SIZING:
-	{
-		if (callback != nullptr) {
-			auto area = (RECT*)lParam;
-			GGeneral::Rectangle<long> rec;
-			rec.dimension.width = area->right - area->left;
-			rec.dimension.height = area->bottom - area->top;
-			rec.position.x = area->left;
-			rec.position.y = area->top;
-			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
-			return MAKELRESULT(1, 1);
-		}
-		break;
-	}
-	case WM_SIZE:
-	{
-		if (callback != nullptr) {
-			if (wParam == 0 || wParam == 2) {
-				if (!wParam)
-					callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::NORMAL);
-				else
-					callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MAXIMIZED);
-				RECT area = {};
-				GetWindowRect(hWnd, &area);
-				GGeneral::Rectangle<long> rec;
-				rec.dimension.width = area.right - area.left;
-				rec.dimension.height = area.bottom - area.top;
-				rec.position.x = area.left;
-				rec.position.y = area.top;
-				callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_RESIZE, (void*)&rec);
-			}
-			else if (wParam) {
-				callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_STATE, (void*)GWindow::WindowState::MINIMIZED);
-			}
-		}
-		return 0;
-	}
-	case WM_MOVING:
-	{
-		if (callback != nullptr) {
-			auto pos = (RECT*)lParam;
-			callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_MOVE, (void*)&GGeneral::Point<long>(pos->left, pos->top));
-			return 0;
-		}
-		break;
-	}
-	//case WM_ACTIVATE: if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)(LOWORD(wParam) == WA_ACTIVE || LOWORD(wParam) == WA_CLICKACTIVE)); return 0;
-	case WM_SETFOCUS:  if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)true);															   return 0;
-	case WM_KILLFOCUS:  if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::WINDOW_FOCUS, (void*)false);														   return 0;
-	case WM_MOUSEMOVE: if (callback != nullptr) callback(getIndex(hWnd), GWindow::WindowEvent::MOUSE_MOVE, (void*)&GGeneral::Point<int>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));  return 0;
-	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-	{
-		if (callback != nullptr) {
-			//Window press event
-			auto key = getVirtualKeyCode(wParam);
-			if (key == GWindow::VK::UNKWON) {
-				auto moreKeys = processUnknownKeys(true);
-				for (size_t i = 0; i < moreKeys.size(); i++) {
-					callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
-				}
-			}
-			else
-				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)key);
-			return MAKELRESULT(1, 1);
-		}
-		break;
-	}
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-	{
-		if (callback != nullptr) {
-			auto key = getVirtualKeyCode(wParam);
-			if (key == GWindow::VK::UNKWON) {
-				auto moreKeys = processUnknownKeys(false);
-				for (size_t i = 0; i < moreKeys.size(); i++) {
-					callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)moreKeys[i]);
-				}
-			}
-			else
-				callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)key);
-			return MAKELRESULT(1, 1);
-		}
-		break;
-	}
-	case WM_LBUTTONDOWN:
-	{
-		SetCapture(hWnd);
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::LEFT_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_RBUTTONDOWN:
-	{
-		SetCapture(hWnd);
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::RIGHT_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_XBUTTONDOWN:
-	{
-		SetCapture(hWnd);
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, proccessXButton(wParam));
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_MBUTTONDOWN:
-	{
-		ReleaseCapture();
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_PRESS, (void*)GWindow::VK::MIDDLE_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_LBUTTONUP:
-	{
-		ReleaseCapture();
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::LEFT_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_RBUTTONUP:
-	{
-		ReleaseCapture();
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::RIGHT_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_XBUTTONUP:
-	{
-		ReleaseCapture();
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, proccessXButton(wParam));
-		}
-		return MAKELRESULT(1, 1);
-	}
-	case WM_MBUTTONUP:
-	{
-		ReleaseCapture();
-		if (callback != nullptr) {
-			callback(getIndex(hWnd), GWindow::WindowEvent::KEY_RELEASE, (void*)GWindow::VK::MIDDLE_MB);
-		}
-		return MAKELRESULT(1, 1);
-	}
-	//Do something when the mouse wants some juicy pics
-	case WM_SETCURSOR:
-		if (LOWORD(lParam) == HTCLIENT) {
-			if (allWindowsInstances[getIndex(hWnd)].c != nullptr)
-				SetCursor((HCURSOR)allWindowsInstances[getIndex(hWnd)].c->instance);
-			else
-				SetCursor(LoadCursorA(NULL, IDC_ARROW));
-			return true;
-		}
-	}
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
-}
-
-GWindow::Window::Window(GGeneral::String name, GGeneral::Point<int> pos, GGeneral::Dimension<int> dim) {
-	//Initialize the toilet
-	WNDCLASS wc = {};
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = (WNDPROC)Callback;
-	wc.hInstance = hInstance;
-	wc.hbrBackground = CreateSolidBrush(3289650); //Some wonderfull gray shade!
-	GGeneral::String s = "G-Renderer Instance" + allWindowsInstances.size();
-	wc.lpszClassName = s.cStr();
-
-	if (!RegisterClassA(&wc)) THROW("An error occurred while registering the window");
-
-	HWND hWnd = CreateWindowA(wc.lpszClassName, name.cStr(), WS_OVERLAPPEDWINDOW, pos.x, pos.y, dim.width, dim.height, 0, 0, hInstance, 0);
-	if (!hWnd) {
-		THROW("An error occurred while creating the window");
-		return;
-	}
-
-	HDC hdc = GetDC(hWnd);
-	//for (size_t i = 0; i < allWindowsInstances.size(); i++) {
-	//	if (allWindowsInstances[i].isFree) {
-	//		this->WindowID = i;
-	//		allWindowsInstances[i] = { false, hdc, hWnd, wc };
-	//		goto DONE;
-	//	}
-	//}
-	this->WindowID = allWindowsInstances.size();
-	allWindowsInstances.push_back({false, hdc, hWnd, wc, nullptr});
-DONE:
-	EnableWindow(hWnd, true);
-	//Pixel format
-	PIXELFORMATDESCRIPTOR pfd =
-	{
-		sizeof(PIXELFORMATDESCRIPTOR),
-		1,
-		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    // Flags
-		PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
-		32,                   // Colordepth of the framebuffer.
-		0, 0, 0, 0, 0, 0,
-		0,
-		0,
-		0,
-		0, 0, 0, 0,
-		24,                   // Number of bits for the depthbuffer
-		8,                    // Number of bits for the stencilbuffer
-		0,                    // Number of Aux buffers in the framebuffer.
-		PFD_MAIN_PLANE,
-		0,
-		0, 0, 0
-	};
-	//Set pixel format
-	auto iPixelFormat = ChoosePixelFormat(THIS_INSTANCE.hdc, &pfd);
-	if (!iPixelFormat) THROW("Couldn't choose pixel format");
-	if (!SetPixelFormat(THIS_INSTANCE.hdc, iPixelFormat, &pfd)) THROW("Couldn't set pixel format");
-}
-
-GWindow::Window::~Window() {
-	this->setOpenGLContextActive(false);
-	THIS_INSTANCE.isFree = true;
-	ReleaseDC(THIS_INSTANCE.hWnd, THIS_INSTANCE.hdc);
-	DeleteDC(THIS_INSTANCE.hdc);
-	DestroyWindow(THIS_INSTANCE.hWnd);
-}
-
-int context_major = 3;
-int context_minor = 3;
-int context_profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
-
-void GWindow::Window::hint(ContextHints c, unsigned int value) {
-	switch (c) {
-	case GWindow::Window::ContextHints::MAJOR_VERSION:
-		context_major = value;
-		break;
-	case GWindow::Window::ContextHints::MINOR_VERSION:
-		context_minor = value;
-		break;
-	case GWindow::Window::ContextHints::PROFILE_MASK:
-		if (value == 1)
-			context_profile = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
-		else
-			context_profile = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
-		break;
-	default:
-		break;
-	}
-}
-
-bool GWindow::Window::createOpenGLcontext() {
-	int gl33_attribs[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, context_major,
-		WGL_CONTEXT_MINOR_VERSION_ARB, context_minor,
-		WGL_CONTEXT_PROFILE_MASK_ARB,  context_profile,
-		0,
-	};
-
-	hglrc = wglCreateContextAttribsARB(THIS_INSTANCE.hdc, 0, gl33_attribs);
-	if (hglrc == NULL) {
-		THROW("Couldn't create OpenGL context");
-		return false;
-	}
-
-	return true;
-}
-
-void GWindow::Window::setOpenGLContextActive(bool b) {
-	wglMakeCurrent(THIS_INSTANCE.hdc, b ? hglrc : NULL);
-}
-
-void GWindow::Window::swapBuffers() {
-	SwapBuffers(THIS_INSTANCE.hdc);
-}
-
-void GWindow::Window::setState(GWindow::WindowState state) {
-	int nCmdShow = 0;
-	switch (state) {
-	case WindowState::HIDDEN:    nCmdShow = SW_HIDE;     break;
-	case WindowState::MAXIMIZED: nCmdShow = SW_MAXIMIZE; break;
-	case WindowState::NORMAL:    nCmdShow = SW_RESTORE;  break;
-	case WindowState::MINIMIZED: nCmdShow = SW_MINIMIZE; break;
-	}
-	ShowWindow(THIS_INSTANCE.hWnd, nCmdShow);
-}
-
-void GWindow::Window::fetchEvents() {
-	BOOL result;
-	do {
-		result = PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
-		if (result != 0) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	} while (result != 0);
-}
-
-const bool GWindow::Window::getCloseRequest() const {
-	return THIS_INSTANCE.closeRequest;
-}
-
-void GWindow::Window::forceCloseRequest() {
-	SendMessage(THIS_INSTANCE.hWnd, WM_CLOSE, 0, 0);
-}
-
-void GWindow::Window::setCursor(GFile::Graphics::Cursor* c) {
-	THIS_INSTANCE.c = c;
-}
-
-GWindow::WindowState GWindow::Window::getCurrentWindowState() const {
-	WINDOWPLACEMENT state;
-	state.length = sizeof(state);
-	GetWindowPlacement(THIS_INSTANCE.hWnd, &state);
-	switch (state.showCmd) {
-	case SW_HIDE: return GWindow::WindowState::HIDDEN;
-	case SW_MAXIMIZE: return GWindow::WindowState::MAXIMIZED;
-	case SW_SHOWMINIMIZED:
-	case SW_MINIMIZE: return GWindow::WindowState::MINIMIZED;
-	default: return GWindow::WindowState::NORMAL;
-	};
-}
-
-void GWindow::Window::setResizable(bool b) {
-	if (!b)
-		SetWindowLong(THIS_INSTANCE.hWnd, GWL_STYLE, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX);
-	else
-		SetWindowLong(THIS_INSTANCE.hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-}
-
-GGeneral::Dimension<int> GWindow::Window::getWindowSize() const {
-	RECT rect = {};
-	GetWindowRect(THIS_INSTANCE.hWnd, &rect);
-	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
-}
-
-GGeneral::Dimension<int> GWindow::Window::getWindowDrawSize() const {
-	RECT rect = {};
-	GetClientRect(THIS_INSTANCE.hWnd, &rect);
-	return GGeneral::Dimension<int>(rect.right - rect.left, rect.bottom - rect.top);
-}
-
-void GWindow::Window::setIcon(GGeneral::String filepath) const {
-	auto handle = LoadImage(NULL, filepath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
-	if (handle == nullptr) {
-		THROW("An Error occurred while loading image from filepath: '", filepath, "'. #", GetLastError());
-	}
-	SetClassLong(THIS_INSTANCE.hWnd, GCL_HICON, (LONG)handle);
-}
-
-void GWindow::Window::setCallbackFunction(GWindowCallback fun) {
-	THIS_INSTANCE.callbackfun = fun;
 }

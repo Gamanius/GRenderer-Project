@@ -1,7 +1,7 @@
 #include <Windows.h>
 #include <vector>
 
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 bool informationFetched = false;
 

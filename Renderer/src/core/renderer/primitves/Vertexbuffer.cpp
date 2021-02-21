@@ -1,4 +1,4 @@
-#include "../../GRenderer.h"
+#include "GRenderer.h"
 #include <GL/glew.h>
 
 GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], unsigned int amount, unsigned int count) {

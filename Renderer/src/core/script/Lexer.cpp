@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <string>
 
 GScript::Interpreter::Lexer::Lexer(const GGeneral::String* source) {

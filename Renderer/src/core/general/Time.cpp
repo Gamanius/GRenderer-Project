@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 #include <chrono>
 
 #pragma warning(disable : 4244)

@@ -1,4 +1,4 @@
-#include "../GRenderer.h"
+#include "GRenderer.h"
 
 std::vector<GGeneral::Logger::Message> allmsg;
 

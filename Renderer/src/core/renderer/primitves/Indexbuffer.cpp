@@ -1,4 +1,4 @@
-#include "../../GRenderer.h"
+#include "GRenderer.h"
 #include <GL/glew.h>
 
 GRenderer::Primitives::IndexBuffer::IndexBuffer(unsigned int data[], unsigned int amount) : amount(amount) {

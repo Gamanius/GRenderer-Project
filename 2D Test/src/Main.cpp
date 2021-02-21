@@ -17,8 +17,8 @@ int main() {
 	GEventWrapper::Windowhandler handler;
 	window = new GWindow::Window("2D Testing", { 0, 0 }, { 1280, 720 });
 	GWindow::Window w = *window;
-	w.hint(GWindow::Window::ContextHints::MAJOR_VERSION, 4);
-	w.hint(GWindow::Window::ContextHints::MINOR_VERSION, 5);
+	w.setWindowHints(GWindow::Window::ContextHints::MAJOR_VERSION, 4);
+	w.setWindowHints(GWindow::Window::ContextHints::MINOR_VERSION, 5);
 
 	w.createOpenGLcontext();
 	w.setOpenGLContextActive(true);

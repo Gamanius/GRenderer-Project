@@ -57,7 +57,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\core\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
@@ -74,7 +74,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WGL_WGLEXT_PROTOTYPES</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Renderer\src\dependencies\GLEW\include;$(SolutionDir)Renderer\src\dependencies\header\;$(SolutionDir)Renderer\src\dependencies\lodePNG\;$(SolutionDir)Renderer\src\core\</AdditionalIncludeDirectories>
       <PreprocessToFile>false</PreprocessToFile>
     </ClCompile>
     <Link>
@@ -104,6 +104,9 @@
     <ClCompile Include="src\core\fastscript\FInterpreter.cpp" />
     <ClCompile Include="src\core\fastscript\FParser.cpp" />
     <ClCompile Include="src\core\fastscript\FTokenizer.cpp" />
+    <ClCompile Include="src\core\fastscript\functions\GFSMath.cpp" />
+    <ClCompile Include="src\core\fastscript\functions\GFSArray.cpp" />
+    <ClCompile Include="src\core\fastscript\functions\GFSSystem.cpp" />
     <ClCompile Include="src\core\file\File.cpp" />
     <ClCompile Include="src\core\gamepad\Gamepad.cpp" />
     <ClCompile Include="src\core\general\Color.cpp" />
