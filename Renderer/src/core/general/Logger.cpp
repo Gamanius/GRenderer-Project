@@ -6,17 +6,16 @@
 #include <vector>
 #include <sstream>
 #include <Windows.h>
-//#include <mutex>
 #include <array>
 
 //Some general Vars
 std::list<GGeneral::Logger::Message> msgBuffer;
 std::thread workerThread;
-std::mutex globalMutex;
+std::mutex _globalMutex;
 
 std::vector<GGeneral::String> userNames;
 
-const std::array<unsigned int, 6> SeverityColors = {8, 9, 10, 6, 4, 64};
+const std::array<uint32_t, 6> SeverityColors = {8, 9, 10, 6, 4, 64};
 
 volatile GGeneral::Logger::Severity severityFilter = GGeneral::Logger::Severity::S_MSG;
 
@@ -55,7 +54,7 @@ void processMsg(GGeneral::Logger::Message msg) {
 void t_process() {
 	while (!shouldThreadTerminate) {
 		auto it = msgBuffer.cbegin();
-		globalMutex.lock();
+		_globalMutex.lock();
 		while (it != msgBuffer.cend()) {
 			if (shouldThreadTerminate)
 				return;
@@ -64,7 +63,7 @@ void t_process() {
 			it++;
 			msgBuffer.pop_front();
 		}
-		globalMutex.unlock();
+		_globalMutex.unlock();
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(10ms);
 	}
@@ -75,12 +74,14 @@ void GGeneral::Logger::printMessage(Message in) {
 		if (maxBufferSize > 0)
 			while (maxBufferSize > (int)msgBuffer.size());
 		//testing without any locks
-		globalMutex.lock();
+		_globalMutex.lock();
 		msgBuffer.push_back(in);
-		globalMutex.unlock();
+		_globalMutex.unlock();
 	}
 	else {
+		_globalMutex.lock();
 		processMsg(in);
+		_globalMutex.unlock();
 	}
 }
 
@@ -119,9 +120,9 @@ bool GGeneral::Logger::init() {
 void GGeneral::Logger::wait() {
 	volatile size_t s = msgBuffer.size();
 	while (s != 0) {
-		globalMutex.lock();
+		_globalMutex.lock();
 		s = msgBuffer.size();
-		globalMutex.unlock();
+		_globalMutex.unlock();
 	}
 }
 
@@ -132,6 +133,7 @@ void GGeneral::Logger::terminateThread() {
 		shouldThreadTerminate = true;
 
 		workerThread.join();
+		workerThread.~thread();
 
 		shouldThreadTerminate = false;
 		msgBuffer.clear();

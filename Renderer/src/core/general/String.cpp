@@ -205,7 +205,7 @@ GGeneral::String& GGeneral::String::operator<<(long l) {
 	FORMAT("%i", l);
 }
 
-GGeneral::String& GGeneral::String::operator<<(unsigned long ul) {
+GGeneral::String& GGeneral::String::operator<<(ulong_t ul) {
 	FORMAT("%u", ul);
 }
 
@@ -217,9 +217,9 @@ void GGeneral::String::setPrecise(const bool b) { precise = b; }
 
 size_t GGeneral::String::find(const char* c) {
 	bool found = false;
-	int ssize = size;
-	int csize = strlen(c);
-	int dif = ssize - csize;
+	size_t ssize = size;
+	size_t csize = strlen(c);
+	size_t dif = ssize - csize;
 	if (dif < 0)
 		return GGeneral::String::npos;
 	for (size_t i = 0; i < size - strlen(c) + 1; i++) {
@@ -255,8 +255,8 @@ void GGeneral::String::clear(bool alloc) {
 }
 
 bool GGeneral::String::in(const char* c) {
-	unsigned int ssize = size;
-	unsigned int csize = strlen(c);
+	size_t ssize = size;
+	size_t csize = strlen(c);
 	for (size_t i = 0; i < ssize; i++) {
 		auto tc = this->operator[](i);
 		for (size_t j = 0; j < csize; j++) {

@@ -1,0 +1,38 @@
+{
+  "FileVersion": 2,
+  "Id": "89110ce3-13a7-413f-93e5-42359fb0213f",
+  "Items": [
+    {
+      "Id": "eb3b5df7-ec21-4dfc-b114-6d4741bb85c5",
+      "Command": "Client Preset",
+      "Items": [
+        {
+          "Id": "0d9c7b11-e28b-42f9-aee2-d2f5366d4264",
+          "Command": "noserver"
+        },
+        {
+          "Id": "7104cad7-068d-4a46-b10e-2d0bed98819b",
+          "Command": "192.168.0.44"
+        },
+        {
+          "Id": "a90c632d-c25a-4e58-81f2-872456d3ebd9",
+          "Command": "7340"
+        }
+      ]
+    },
+    {
+      "Id": "9650cb47-6710-4b27-ab20-8bfe4efbb598",
+      "Command": "Server Preset",
+      "Items": [
+        {
+          "Id": "b458e4c9-8498-4ea1-b531-9f84cfedfa91",
+          "Command": "server"
+        },
+        {
+          "Id": "e689aad1-e69c-455b-ab1c-da9238470a2b",
+          "Command": "7340"
+        }
+      ]
+    }
+  ]
+}

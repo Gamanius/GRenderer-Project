@@ -10,11 +10,11 @@
 #include <map>
 #include <cmath>
 
-#ifndef _WIN32
-#error Only Windows is Supported!
-#elif _WIN64
-#error There is no 64x support!
-#endif
+//#ifndef _WIN32
+//#error Only Windows is Supported!
+//#elif _WIN64
+//#error There is no 64x support!
+//#endif
 
 //#ifdef _DEBUG
 //#define EXTENDED_MEMORYTRACKING
@@ -306,8 +306,10 @@
 #define	THROWF(...)  GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_FATAL)
 #define	THROWI(...)  GGeneral::ErrorHandler::add(GGeneral::toString(__VA_ARGS__), GGeneral::Logger::Severity::S_INFO)
 
-/*! Reference see: GMemory */
-#define GET_ALLOC_INFO_COUNT(pointer) reinterpret_cast<unsigned int*>(pointer)[-1]
+
+//Assert
+#define G_ASSERT(x) if (!x) { LOGE("[Line: ", __LINE__, "]: Assertion failed '", #x, "'") }
+#define G_ASSERT_EX(x, add) if (!(x)) { LOGE("[Line: ", __LINE__, "]: Assertion failed of variable: '", #x, "'"); add }
 
 /**
  * The approx value of Pi used in this renderer
@@ -322,9 +324,20 @@
 
 #define STRING_NUMBERS "1234567890"
 
+ /*! Just a typedef so the code is better to read */
+typedef unsigned char byte;
+
+typedef unsigned long ulong_t;
+
+typedef __int64 int64;
+typedef __int32 int32;
+typedef __int16 int16;
+typedef __int8 int8;
+
+
 #ifndef G_RENDERER_VERSION
  /** Versioning of this Renderer. Template: 'short description of the phase the engine is in' Major Version.Minor Version.Revision.Month.Year */
-#define G_RENDERER_VERSION "early Alpha Build Version 0.0.7.02.21GFS0.1"
+#define G_RENDERER_VERSION "early Alpha Build Version 0.0.8.03.21"
 #endif // !G_RENDERER_VERSION
 
 #ifndef G_RENDERER
@@ -337,239 +350,6 @@
   * This namespace holds all function, namespaces, structs and classes that are not directly part of the Renderer but still integrated.
   */
 
-  /**
-   * A class whose main purpose is to track memory. It will process all allocation done with the MALLOC/FREE define or with the
-   * new/delete operator. Note that every allocation will allocate 4 more bytes than needed to save the size.
-   */
-class GMemory {
-private:
-	inline static std::atomic_uint32_t memoryUsage = 0;
-	inline static std::atomic_uint32_t allocations = 0, deallocations = 0;
-public:
-	/**
-	 * Will fetch the current Memory usage
-	 * @return The amount of memory used in bytes
-	 */
-	static const size_t getMemory() { return memoryUsage; }
-
-	static const size_t getCurrentAllocationCount() { return allocations - deallocations; }
-	static const size_t getAllocation() { return allocations; }
-	static const size_t getDeAllocation() { return deallocations; }
-
-#ifndef EXTENDED_MEMORYTRACKING
-	/**
-	 * @return nullptr
-	 */
-	static void** getAllocInfo() {
-		auto temp = reinterpret_cast<unsigned int*>(malloc(2 * sizeof(unsigned int)));
-		temp[0] = 0;
-		temp++;
-		return (void**)temp;
-	}
-#endif
-	/** This class can be used to check how much memory has been allocated on the heap since construction of this class */
-	class MemoryTracker {
-		size_t start = getMemory();
-		size_t allocations = getAllocation();
-	public:
-		/**
-		 * @return The difference in allocation count since construction of this class
-		 */
-		const int getAllocationDifference() const { return getCurrentAllocationCount() - allocations; }
-		/**
-		 * @return The difference in memory usage since construction of this class
-		 */
-		const int getMemoryDifference() const { return  getMemory() - start; }
-	};
-
-#ifdef EXTENDED_MEMORYTRACKING
-public:
-	/** This struct holds basic information of allocation happening during a program */
-	struct AllocInfo {
-		/** The memory address */
-		void* address;
-		/** Amount of bytes allocated */
-		size_t size;
-		/** The file path to the file in which the allocation happened */
-		const char* fileName;
-		/** The signature of the function */
-		const char* functionSig;
-		/** The line in which the allocation happened */
-		unsigned int line;
-
-		/**
-		 * Will only compare the two memory addresses
-		 */
-		bool operator==(void* b) { return address == b; }
-	};
-private:
-	struct List {
-		AllocInfo* address;
-		List* next;
-	};
-	inline static List* extendedAllocations = nullptr;
-	inline static std::mutex globalMutex;
-
-public:
-
-	/**
-	 * Will return a pointer array of AllocInfo structs and the amount of pointers. This array hold information of any allocation made with the new operator or the macro TMALLOC (not included). The amount of AllocInfo Pointers can be fetches by reading 4 bytes before of this pointer
-	 * or by using the GET_ALLOC_INFO_COUNT macro.
-	 * @return An AllocInfo Pointer array
-	 */
-	static AllocInfo** getAllocInfo() {
-		globalMutex.lock();
-		auto temp = reinterpret_cast<unsigned int*>(malloc(getCurrentAllocationCount() * sizeof(AllocInfo**) + sizeof(unsigned int)));
-		auto add = extendedAllocations;
-		temp++;
-		auto alloc = reinterpret_cast<AllocInfo**>(temp);
-
-		unsigned int amount = 0;
-		while (add != nullptr) {
-			alloc[amount] = add->address;
-			add = add->next;
-			amount++;
-		}
-		temp[-1] = amount;
-		globalMutex.unlock();
-		return alloc;
-	}
-
-	/**
-	 * Override for the new operator
-	 */
-	static void* alloc(size_t size, const char* file, const char* function, unsigned int line) {
-		globalMutex.lock();
-		//std::cout << "Allocated " << size << " bytes\n";
-		AllocInfo* mem = reinterpret_cast<AllocInfo*>(malloc(size + sizeof(AllocInfo)));
-		auto info = mem;
-		mem++;
-		info[0] = {mem, size, file, function, line};
-		if (extendedAllocations == nullptr) {
-			extendedAllocations = reinterpret_cast<List*>(malloc(sizeof(List)));
-			extendedAllocations->address = info;
-			extendedAllocations->next = nullptr;
-		}
-		else {
-			auto temp = extendedAllocations;
-			while (temp->next != nullptr) {
-				temp = temp->next;
-			}
-			temp->next = reinterpret_cast<List*>(malloc(sizeof(List)));
-			auto last = temp;
-			temp = temp->next;
-			temp->address = info;
-			temp->next = nullptr;
-		}
-		memoryUsage += size;
-		allocations++;
-		globalMutex.unlock();
-		return reinterpret_cast<void*>(mem);
-	}
-
-	/**
-	 * Override for the delete operator
-	 */
-	static void dele(void* p) {
-		if (p == nullptr)
-			return;
-		globalMutex.lock();
-		AllocInfo info = (reinterpret_cast<AllocInfo*>(p) - 1)[0];
-		//std::cout << "Deleted " << info.size << " bytes\n";
-		memoryUsage -= info.size;
-		deallocations++;
-
-		auto temp = extendedAllocations;
-		auto last = temp;
-		while (temp->address->address != p && temp->next != nullptr) {
-			last = temp;
-			temp = temp->next;
-		}
-		last->next = temp->next;
-		free(temp);
-		globalMutex.unlock();
-		free(reinterpret_cast<void*>((reinterpret_cast<AllocInfo*>(p) - 1)));
-	}
-#else
-
-public:
-	/**
-	 * Override for the new operator
-	 */
-	static void* alloc(size_t size) {
-		//std::cout << "Allocated " << size << " bytes\n";
-		memoryUsage += size;
-		allocations++;
-		unsigned int* mem = reinterpret_cast<unsigned int*>(malloc(size + 4));
-		if (mem != nullptr) {
-			mem[0] = size;
-			mem++;
-			return (void*)mem;
-		}
-		return nullptr;
-	}
-
-	static void* re_alloc(void* p, size_t newsize) {
-		if (p == nullptr)
-			return alloc(newsize);
-		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
-
-		auto ptr = realloc(reinterpret_cast<unsigned int*>(p) - 1, newsize);
-		if (ptr != nullptr) {
-			memoryUsage -= size;
-			memoryUsage += newsize;
-			unsigned int* s = reinterpret_cast<unsigned int*>(ptr);
-			s[0] = newsize;
-			return (s++);
-		}
-		return nullptr;
-	}
-
-	/**
-	 * Override for the delete operator
-	 */
-	static void dele(void* p) {
-		if (p == nullptr)
-			return;
-		unsigned int size = (reinterpret_cast<unsigned int*>(p) - 1)[0];
-		//std::cout << "Deleted " << size << " bytes\n";
-		memoryUsage -= size;
-		deallocations++;
-		auto del = reinterpret_cast<unsigned int*>(p) - 1;
-		free((void*)del);
-	}
-#endif // EXTENDED_MEMORYTRACKING
-};
-
-#ifndef EXTENDED_MEMORYTRACKING
-inline void* operator new(size_t size) {
-	return GMemory::alloc(size);
-}
-#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size))
-#else
-inline void* operator new(size_t size) {
-	return GMemory::alloc(size, "UNKNOWN", "UNKNOWN", 0);
-}
-inline void* operator new(size_t size, const char* file, const char* function, unsigned int line) {
-	return GMemory::alloc(size, file, function, line);
-}
-inline void operator delete(void* p, const char* file, const char* function, unsigned int line) {
-	GMemory::dele(p);
-}
-#define new new(__FILE__,  __FUNCSIG__, __LINE__)
-#define TMALLOC(type, size) reinterpret_cast<type>(GMemory::alloc(size, __FILE__,  __FUNCSIG__, __LINE__))
-#endif // !EXTENDED_MEMORYTRACKING
-
-inline void operator delete(void* p) {
-	GMemory::dele(p);
-}
-
-inline void operator delete[](void* p) {
-	GMemory::dele(p);
-}
-
-/*! Just a typedef so the code is better to read */
-typedef unsigned char byte;
 /**
  * This namespace includes the most important OpenGL math functions needed. It can be also used outside the engine and/or without OpenGL.
  * The Renderer doesn't need to be initialized to use the functions
@@ -836,17 +616,14 @@ namespace GMath {
 	}
 }
 
-#undef A_OPERATION
-#undef A_OPERATION_BODY
-
 namespace GGeneral {
 	struct BaseObject;
 
 	class String {
 	private:
 		/** Amount of chars without \0!! */
-		size_t size;
-		size_t bytesize;
+		size_t size = 0;
+		size_t bytesize = 0;
 		char* buffer = nullptr;
 		bool precise = false;
 	public:
@@ -1012,7 +789,7 @@ namespace GGeneral {
 
 		String& operator<< (long l);
 
-		String& operator<< (unsigned long ul);
+		String& operator<< (ulong_t ul);
 
 		/**
 		 * Will format the number into a char* and will then call append
@@ -1166,7 +943,7 @@ namespace GGeneral {
 
 	struct HSVColor : public GGeneral::BaseObject {
 		/** The hue component */
-		int h;
+		uint16_t h;
 		/** The saturation */
 		float s;
 		/** The value or brightness */
@@ -1178,7 +955,7 @@ namespace GGeneral {
 		 * @param green - The green value
 		 * @param blue - The blue value
 		 */
-		HSVColor(int hue = 0, float saturation = 0, float value = 0);
+		HSVColor(uint16_t hue = 0, float saturation = 0, float value = 0);
 		
 		HSVColor(const HSVColor& other) = default;
 		HSVColor(HSVColor&& other) noexcept = default;
@@ -1215,31 +992,31 @@ namespace GGeneral {
 		/** This struct holds the information of any timepoint */
 		struct TimePoint : public GGeneral::BaseObject {
 			/** The time since 1970 in nanoseconds */
-			unsigned long long int timepoint = 0;
+			uint64_t timepoint = 0;
 			/** Years since 0 */
-			unsigned int year = 0;
+			uint32_t year = 0;
 			/** Amount of months */
-			unsigned short month = 0;
+			uint16_t month = 0;
 			/** Amount of days */
-			unsigned short day = 0;
+			uint16_t day = 0;
 			/** Amount of hours */
-			unsigned short hour = 0;
+			uint16_t hour = 0;
 			/** Amount of minutes */
-			unsigned short minute = 0;
+			uint16_t minute = 0;
 			/** Amount of seconds */
-			unsigned short seconds = 0;
+			uint16_t seconds = 0;
 			/** Amount of milliseconds */
-			unsigned int millisecond = 0;
+			uint32_t millisecond = 0;
 			/** Amount of microseconds */
-			unsigned int microsecond = 0;
+			uint32_t microsecond = 0;
 			/** Amount of nanoseconds */
-			unsigned int nanosecond = 0;
+			uint32_t nanosecond = 0;
 
 			/**
 			 * Will set the timepoint member to the given value
 			 * @param timepoint - The value of the timepoint in nanoseconds since 1970
 			 */
-			TimePoint(unsigned long long timepoint) : timepoint(timepoint) {}
+			TimePoint(uint64_t timepoint) : timepoint(timepoint) {}
 
 			/**
 			 * Will initialize all members to the value 0
@@ -1254,7 +1031,7 @@ namespace GGeneral {
 			 * Will return the current timepoint
 			 * @return The time since 1980
 			 */
-			operator unsigned long long int() {
+			operator uint64_t() {
 				return timepoint;
 			}
 
@@ -1264,9 +1041,9 @@ namespace GGeneral {
 		};
 
 		/** Will return true if the year was a leap year */
-		const bool isLeapYear(TimePoint& point);
+		const bool isLeapYear(const TimePoint& point);
 		/** Will return true if the year was a leap year */
-		const bool isLeapYear(const unsigned int year);
+		const bool isLeapYear(const uint32_t year);
 
 		/**
 		 * This will fetch the current UTC time. Timezones are not taken into account.
@@ -1275,7 +1052,7 @@ namespace GGeneral {
 		TimePoint getCurrentTime();
 
 		/** Returns the time since 1980 in nanoseconds */
-		unsigned long long getNanoTime();
+		uint64_t getNanoTime();
 
 		/**
 		 * Will convert the given days (since 1970) into the correct amount of years. This function will take
@@ -1283,7 +1060,7 @@ namespace GGeneral {
 		 * @param day - days since 1970
 		 * @return Years since 1970
 		 */
-		unsigned int daysToYears(unsigned int day);
+		uint32_t daysToYears(uint32_t day);
 
 		/**
 		 * Will convert the given year (since 1970) to the equivalent amount of days. This function will take leap years
@@ -1291,7 +1068,7 @@ namespace GGeneral {
 		 * @param year - Years since 1970
 		 * @return Days since 1970
 		 */
-		unsigned int yearsToDays(unsigned int year);
+		uint32_t yearsToDays(uint32_t year);
 
 		/**
 		 * Will convert the given months since year begin and return the equivalent amount of days. Will not take leap years into
@@ -1300,7 +1077,7 @@ namespace GGeneral {
 		 *
 		 * @return Days since the beginning of the year
 		 */
-		unsigned int monthsToDays(byte m);
+		uint32_t monthsToDays(byte m);
 		/**
 		 * Will convert the given months since year begin and return the equivalent amount of days. Can take leap years into
 		 * account.
@@ -1310,7 +1087,7 @@ namespace GGeneral {
 		 *
 		 * @return Days since the beginning of the year
 		 */
-		unsigned int monthsToDays(byte m, bool leap);
+		uint32_t monthsToDays(byte m, bool leap);
 
 		/**
 		 * Will convert the days into the corresponding months. It will consider the year not a leap year
@@ -1318,7 +1095,7 @@ namespace GGeneral {
 		 *
 		 * @return The months since the beginning of the year
 		 */
-		byte daysToMonths(unsigned short d);
+		byte daysToMonths(uint16_t d);
 
 		/**
 		 * Will convert the days into the corresponding months. It can consider the year a leap year
@@ -1327,7 +1104,7 @@ namespace GGeneral {
 		 *
 		 * @return The months since the beginning of the year
 		 */
-		byte daysToMonths(unsigned short d, bool leap);
+		byte daysToMonths(uint16_t d, bool leap);
 
 		/**
 		 * Will try to fill out missing data from an Timepoint. This will only work if TimePoint.timepoint is valid
@@ -1338,14 +1115,14 @@ namespace GGeneral {
 		/** On construction it will start an internal timer. If the stop method is called the timer will return the time sice its construction */
 		struct Timer {
 			/** The time the Time was constructed in nanoseconds */
-			unsigned long long int startTime;
+			uint64_t startTime;
 			/** Will start the timer */
 			Timer();
 			/**
 			 * Will calculate the time since construction of this struct and return the time in nanoseconds
 			 * @return The time sice constuction in nanoseconds
 			 */
-			unsigned long long int stop() const;
+			uint64_t stop() const;
 		};
 	}
 
@@ -1378,7 +1155,7 @@ namespace GGeneral {
 		struct Message {
 			GGeneral::String msg;
 			Severity sev;
-			unsigned long long time;
+			uint64_t time;
 		};
 
 		/**
@@ -1659,14 +1436,14 @@ namespace GFile {
 		/**
 		 * The size of data in bytes
 		 */
-		unsigned int size = 0;
+		uint64_t size = 0;
 
 		/**
 		 * The filepath of this file
 		 */
 		GGeneral::String filepath;
 
-		File(byte* data, unsigned int size) : data(data), size(size) {}
+		File(byte* data, uint32_t size) : data(data), size(size) {}
 
 		/** Default constructor */
 		File() = default;
@@ -1680,7 +1457,7 @@ namespace GFile {
 		 * @param i -  The index
 		 * @return The data
 		 */
-		virtual byte operator[](unsigned int i) {
+		virtual byte operator[](uint32_t i) {
 			return data[i];
 		}
 
@@ -1696,7 +1473,7 @@ namespace GFile {
 	 * Loads in the file and return the file size. If an error occurs the returned value is 0
 	 * @returns The file size in bytes
 	 */
-	unsigned long long int getFileSize(GGeneral::String& filepath);
+	uint64_t getFileSize(GGeneral::String& filepath);
 
 	/**
 	 * Will create a file, load and allocated the memory for the data. If an error occurs the returned value will be a nullptr
@@ -1739,7 +1516,7 @@ namespace GFile {
 			/**
 			 * The size of the image
 			 */
-			GGeneral::Dimension<unsigned int> dim;
+			GGeneral::Dimension<uint32_t> dim;
 			/**
 			 * Does the image contain alpha values
 			 */
@@ -1780,7 +1557,7 @@ namespace GFile {
 		 */
 		ImageType isParseble(byte* data);
 
-		Image* resizeImage(const Image& i, GGeneral::Dimension<unsigned int> newSize);
+		Image* resizeImage(const Image& i, GGeneral::Dimension<uint32_t> newSize);
 
 		/**
 		 * Will check if the image can be parsed. If the image can be parse it will load in the image, parse it and return a pointer to a created image struct with all information about the image
@@ -2000,13 +1777,16 @@ namespace GWindow {
 	class Window {
 	private:
 		/*! Window ID used to identify any window */
-		bool closeRequest                = false;
-		void* deviceContext              = nullptr;
-		void* WindowID                   = nullptr;
-		GWindowCallback callbackFunction = nullptr;
+		bool closeRequest                          = false;
+		GGeneral::Dimension<int> minimumWindowSize = { 300, 200 };
+
+		void* deviceContext                        = nullptr;
+		void* WindowID                             = nullptr;
+		GWindowCallback callbackFunction           = nullptr;
 	public:
 		/*! Creates a new Window with default values */
-		Window() : Window("G-Renderer Window Instance", {50, 50}, {1280,  720}) {}
+		Window() : Window("G-Renderer Window Instance", {50, 50}, {1280, 720}) {}
+		Window(GGeneral::String name) : Window(name, {50, 50}, {1280, 720}) {}
 		/**
 		 * Creates a new window and enables input for it
 		 * @param name - The name of the window to be displayed
@@ -2035,7 +1815,7 @@ namespace GWindow {
 		 * @param c - The context hint to modify
 		 * @param value - The new value
 		 */
-		static void setWindowHints(ContextHints c, unsigned int value);
+		static void setWindowHints(ContextHints c, uint32_t value);
 
 		/**
 		 * This will create a global OpenGL context. Only use this function once! If the function was successful the context can be used with any window.
@@ -2047,12 +1827,12 @@ namespace GWindow {
 		 * Will set the context active/inactive
 		 * @param b - If true the context will be made active
 		 */
-		void setOpenGLContextActive(bool b = true);
+		bool setOpenGLContextActive(bool b = true);
 
 		/**
 		 * Will swap the buffers of the windows
 		 */
-		void swapBuffers();
+		bool swapBuffers();
 
 		/**
 		 * Set the extended window state of the window instance. Is used to change the visibility of the window.
@@ -2062,8 +1842,10 @@ namespace GWindow {
 
 		/**
 		 * Will retrieve all messages/events from the current queue from all Windows. It can only process all events from every window instance used owned/constructed from the current thread
+		 * 
+		 * @param blocking - if set to true the program will halt until a new window message is retrieved
 		 */
-		static void fetchEvents();
+		static void fetchEvents(bool blocking = false);
 
 		/**
 		 * Will fetch if there is a close request for the current window
@@ -2087,6 +1869,17 @@ namespace GWindow {
 		 * @param b - If set to true the user will be able to resize the window
 		 */
 		void setResizable(bool b);
+		
+		/**
+		 * Will change the minimum size the user can produce by using the borders
+		 * @param size - The minimum size
+		 */
+		void setMinimumWindowSize(GGeneral::Dimension<int> size);
+
+		/**
+		 * @return The current set minimum Window size that can be produced by using the window borders
+		 */
+		GGeneral::Dimension<int> getMinimumWindowSize();
 
 		/**
 		 * Will fetch the size of the whole window
@@ -2184,26 +1977,26 @@ namespace GWindow {
 		/**
 		 * @return an integer with the amount of virtual monitors
 		 */
-		const unsigned int getAmountOfMonitors();
+		const uint32_t getAmountOfMonitors();
 
 		/**
 		 * @return the index of the primary monitor
 		 */
-		const unsigned int getPrimaryMonitorIndex();
+		const uint32_t getPrimaryMonitorIndex();
 
 		/**
 		 * Will return the information of the monitor with the given index.
 		 *
 		 * @return a monitor struct
 		 */
-		Screen const* getMonitorInformation(unsigned int i);
+		Screen const* getMonitorInformation(uint32_t i);
 
 		/**
 		 * Will return the maximum amount of supported Monitor devices
 		 *
 		 * @return The amount of monitors supported by the users GPU
 		 */
-		const unsigned int getSupportedAmountOfMonitorDevices();
+		const uint32_t getSupportedAmountOfMonitorDevices();
 	}
 }
 
@@ -2295,7 +2088,7 @@ namespace GGamepad {
 		 * @return true if the function succeeded
 		 * @return false if the function fails
 		 */
-		bool vibrate(unsigned short amount = 0xffff, byte param = GAMEPAD_LEFT_MOTOR | GAMEPAD_RIGHT_MOTOR);
+		bool vibrate(uint16_t amount = 0xffff, byte param = GAMEPAD_LEFT_MOTOR | GAMEPAD_RIGHT_MOTOR);
 		/**
 		 * Will stop all vibration of the gamepad
 		 * @return true if the function succeeded
@@ -2333,12 +2126,21 @@ namespace GNetworking {
 	 */
 	struct Package {
 		/** The size of this Package in bytes */
-		unsigned long size = 0;
+		ulong_t size = 0;
 		/** The raw data of the package */
 		byte* data = nullptr;
 
 		/** Default Constructor */
 		Package() {}
+
+		/**
+		 * Copy constructor will only copy the memory address
+		 */
+		Package(const Package& other) {
+			data = other.data;
+			size = other.size;
+		}
+
 		/**
 		 * Move constructor
 		 */
@@ -2348,6 +2150,29 @@ namespace GNetworking {
 
 			other.data = nullptr;
 			other.size = 0;
+		}
+
+		/**
+		 * Mover operator. Will dereference the other Object
+		 */
+		Package& operator=(Package&& other) noexcept {
+			size = other.size;
+			data = other.data;
+
+			other.data = nullptr;
+			other.size = 0;
+
+			return *this;
+		}
+
+		/**
+		 * Will copy the memory address
+		 */
+		Package& operator= (const Package& other) {
+			data = other.data;
+			size = other.size;
+
+			return *this;
 		}
 
 		/** Destructor. Will delete the data */
@@ -2364,7 +2189,7 @@ namespace GNetworking {
 	/** This class can be used to connect to server sockets */
 	class Socket {
 	private:
-		unsigned int socketNr = ~0;
+		uint64_t socketNr = ~0;
 		bool connected = false;
 		bool blocking = true;
 	public:
@@ -2376,7 +2201,7 @@ namespace GNetworking {
 		 * @param IP - The IP address to connect to
 		 * @param port - The port
 		 */
-		Socket(GGeneral::String ip, unsigned int port);
+		Socket(GGeneral::String ip, uint16_t port);
 
 		/** Will forcefully close the socket */
 		~Socket();
@@ -2410,7 +2235,7 @@ namespace GNetworking {
 		 * @param data - The data to send
 		 * @param size - The size of the data in bytes
 		 */
-		void send(byte* data, unsigned int size = MAX_NET_BUFFER_SIZE);
+		void send(byte* data, ulong_t size = MAX_NET_BUFFER_SIZE);
 		/**
 		 * Will retrieve the first data that is currently in the queue. If there is no data and the socket is set as non blocking or any other error occur the data that the package is pointing to will be a nullptr.
 		 * @return A Package struct
@@ -2421,8 +2246,8 @@ namespace GNetworking {
 	/** This class can be used to let other Sockets connect to */
 	class ServerSocket {
 	private:
-		std::vector<unsigned int> sockets;
-		unsigned int listenSocket = ~0;
+		std::vector<uint64_t> sockets;
+		uint64_t listenSocket = ~0;
 		bool blocking = true;
 	public:
 		/** Default constructor */
@@ -2431,29 +2256,31 @@ namespace GNetworking {
 		 * Will create a Socket and set it to listen on the port given.
 		 * @param port - The port to listen on
 		 */
-		ServerSocket(unsigned int port);
+		ServerSocket(uint16_t port);
 
 		/** Will Disconnect all connected sockets and then close the listening socket */
 		~ServerSocket();
 
 		/**
 		 * Will accept the first Socket in the queue
-		 * @return If successful a unsigned int representing the socket. If not the return value will be ~0
+		 * @return If successful a uint64_t representing the socket. If not the return value will be ~0
 		 */
-		unsigned int accept();
+		uint64_t accept();
 
 		/**
 		 * Will create a socket that will listen on the port given.
 		 * @param port - The port to listen on
 		 * @return true if no error occurs
 		 */
-		bool listen(unsigned short port);
+		bool listen(uint16_t port);
 
 		/**
 		 * Will try to gracefully disconnect the given socket. Will also close the socket that is connected
 		 * @param socket - The socket to disconnect
 		 */
-		void disconnect(unsigned int socket);
+		void disconnect(uint64_t socket);
+
+		void forceDisconnect(uint64_t socket);
 
 		/**
 		 * Will check if messages can still be received or send to the socket. This function may not deliever correct results.
@@ -2461,7 +2288,7 @@ namespace GNetworking {
 		 * @return true - The socket is still connected
 		 * @return false - The socket is not connected anymore
 		 */
-		bool isConnected(unsigned int socket);
+		bool isConnected(uint64_t socket);
 
 		/**
 		 * Will set the blocking mode of the listening socket
@@ -2475,13 +2302,13 @@ namespace GNetworking {
 		 * @param socket - The socket to mark
 		 * @return true if the function was successful
 		 */
-		bool setBlockingMode(bool block, unsigned int socket);
+		bool setBlockingMode(bool block, uint64_t socket);
 
 		/**
-		 * Always call receive(unsigned int) before calling this function
+		 * Always call receive(uint32_t) before calling this function
 		 * @return The amount of connected sockets. May be higher or lower than the real value
 		 */
-		unsigned int getConnectedAmount() const;
+		size_t getConnectedAmount() const;
 
 		/**
 		 * Will send data to the given connected socket
@@ -2489,14 +2316,14 @@ namespace GNetworking {
 		 * @param data - A pointer to the data
 		 * @param size - The size in bytes of the data
 		 */
-		void send(unsigned int socket, byte* data, unsigned int size = MAX_NET_BUFFER_SIZE);
+		void send(uint64_t socket, byte* data, uint32_t size = MAX_NET_BUFFER_SIZE);
 
 		/**
 		 * Will receive the data of the connected socket
 		 * @param socket - The socket to receive from
 		 * @return A package. If the data of the package is a nullptr an error occured
 		 */
-		Package receive(unsigned int socket);
+		Package receive(uint64_t socket);
 	};
 }
 
@@ -2535,7 +2362,7 @@ namespace GEventWrapper {
 	 */
 	class Windowhandler {
 	private:
-		unsigned int ID = 0;
+		uint32_t ID = 0;
 	public:
 		/** Default constructor. Call registerWindow() to hook to the window callback */
 		Windowhandler();
@@ -2669,12 +2496,12 @@ namespace GRenderer {
 		 */
 		struct IndexBuffer {
 		private:
-			unsigned int amount;
+			uint32_t amount;
 			IndexTypes element;
 			/**
 			 * Internal OpenGL ID
 			 */
-			unsigned int ID;
+			uint32_t ID;
 		public:
 			IndexBuffer() = default;
 
@@ -2683,19 +2510,19 @@ namespace GRenderer {
 			 * @param data - The indexes
 			 * @param amount - The amount of indexes given
 			 */
-			IndexBuffer(unsigned int data[], unsigned int amount);
+			IndexBuffer(uint32_t data[], uint32_t amount);
 			/**
 			 * Creates a new IndexBuffer
 			 * @param data - The indexes
 			 * @param amount - The amount of indexes given
 			 */
-			IndexBuffer(byte data[], unsigned int amount);
+			IndexBuffer(byte data[], uint32_t amount);
 			/**
 			 * Creates a new IndexBuffer
 			 * @param data - The indexes
 			 * @param amount - The amount of indexes given
 			 */
-			IndexBuffer(unsigned short data[], unsigned int amount);
+			IndexBuffer(uint16_t data[], uint32_t amount);
 
 			/**
 			 * Deletes the IndexBuffer
@@ -2722,8 +2549,8 @@ namespace GRenderer {
 			/**
 			 * Internal OpenGL ID
 			 */
-			unsigned int ID = 0;
-			unsigned int amount = 0;
+			uint32_t ID = 0;
+			uint32_t amount = 0;
 
 		public:
 			VertexBuffer() = default;
@@ -2733,35 +2560,35 @@ namespace GRenderer {
 			 * @param amount - The amount of elements
 			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(char data[], unsigned int amount, unsigned int count = 3);
+			VertexBuffer(char data[], uint32_t amount, uint32_t count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
 			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(short data[], unsigned int amount, unsigned int count = 3);
+			VertexBuffer(short data[], uint32_t amount, uint32_t count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
 			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(int data[], unsigned int amount, unsigned int count = 3);
+			VertexBuffer(int data[], uint32_t amount, uint32_t count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
 			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(float data[], unsigned int amount, unsigned int count = 3);
+			VertexBuffer(float data[], uint32_t amount, uint32_t count = 3);
 			/**
 			 * Creates a new VertexBuffer
 			 * @param data - The Data to use
 			 * @param amount - The amount of elements
 			 * @param count - The amount of Vertexes. Only needed if there is no indexbuffer present
 			 */
-			VertexBuffer(double data[], unsigned int amount, unsigned int count = 3);
+			VertexBuffer(double data[], uint32_t amount, uint32_t count = 3);
 			/**
 			 * Deletes the VertexBuffer
 			 */
@@ -2803,25 +2630,25 @@ namespace GRenderer {
 				 * Calculates the Stride
 				 * @return The stride
 				 */
-				const unsigned int getStride() const;
+				const uint32_t getStride() const;
 
 				/**
 				 * Calculates the offset of the given element index
 				 * @param index - The element
 				 * @return The offset
 				 */
-				const unsigned int getOffset(const unsigned int index) const;
+				const uint32_t getOffset(const uint32_t index) const;
 
 				friend struct VertexArray;
 			};
 		private:
 			bool isOnlyVertexBuffer = false;
-			unsigned int amount = 0;
+			uint32_t amount = 0;
 			IndexTypes type = IndexTypes::UNSIGNED_BYTE;
 			/**
 			 * Internal OpenGL ID
 			 */
-			unsigned int ID;
+			uint32_t ID;
 
 		public:
 			VertexArray();
@@ -2860,7 +2687,7 @@ namespace GRenderer {
 			/**
 			 * Will return the amount of indexes or the amount of vertexes (to be rendered). The return value will depend if there is an IndexBuffer in this VertexArray (see isOnlyVertex())
 			 */
-			unsigned int getAmount() const { return amount; }
+			uint32_t getAmount() const { return amount; }
 
 			IndexTypes getIndexType() const { return type; }
 		};
@@ -2886,7 +2713,7 @@ namespace GRenderer {
 			/**
 			 * Internal OpenGL ID
 			 */
-			unsigned int ID;
+			uint32_t ID;
 			/**
 			 * The source code
 			 */
@@ -2951,9 +2778,9 @@ namespace GRenderer {
 	 * A class wrapper for OpenGL textures
 	 */
 	class Texture {
-		unsigned int ID = 0;
-		unsigned int textureSlot = 0;
-		GGeneral::Dimension<unsigned int> defaultSize;
+		uint32_t ID = 0;
+		uint32_t textureSlot = 0;
+		GGeneral::Dimension<uint32_t> defaultSize;
 
 	public:
 		/**
@@ -2993,23 +2820,23 @@ namespace GRenderer {
 		 * Will bind the texture to the given texture slot
 		 * @param slot - The texture slot to bind to
 		 */
-		void bind(unsigned int slot);
+		void bind(uint32_t slot);
 
 		/**
 		 * Will bind the texture to the last texture slot given
 		 */
 		void bind();
 
-		void setTextureSlot(unsigned int slot);
+		void setTextureSlot(uint32_t slot);
 
-		GGeneral::Dimension<unsigned int> getSize() const;
+		GGeneral::Dimension<uint32_t> getSize() const;
 
 		/**
 		 * Will unbind the current texture from the texture slot
 		 */
 		static void unbind();
 
-		const unsigned int getID() const { return ID; }
+		const uint32_t getID() const { return ID; }
 
 		friend class FrameBuffer;
 	};
@@ -3019,8 +2846,8 @@ namespace GRenderer {
 	 */
 	class ShaderProgram {
 	private:
-		unsigned int ID = 0;
-		std::vector<unsigned int*> shaderIDs;
+		uint32_t ID = 0;
+		std::vector<uint32_t*> shaderIDs;
 		bool fail = true;
 	public:
 		/**
@@ -3053,7 +2880,7 @@ namespace GRenderer {
 		 * @param name - The name of the uniform
 		 * @return If successful the location of the uniform
 		 */
-		const unsigned int getUniformLocation(const GGeneral::String& name) const;
+		const uint32_t getUniformLocation(const GGeneral::String& name) const;
 
 		/**
 		 * Will fetch the uniform location and if found will set the the uniform to the value given
@@ -3129,25 +2956,25 @@ namespace GRenderer {
 		 * @param name - Name of the uniform
 		 * @param ui - The new value
 		 */
-		void set(const GGeneral::String& name, unsigned int ui);
+		void set(const GGeneral::String& name, uint32_t ui);
 		/**
 		 * Will fetch the uniform location and if found will set the the uniform to the value given
 		 * @param name - Name of the uniform
 		 * @param ui - The new value
 		 */
-		void set(const GGeneral::String& name, GMath::vec2<unsigned int>& ui);
+		void set(const GGeneral::String& name, GMath::vec2<uint32_t>& ui);
 		/**
 		 * Will fetch the uniform location and if found will set the the uniform to the value given
 		 * @param name - Name of the uniform
 		 * @param ui - The new value
 		 */
-		void set(const GGeneral::String& name, GMath::vec3<unsigned int>& ui);
+		void set(const GGeneral::String& name, GMath::vec3<uint32_t>& ui);
 		/**
 		 * Will fetch the uniform location and if found will set the the uniform to the value given
 		 * @param name - Name of the uniform
 		 * @param ui - The new value
 		 */
-		void set(const GGeneral::String& name, GMath::vec4<unsigned int>& ui);
+		void set(const GGeneral::String& name, GMath::vec4<uint32_t>& ui);
 
 		/**
 		 * Will bind the shader program
@@ -3162,12 +2989,12 @@ namespace GRenderer {
 		/**
 		 * @return The internal OpenGL Shaderprogram ID
 		 */
-		const unsigned int getID() const { return ID; }
+		const uint32_t getID() const { return ID; }
 	};
 
 	class FrameBuffer {
 	private:
-		unsigned int ID = 0;
+		uint32_t ID = 0;
 		Texture* boundTexture = nullptr;
 	public:
 		FrameBuffer();
@@ -3230,14 +3057,14 @@ namespace GGraphics {
 	 * @param pos - The position of the image
 	 * @param img - The image to draw
 	 */
-	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<unsigned int> dim = {0,0});
+	void drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<uint32_t> dim = {0,0});
 
 	/**
 	 * Will draw an image at the given coordinates.
 	 * @param pos - The position of the image
 	 * @param img - The image to draw
 	 */
-	void drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<unsigned int> dim = {0,0});
+	void drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<uint32_t> dim = {0,0});
 }
 
 /**
@@ -3284,10 +3111,10 @@ namespace GFScript {
 		 * The type of the token
 		 */
 		TokenID type = TokenID::UNKNOWN;
-		unsigned int line = 0;
+		uint32_t line = 0;
 		void* data = nullptr;
 
-		Token(TokenID t = TokenID::UNKNOWN, unsigned int line = 0, void* data = nullptr) : type(t), line(line), data(data) {}
+		Token(TokenID t = TokenID::UNKNOWN, uint32_t line = 0, void* data = nullptr) : type(t), line(line), data(data) {}
 
 		/**
 		 * Copy constructor will only copy the mem address
@@ -3566,12 +3393,12 @@ namespace GFScript {
  //		double dvalue = 0; //type 1
  //		int ivalue = 0; //type 2
  //		GGeneral::String svalue; //type 3
- //		unsigned int line = 0;
+ //		uint32_t line = 0;
  //
  //		Token() : token(TokenID::UNKNOWN) {}
- //		Token(TokenID token, double dvalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), dvalue(dvalue), line(line), svalue(rep) { type = 1; }
- //		Token(TokenID token, int ivalue, unsigned int line, GGeneral::String rep = GGeneral::String()) : token(token), ivalue(ivalue), line(line), svalue(rep) { type = 2; }
- //		Token(TokenID token, GGeneral::String svalue, unsigned int line) : token(token), line(line), svalue(svalue) { type = 3; }
+ //		Token(TokenID token, double dvalue, uint32_t line, GGeneral::String rep = GGeneral::String()) : token(token), dvalue(dvalue), line(line), svalue(rep) { type = 1; }
+ //		Token(TokenID token, int ivalue, uint32_t line, GGeneral::String rep = GGeneral::String()) : token(token), ivalue(ivalue), line(line), svalue(rep) { type = 2; }
+ //		Token(TokenID token, GGeneral::String svalue, uint32_t line) : token(token), line(line), svalue(svalue) { type = 3; }
  //
  //		GGeneral::String toString() const override {
  //			return PRINT_VAR(token, type, dvalue, ivalue, svalue, line);
@@ -3637,7 +3464,7 @@ namespace GFScript {
  //		class Lexer {
  //			const GGeneral::String* source = nullptr;
  //			std::vector<Token> tokens;
- //			unsigned int position = 0;
+ //			uint32_t position = 0;
  //
  //		public:
  //			/**
@@ -3675,7 +3502,7 @@ namespace GFScript {
  //		//	Node* abstractSyntaxTree = nullptr;
  //		//	const std::vector<Token>* tokens = nullptr;
  //		//	std::map<GGeneral::String, Var>* variables = nullptr;
- //		//	unsigned int position = 0;
+ //		//	uint32_t position = 0;
  //		//public:
  //		//	/**
  //		//	 * Will set the tokens array. Does not create AST

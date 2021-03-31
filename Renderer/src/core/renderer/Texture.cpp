@@ -88,7 +88,7 @@ void GRenderer::Texture::createTexture(GGeneral::Dimension<int> size, bool alpha
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB + alpha, size.width, size.height, 0, GL_BGR, GL_UNSIGNED_BYTE, nullptr);
 }
 
-void GRenderer::Texture::bind(unsigned int slot) {
+void GRenderer::Texture::bind(uint32_t slot) {
 	textureSlot = GL_TEXTURE0 + slot;
 	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D, ID);
@@ -99,7 +99,7 @@ void GRenderer::Texture::bind() {
 	glBindTexture(GL_TEXTURE_2D, ID);
 }
 
-GGeneral::Dimension<unsigned int> GRenderer::Texture::getSize() const {
+GGeneral::Dimension<uint32_t> GRenderer::Texture::getSize() const {
 	return defaultSize;
 }
 
@@ -107,7 +107,7 @@ void GRenderer::Texture::unbind() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void GRenderer::Texture::setTextureSlot(unsigned int slot) {
+void GRenderer::Texture::setTextureSlot(uint32_t slot) {
 	textureSlot = GL_TEXTURE0 + slot;
 }
 

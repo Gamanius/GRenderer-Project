@@ -80,7 +80,7 @@ static void* lodepng_malloc(size_t size) {
 	/**
 	 * GRENDERER MALLOC FUNCTION
 	 */
-	return GMemory::alloc(size);
+	return malloc(size);
 	/**
 	 * ORIGINAL UNDER THIS COMMENT
 	 */
@@ -95,7 +95,7 @@ static void* lodepng_realloc(void* ptr, size_t new_size) {
 	/**
 	 * GRENDERER re_alloc FUNCTION
 	 */
-	return GMemory::re_alloc(ptr, new_size);
+	return realloc(ptr, new_size);
 	/**
 	 * ORIGINAL UNDER THIS COMMENT
 	 */
@@ -106,7 +106,7 @@ static void lodepng_free(void* ptr) {
 	/**
 	 * GRENDERER FREE FUNCTION
 	 */
-	return GMemory::dele(ptr);
+	return free(ptr);
 	/**
 	 * ORIGINAL UNDER THIS COMMENT
 	 */

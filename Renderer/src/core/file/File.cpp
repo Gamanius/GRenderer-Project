@@ -13,7 +13,7 @@ FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |	FORM
 THROWW(msg, (char*)lpMsgBuf);\
 LocalFree(lpMsgBuf);}
 
-unsigned long long int GFile::getFileSize(GGeneral::String& relativeFilepath) {
+unsigned __int64 GFile::getFileSize(GGeneral::String& relativeFilepath) {
 	File returnValue = {};
 	std::fstream file(relativeFilepath, std::ios_base::binary);
 	if (file.fail())
@@ -32,10 +32,10 @@ GFile::File* GFile::loadFile(GGeneral::String relativeFilepath) {
 		return returnValue;
 	}
 	file.seekg(0, std::ios_base::end);
-	unsigned int size = static_cast<unsigned int>(file.tellg());
+	uint32_t size = static_cast<uint32_t>(file.tellg());
 	file.seekg(0, 0);
 
-	char* buffer = new char[size];//MALLOC new char[static_cast<unsigned int>(size)];
+	char* buffer = new char[size];//MALLOC new char[static_cast<uint32_t>(size)];
 	file.read(buffer, size);
 	file.close();
 	returnValue->size = size;
@@ -56,10 +56,10 @@ GGeneral::String GFile::loadFileS(GGeneral::String filepath) {
 		return s;
 	}
 	file.seekg(0, std::ios_base::end);
-	unsigned int size = static_cast<unsigned int>(file.tellg());
+	uint32_t size = static_cast<uint32_t>(file.tellg());
 	file.seekg(0, 0);
 
-	char* buffer = new char[size + 1];//MALLOC new char[static_cast<unsigned int>(size)];
+	char* buffer = new char[size + 1];//MALLOC new char[static_cast<uint32_t>(size)];
 	buffer[size] = '\0';
 	file.read(buffer, size);
 	file.close();
@@ -109,10 +109,10 @@ GFile::Graphics::ImageType GFile::Graphics::isParseble(byte* data) {
 	return GFile::Graphics::ImageType::UNKNOWN;
 }
 
-GFile::Graphics::Image* GFile::Graphics::resizeImage(const Image& img, GGeneral::Dimension<unsigned int> newSize) {
+GFile::Graphics::Image* GFile::Graphics::resizeImage(const Image& img, GGeneral::Dimension<uint32_t> newSize) {
 	Image* returnValue = new Image();
-	unsigned int size = (3 + img.hasAlpha) * newSize.width * newSize.height;
-	returnValue->data = (byte*)GMemory::alloc(size);
+	uint32_t size = (3 + img.hasAlpha) * newSize.width * newSize.height;
+	returnValue->data = (byte*)malloc(size);
 	returnValue->size = size;
 
 	returnValue->dim = newSize;
@@ -139,15 +139,15 @@ GFile::Graphics::Image* doBMP(GFile::File* f) {
 	returnValue->dim.height = height;
 	int width = reinterpret_cast<int*>(&f->data[0x12])[0];
 	returnValue->dim.width = width;
-	unsigned short bpp = reinterpret_cast<unsigned short*>(&f->data[0x1c])[0];
+	uint16_t bpp = reinterpret_cast<uint16_t*>(&f->data[0x1c])[0];
 	//ONLY 32bit and 24bit support for now
 	if (bpp != 24 && bpp != 32)
 		return nullptr;
 	//Unused
-	//unsigned int compression = reinterpret_cast<unsigned int*>(&f->data[0x1e])[0];
+	//uint32_t compression = reinterpret_cast<uint32_t*>(&f->data[0x1e])[0];
 
-	unsigned int pixelStart = reinterpret_cast<unsigned int*>(&f->data[0xa])[0];
-	unsigned long readBytes = height * width * (bpp == 24 ? 3 : 4);
+	uint32_t pixelStart = reinterpret_cast<uint32_t*>(&f->data[0xa])[0];
+	uint32_t readBytes = height * width * (bpp == 24 ? 3 : 4);
 	returnValue->data = new byte[readBytes];// static_cast<byte*>(MALLOC(readBytes));
 	memcpy(returnValue->data, &f->data[pixelStart], readBytes);
 	returnValue->size = readBytes;
@@ -162,7 +162,7 @@ GFile::Graphics::Image* doPNG(GFile::File* f) {
 	Image* returnValue = new Image;
 	returnValue->type = ImageType::PORTABLE_NETWORK_GRAPHICS;
 
-	unsigned int error;
+	uint32_t error;
 	LodePNGState state = {};
 	error = lodepng_inspect(&returnValue->dim.width, &returnValue->dim.height, &state, f->data, f->size);
 	if (error != 0) {

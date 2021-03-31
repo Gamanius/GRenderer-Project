@@ -5,9 +5,9 @@
 
 bool informationFetched = false;
 
-unsigned int primaryMonitorIndex = 0;
-unsigned int indexCounter = 0;
-unsigned int maxAmountOfMonitors = 0;
+uint32_t primaryMonitorIndex = 0;
+uint32_t indexCounter = 0;
+uint32_t maxAmountOfMonitors = 0;
 
 std::vector<GWindow::Monitor::Screen*> allScreens;
 
@@ -72,7 +72,7 @@ GWindow::Monitor::Screen const* GWindow::Monitor::getPrimaryMonitorInformation()
 	return allScreens[primaryMonitorIndex];
 }
 
-const unsigned int GWindow::Monitor::getAmountOfMonitors() {
+const uint32_t GWindow::Monitor::getAmountOfMonitors() {
 	if (!isInit()) {
 		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;
@@ -80,7 +80,7 @@ const unsigned int GWindow::Monitor::getAmountOfMonitors() {
 	return allScreens.size();
 }
 
-const unsigned int GWindow::Monitor::getPrimaryMonitorIndex() {
+const uint32_t GWindow::Monitor::getPrimaryMonitorIndex() {
 	if (!isInit()) {
 		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;
@@ -88,7 +88,7 @@ const unsigned int GWindow::Monitor::getPrimaryMonitorIndex() {
 	return primaryMonitorIndex;
 }
 
-GWindow::Monitor::Screen const* GWindow::Monitor::getMonitorInformation(unsigned int i) {
+GWindow::Monitor::Screen const* GWindow::Monitor::getMonitorInformation(uint32_t i) {
 	if (!isInit()) {
 		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return nullptr;
@@ -96,7 +96,7 @@ GWindow::Monitor::Screen const* GWindow::Monitor::getMonitorInformation(unsigned
 	return allScreens[i];
 }
 
-const unsigned int GWindow::Monitor::getSupportedAmountOfMonitorDevices() {
+const uint32_t GWindow::Monitor::getSupportedAmountOfMonitorDevices() {
 	if (!isInit()) {
 		THROW("Monitor information not fetched. Maybe the init() hasn't been called?");
 		return 0;

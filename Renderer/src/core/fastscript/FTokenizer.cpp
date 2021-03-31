@@ -18,7 +18,7 @@ std::vector<GFScript::Token>* GFScript::Tokenizer::createTokens() {
 	auto amountChar = source.getSize() + 1;
 	std::vector<Token>* tokens = new std::vector<Token>;
 	std::vector<GGeneral::String*> allVarNames;
-	unsigned int line = 1;
+	uint32_t line = 1;
 
 	for (size_t position = 0; position < amountChar; position++) {
 		GGeneral::String stok;

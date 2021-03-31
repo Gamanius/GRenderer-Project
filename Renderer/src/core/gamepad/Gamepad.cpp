@@ -3,9 +3,11 @@
 #include <Xinput.h>
 #pragma warning(disable : 4995)
 
+#define MAX_AMOUNT_OF_CONTROLLERS 4
+
 short GGamepad::getAmountOfConnectedGPad() {
 	XINPUT_STATE state;
-	for (short i = 0; i < 4; i++) {
+	for (short i = 0; i < MAX_AMOUNT_OF_CONTROLLERS; i++) {
 		auto error = XInputGetState(i, &state);
 		if (error == ERROR_DEVICE_NOT_CONNECTED)
 			return i;
@@ -25,7 +27,7 @@ void GGamepad::Gamepad::listen(byte num) {
 	this->num = num;
 }
 
-bool GGamepad::Gamepad::vibrate(unsigned short amount, byte leftMotor) {
+bool GGamepad::Gamepad::vibrate(uint16_t amount, byte leftMotor) {
 	XINPUT_VIBRATION vib;
 	vib.wLeftMotorSpeed = (leftMotor & 0b1) * amount;
 	vib.wRightMotorSpeed = (leftMotor & 0b10) * amount;

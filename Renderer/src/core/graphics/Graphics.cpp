@@ -6,7 +6,7 @@ GRenderer::ShaderProgram texProgram;
 float recVertex[8];
 float texVertex[16];
 
-unsigned short recIndex[] = {
+uint16_t recIndex[] = {
    0, 1, 2,
    2, 3, 0
 };
@@ -156,12 +156,12 @@ void GGraphics::drawRect(GGeneral::Rectangle<int> r) {
 	m.vertex = nullptr;
 }
 
-void GGraphics::drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<unsigned int> dim) {
+void GGraphics::drawImg(GGeneral::Point<int> pos, const GFile::Graphics::Image& img, GGeneral::Dimension<uint32_t> dim) {
 	auto t = GRenderer::Texture(img);
 	drawImg(pos, t, dim);
 }
 
-void GGraphics::drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<unsigned int> dim) {
+void GGraphics::drawImg(GGeneral::Point<int> pos, GRenderer::Texture& tex, GGeneral::Dimension<uint32_t> dim) {
 	texProgram.bind();
 
 	GGeneral::Rectangle<int> r;

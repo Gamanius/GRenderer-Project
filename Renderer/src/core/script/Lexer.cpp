@@ -14,7 +14,7 @@ void GScript::Interpreter::Lexer::setSource(const GGeneral::String* source) {
 }
 
 bool GScript::Interpreter::Lexer::createTokens() {
-	unsigned int line = 1;
+	uint32_t line = 1;
 	for (position = 0; position < source->getSize(); position++) {
 		char c = source->operator[](position);
 		if ((c >= 48 && c <= 57) || c == '.') {

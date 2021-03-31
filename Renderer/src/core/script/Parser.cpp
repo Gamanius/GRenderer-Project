@@ -16,9 +16,9 @@ void GScript::Node::dereference() {
 		right->dereference();
 }
 
-GScript::Node* getExpression(const std::vector<GScript::Token>* tokens, unsigned int* position);
+GScript::Node* getExpression(const std::vector<GScript::Token>* tokens, uint32_t* position);
 
-GScript::Node* getFactor(const std::vector<GScript::Token>* tokens, unsigned int* position) {
+GScript::Node* getFactor(const std::vector<GScript::Token>* tokens, uint32_t* position) {
 	GScript::Node* node = new GScript::Node();
 	if (GET_TOKEN == GScript::TokenID::DOUBLE_LITERAL || GET_TOKEN == GScript::TokenID::INTEGER_LITERAL) {
 		node->main = tokens->operator[](*position);
@@ -38,7 +38,7 @@ GScript::Node* getFactor(const std::vector<GScript::Token>* tokens, unsigned int
 	return node;
 }
 
-GScript::Node* getTerm(const std::vector<GScript::Token>* tokens, unsigned int* position) {
+GScript::Node* getTerm(const std::vector<GScript::Token>* tokens, uint32_t* position) {
 	GScript::Node* node = new GScript::Node();
 	ASS(node->left, getFactor(tokens, position));
 
@@ -63,7 +63,7 @@ GScript::Node* getTerm(const std::vector<GScript::Token>* tokens, unsigned int* 
 	return node;
 }
 
-GScript::Node* getExpression(const std::vector<GScript::Token>* tokens, unsigned int* position) {
+GScript::Node* getExpression(const std::vector<GScript::Token>* tokens, uint32_t* position) {
 	GScript::Node* node = new GScript::Node();
 	ASS(node->left, getTerm(tokens, position));
 
@@ -92,7 +92,7 @@ GScript::Node* getExpression(const std::vector<GScript::Token>* tokens, unsigned
 	return node;
 }
 
-GScript::Node* parseVar(const std::vector<GScript::Token>* tokens, unsigned int* position, std::map<GGeneral::String, GScript::Interpreter::Var>* vars) {
+GScript::Node* parseVar(const std::vector<GScript::Token>* tokens, uint32_t* position, std::map<GGeneral::String, GScript::Interpreter::Var>* vars) {
 	if ((tokens->operator[](*position).token != GScript::TokenID::IDENTIFIER_DOUBLE) && (tokens->operator[](*position).token != GScript::TokenID::IDENTIFIER_INT)) {
 		THROW("An internal error occurred");
 		return nullptr;

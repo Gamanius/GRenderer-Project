@@ -2,29 +2,29 @@
 #include <chrono>
 
 #pragma warning(disable : 4244)
-constexpr unsigned long long int nanoToDay = 8.64e13;
-constexpr unsigned long long int nanoToHour = 3.6e12;
-constexpr unsigned long long int nanoToMinute = 6e10;
-constexpr unsigned long long int nanoToSecond = 1e9;
-constexpr unsigned long long int nanoToMillieSecond = 1e6;
-constexpr unsigned long long int nanoToMicroSecond = 1e3;
+constexpr uint64_t nanoToDay = 8.64e13;
+constexpr uint64_t nanoToHour = 3.6e12;
+constexpr uint64_t nanoToMinute = 6e10;
+constexpr uint64_t nanoToSecond = 1e9;
+constexpr uint64_t nanoToMillieSecond = 1e6;
+constexpr uint64_t nanoToMicroSecond = 1e3;
 
 GGeneral::Time::Timer::Timer() {
 	auto nano = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::system_clock::now().time_since_epoch());
 	startTime = nano.count();
 }
 
-unsigned long long int GGeneral::Time::Timer::stop() const {
+uint64_t GGeneral::Time::Timer::stop() const {
 	auto nano = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::system_clock::now().time_since_epoch());
 	return nano.count() - startTime;
 }
 
-const bool GGeneral::Time::isLeapYear(TimePoint& point) {
+const bool GGeneral::Time::isLeapYear(const TimePoint& point) {
 	auto year = point.year;
 	return !(year % 4) && (year % 100) || !(year % 400);
 }
 
-const bool GGeneral::Time::isLeapYear(const unsigned int year) {
+const bool GGeneral::Time::isLeapYear(const uint32_t year) {
 	return !(year % 4) && (year % 100) || !(year % 400);
 }
 
@@ -35,31 +35,31 @@ GGeneral::Time::TimePoint GGeneral::Time::getCurrentTime() {
 	return fillTimePoint(p);
 }
 
-unsigned long long GGeneral::Time::getNanoTime() {
+uint64_t GGeneral::Time::getNanoTime() {
 	return std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-unsigned int GGeneral::Time::daysToYears(unsigned int day) {
-	unsigned int i = 0;
+uint32_t GGeneral::Time::daysToYears(uint32_t day) {
+	uint32_t i = 0;
 	while (yearsToDays(i) < day)
 		i++;
 	return --i;
 }
 
-unsigned int GGeneral::Time::yearsToDays(unsigned int year) {
-	unsigned int days = 0;
-	for (unsigned int i = 0; i < year; i++) {
+uint32_t GGeneral::Time::yearsToDays(uint32_t year) {
+	uint32_t days = 0;
+	for (uint32_t i = 0; i < year; i++) {
 		days += GGeneral::Time::isLeapYear(i + 1970) ? 366 : 365;
 	}
 	return days;
 }
 
-unsigned int GGeneral::Time::monthsToDays(byte m) {
+uint32_t GGeneral::Time::monthsToDays(byte m) {
 	return monthsToDays(m, false);
 }
 
-unsigned int GGeneral::Time::monthsToDays(byte m, bool leap) {
-	unsigned short days = 0;
+uint32_t GGeneral::Time::monthsToDays(byte m, bool leap) {
+	uint16_t days = 0;
 	for (size_t i = 1; i < m; i++) {
 		if (i == 2)
 			if (leap)
@@ -74,11 +74,11 @@ unsigned int GGeneral::Time::monthsToDays(byte m, bool leap) {
 	return days;
 }
 
-byte GGeneral::Time::daysToMonths(unsigned short d) {
+byte GGeneral::Time::daysToMonths(uint16_t d) {
 	return daysToMonths(d, false);
 }
 
-byte GGeneral::Time::daysToMonths(unsigned short d, bool leap) {
+byte GGeneral::Time::daysToMonths(uint16_t d, bool leap) {
 	for (byte i = 1; i < 13; i++) {
 		byte next;
 		if (i == 2)

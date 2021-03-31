@@ -1,8 +1,8 @@
 #include "GRenderer.h"
 #include <GL/glew.h>
 
-unsigned long lastDeltaT = 0;
-unsigned long lastDDeltaT = 0;
+uint32_t lastDeltaT = 0;
+uint32_t lastDDeltaT = 0;
 
 const bool GRenderer::init() {
 	if (!GGeneral::Logger::init()) {
@@ -45,14 +45,14 @@ double GRenderer::delta() {
 		lastDeltaT = GGeneral::Time::getNanoTime() / 1000000;
 		return 0;
 	}
-	unsigned long t = GGeneral::Time::getNanoTime() / 1000000;
+	uint32_t t = GGeneral::Time::getNanoTime() / 1000000;
 	auto temp = t - lastDeltaT;
 	lastDeltaT = t;
 	return temp;
 }
 
 double GRenderer::ddelta() {
-	unsigned long t = GGeneral::Time::getNanoTime() / 1000000;
+	uint32_t t = GGeneral::Time::getNanoTime() / 1000000;
 	auto temp = t - lastDDeltaT;
 	return temp;
 }

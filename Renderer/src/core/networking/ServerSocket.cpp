@@ -12,7 +12,7 @@ LocalFree(lpMsgBuf);}
 
 GNetworking::ServerSocket::ServerSocket() {}
 
-GNetworking::ServerSocket::ServerSocket(unsigned int port) {
+GNetworking::ServerSocket::ServerSocket(uint16_t port) {
 	listen(port);
 }
 
@@ -29,12 +29,12 @@ int wListen(SOCKET s, int log) {
 
 SOCKET wAccept(SOCKET s, sockaddr* addr, int* addrlen) { return accept(s, addr, addrlen); }
 
-unsigned int GNetworking::ServerSocket::accept() {
+uint64_t GNetworking::ServerSocket::accept() {
 	SOCKET newSocket = wAccept(listenSocket, nullptr, nullptr);
 	if (newSocket == INVALID_SOCKET) {
 		auto error = WSAGetLastError();
 		if (error != WSAEWOULDBLOCK)
-			FORMAT_THROW("WSA error while trying to accept a new Socket: ", error);
+			THROW("WSA error while trying to accept a new Socket: ", error);
 	}
 	else {
 		sockets.push_back(newSocket);
@@ -42,13 +42,13 @@ unsigned int GNetworking::ServerSocket::accept() {
 	return newSocket;
 }
 
-bool GNetworking::ServerSocket::listen(unsigned short port) {
+bool GNetworking::ServerSocket::listen(uint16_t port) {
 	sockaddr_in test = {};
 	test.sin_port = htons(port);
 
 	listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenSocket == INVALID_SOCKET) {
-		FORMAT_THROW("Invalid Socket: ", WSAGetLastError());
+		THROW("Invalid Socket: ", WSAGetLastError());
 		return false;
 	}
 
@@ -59,12 +59,12 @@ bool GNetworking::ServerSocket::listen(unsigned short port) {
 
 	auto error = bind(listenSocket, (sockaddr*)&info, sizeof(info));
 	if (error != 0) {
-		FORMAT_THROW("Couldn't bind Socket: ", WSAGetLastError());
+		THROW("Couldn't bind Socket: ", WSAGetLastError());
 		return false;
 	}
 
 	if (wListen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
-		FORMAT_THROW("Listen failed with error: ", WSAGetLastError());
+		THROW("Listen failed with error: ", WSAGetLastError());
 		closesocket(listenSocket);
 		WSACleanup();
 		return false;
@@ -72,10 +72,10 @@ bool GNetworking::ServerSocket::listen(unsigned short port) {
 	return true;
 }
 
-void GNetworking::ServerSocket::disconnect(unsigned int socket) {
+void GNetworking::ServerSocket::disconnect(uint64_t socket) {
 	auto error = shutdown(socket, SD_SEND);
 	if (error != 0)
-		FORMAT_THROW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
+		THROW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
 	byte* buffer = new byte[MAX_NET_BUFFER_SIZE];
 	auto size = recv(socket, (char*)buffer, MAX_NET_BUFFER_SIZE, 0);
 	while (size > 0) {
@@ -88,10 +88,20 @@ void GNetworking::ServerSocket::disconnect(unsigned int socket) {
 
 	error = closesocket(socket);
 	if (error != 0)
-		FORMAT_THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
+		THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
 }
 
-bool GNetworking::ServerSocket::isConnected(unsigned int socket) {
+void GNetworking::ServerSocket::forceDisconnect(uint64_t socket) {
+	auto error = shutdown(socket, SD_SEND);
+	if (error != 0)
+		THROW("WSA error while trying to shutdown the connection. A graceful shutdown is not possible: ", WSAGetLastError());
+
+	error = closesocket(socket);
+	if (error != 0)
+		THROW("WSA error while trying to shutdown socket: ", WSAGetLastError());
+}
+
+bool GNetworking::ServerSocket::isConnected(uint64_t socket) {
 	for (auto i : sockets) {
 		if (i == socket)
 			return true;
@@ -101,35 +111,35 @@ bool GNetworking::ServerSocket::isConnected(unsigned int socket) {
 
 bool GNetworking::ServerSocket::setBlockingMode(bool block) {
 	blocking = !block;
-	auto error = ioctlsocket(listenSocket, FIONBIO, (unsigned long*)&blocking);
+	auto error = ioctlsocket(listenSocket, FIONBIO, (ulong_t*)&blocking);
 	if (error != 0) {
 		THROWW("WSA error while trying to set IO mode on Socket: ", error);
 	}
 	return error == 0;
 }
 
-bool GNetworking::ServerSocket::setBlockingMode(bool block, unsigned int socket) {
+bool GNetworking::ServerSocket::setBlockingMode(bool block, uint64_t socket) {
 	auto b = !block;
-	auto error = ioctlsocket(socket, FIONBIO, (unsigned long*)&b);
+	auto error = ioctlsocket(socket, FIONBIO, (u_long*)&b);
 	if (error != 0) {
 		THROWW("WSA error while trying to set IO mode on Socket: ", error);
 	}
 	return error == 0;
 }
 
-unsigned int GNetworking::ServerSocket::getConnectedAmount() const {
+size_t GNetworking::ServerSocket::getConnectedAmount() const {
 	return sockets.size();
 }
 
-void windowsSend(SOCKET s, byte* data, unsigned int size) {
+void windowsSend(SOCKET s, byte* data, uint32_t size) {
 	send(s, (char*)data, size, 0);
 }
 
-void GNetworking::ServerSocket::send(unsigned int soket, byte* data, unsigned int size) {
+void GNetworking::ServerSocket::send(uint64_t soket, byte* data, uint32_t size) {
 	windowsSend(soket, data, size);
 }
 
-GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
+GNetworking::Package GNetworking::ServerSocket::receive(uint64_t socket) {
 	Package p;
 	byte* buffer = new byte[MAX_NET_BUFFER_SIZE];
 	p.data = buffer;
@@ -139,7 +149,7 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 	winBuffer.buf = (char*)p.data;
 	winBuffer.len = MAX_NET_BUFFER_SIZE;
 
-	unsigned long flags = MSG_PUSH_IMMEDIATE;
+	u_long flags = MSG_PUSH_IMMEDIATE;
 	auto error = WSARecv(socket, &winBuffer, 1, &p.size, &flags, nullptr, nullptr);
 
 	if (error != 0) {
@@ -147,6 +157,7 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 		if (error == WSAEWOULDBLOCK)
 			goto FINISH;
 		else if (error == WSAECONNRESET) {
+			THROWW("Socket ", socket, " lost connection");
 			for (size_t i = 0; i < sockets.size(); i++) {
 				if (sockets[i] == socket) {
 					sockets.erase(sockets.begin() + i);
@@ -156,7 +167,7 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 		}
 		//if (p.size != 0)
 
-		FORMAT_THROW("WSA error while trying to receive data: ", error);
+		THROW("WSA error while trying to receive data: ", error);
 
 		for (size_t i = 0; i < sockets.size(); i++) {
 			if (sockets[i] == socket) {
@@ -167,6 +178,16 @@ GNetworking::Package GNetworking::ServerSocket::receive(unsigned int socket) {
 	}
 	else if (p.size == 0) {
 		p.size = -1;
+		//close socket gracefully?
+		closesocket(socket);
+
+		//delete socket from stack
+		THROWW("Socket ", socket, " lost connection");
+		for (size_t i = 0; i < sockets.size(); i++) {
+			if (sockets[i] == socket) {
+				sockets.erase(sockets.begin() + i);
+			}
+		}
 	FINISH:
 		//solve possible memory leak
 		delete[] buffer;

@@ -127,7 +127,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="src\dependencies\GLEW\lib\glew32s.lib" />
+    <Library Include="src\dependencies\GLEW\lib\glew32s32x.lib" />
+    <Library Include="src\dependencies\GLEW\lib\glew32s64x.lib" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\core\fastscript\Syntax Documentation.h" />

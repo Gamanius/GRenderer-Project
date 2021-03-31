@@ -160,6 +160,10 @@ std::vector<GWindow::VK> processUnknownKeys(bool pressed) {
 
 //window call back
 LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if(allWindowInstances[hWnd] == nullptr) {
+		return  DefWindowProc(hWnd, uMsg, wParam, lParam);
+	}
+
 	switch (uMsg) {
 	//Send close message
 	case WM_CLOSE:
@@ -325,6 +329,15 @@ LRESULT Callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			SetCursor(LoadCursorA(NULL, IDC_ARROW));
 			return true;
 		}
+		break;
+	}
+	//Do minimum and maximum window size
+	case WM_GETMINMAXINFO:
+	{
+		LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
+		lpMMI->ptMinTrackSize.x = allWindowInstances[hWnd]->getMinimumWindowSize().width;
+		lpMMI->ptMinTrackSize.y = allWindowInstances[hWnd]->getMinimumWindowSize().height;
+		return 0;
 	}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -390,7 +403,7 @@ GWindow::Window::~Window() {
 	DestroyWindow((HWND)this->WindowID);
 }
 
-void GWindow::Window::setWindowHints(ContextHints c, unsigned int value) {
+void GWindow::Window::setWindowHints(ContextHints c, uint32_t value) {
 	switch (c) {
 	case GWindow::Window::ContextHints::MAJOR_VERSION:
 		CONTEXT_MAJOR = value;
@@ -430,7 +443,7 @@ bool GWindow::Window::createOpenGLcontext() {
 	}
 
 	if (hglrc == NULL) {
-		if (CONTEXT_FLAG == 0) 
+		if (CONTEXT_FLAG != 0) 
 			THROWW("Couldn't create OpenGL context with given Context flags");
 		int gl33_attribs[] = {
 			WGL_CONTEXT_MAJOR_VERSION_ARB, CONTEXT_MAJOR,
@@ -451,12 +464,12 @@ bool GWindow::Window::createOpenGLcontext() {
 	return true;
 }
 
-void GWindow::Window::setOpenGLContextActive(bool b) {
-	wglMakeCurrent((HDC)this->deviceContext, b ? hglrc : NULL);
+bool GWindow::Window::setOpenGLContextActive(bool b) {
+	return wglMakeCurrent((HDC)this->deviceContext, b ? hglrc : NULL);
 }
 
-void GWindow::Window::swapBuffers() {
-	SwapBuffers((HDC)this->deviceContext);
+bool GWindow::Window::swapBuffers() {
+	return SwapBuffers((HDC)this->deviceContext);
 }
 
 void GWindow::Window::setState(GWindow::WindowState state) {
@@ -470,15 +483,22 @@ void GWindow::Window::setState(GWindow::WindowState state) {
 	ShowWindow((HWND)this->WindowID, nCmdShow);
 }
 
-void GWindow::Window::fetchEvents() {
+void GWindow::Window::fetchEvents(bool blocking) {
 	BOOL result;
-	do {
+
+	//first block
+	if (blocking)
+		result = GetMessage(&msg, 0, 0, 0);
+	else 
 		result = PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
-		if (result != 0) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	} while (result != 0);
+
+	while (result != 0) {
+		
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+		//now just peek messages
+		result = PeekMessage(&msg, 0, 0, 0, PM_REMOVE);
+	}
 }
 
 const bool GWindow::Window::getCloseRequest() const {
@@ -509,6 +529,15 @@ void GWindow::Window::setResizable(bool b) {
 		SetWindowLong((HWND)this->WindowID, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 }
 
+void GWindow::Window::setMinimumWindowSize(GGeneral::Dimension<int> size) {
+	minimumWindowSize = size;
+}
+
+GGeneral::Dimension<int> GWindow::Window::getMinimumWindowSize() {
+	return minimumWindowSize;
+}
+
+
 GGeneral::Dimension<int> GWindow::Window::getWindowSize() const {
 	RECT rect = {};
 	GetWindowRect((HWND)this->WindowID, &rect);
@@ -526,7 +555,7 @@ void GWindow::Window::setIcon(GGeneral::String filepath) const {
 	if (handle == nullptr) {
 		THROW("An Error occurred while loading image from filepath: '", filepath, "'. #", GetLastError());
 	}
-	SetClassLong((HWND)this->WindowID, GCL_HICON, (LONG)handle);
+	SetClassLongPtr((HWND)this->WindowID, GCLP_HICON, (LONG)handle);
 }
 
 void GWindow::Window::setCallbackFunction(GWindowCallback fun) {

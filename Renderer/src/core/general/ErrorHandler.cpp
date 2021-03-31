@@ -21,7 +21,7 @@ void GGeneral::ErrorHandler::printAll() {
 }
 
 GGeneral::String GGeneral::ErrorHandler::getLastError() {
-	return allmsg[allmsg.size()].msg;
+	return allmsg[allmsg.size() - 1].msg;
 }
 
 void GGeneral::ErrorHandler::clearBuffer() {

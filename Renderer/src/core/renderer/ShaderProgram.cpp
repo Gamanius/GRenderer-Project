@@ -70,19 +70,19 @@ void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec4<int
 	glUniform4iv(getUniformLocation(name), 1, ui.mem());
 }
 
-void GRenderer::ShaderProgram::set(const GGeneral::String& name, unsigned int ui) {
+void GRenderer::ShaderProgram::set(const GGeneral::String& name, uint32_t ui) {
 	glUniform1ui(getUniformLocation(name), ui);
 }
 
-void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec2<unsigned int>& ui) {
+void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec2<uint32_t>& ui) {
 	glUniform2uiv(getUniformLocation(name), 1, ui.mem());
 }
 
-void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec3<unsigned int>& ui) {
+void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec3<uint32_t>& ui) {
 	glUniform3uiv(getUniformLocation(name), 1, ui.mem());
 }
 
-void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec4<unsigned int>& ui) {
+void GRenderer::ShaderProgram::set(const GGeneral::String& name, GMath::vec4<uint32_t>& ui) {
 	glUniform4uiv(getUniformLocation(name), 1, ui.mem());
 }
 
@@ -104,6 +104,6 @@ GGeneral::String GRenderer::ShaderProgram::getInfoMessage() {
 	return GGeneral::String(infolog);
 }
 
-const unsigned int GRenderer::ShaderProgram::getUniformLocation(const GGeneral::String& name) const {
+const uint32_t GRenderer::ShaderProgram::getUniformLocation(const GGeneral::String& name) const {
 	return glGetUniformLocation(ID, name.cStr());
 }

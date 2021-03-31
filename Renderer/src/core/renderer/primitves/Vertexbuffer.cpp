@@ -1,7 +1,7 @@
 #include "GRenderer.h"
 #include <GL/glew.h>
 
-GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], unsigned int amount, unsigned int count) {
+GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], uint32_t amount, uint32_t count) {
 	glGenBuffers(1, &ID);
 	bind();
 
@@ -10,7 +10,7 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(float data[], unsigned int amo
 	this->amount = count;
 }
 
-GRenderer::Primitives::VertexBuffer::VertexBuffer(char data[], unsigned int amount, unsigned int count) {
+GRenderer::Primitives::VertexBuffer::VertexBuffer(char data[], uint32_t amount, uint32_t count) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
@@ -18,7 +18,7 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(char data[], unsigned int amou
 	this->amount = count;
 }
 
-GRenderer::Primitives::VertexBuffer::VertexBuffer(short data[], unsigned int amount, unsigned int count) {
+GRenderer::Primitives::VertexBuffer::VertexBuffer(short data[], uint32_t amount, uint32_t count) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
@@ -26,7 +26,7 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(short data[], unsigned int amo
 	this->amount = count;
 }
 
-GRenderer::Primitives::VertexBuffer::VertexBuffer(int data[], unsigned int amount, unsigned int count) {
+GRenderer::Primitives::VertexBuffer::VertexBuffer(int data[], uint32_t amount, uint32_t count) {
 	glGenBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);
@@ -34,7 +34,7 @@ GRenderer::Primitives::VertexBuffer::VertexBuffer(int data[], unsigned int amoun
 	this->amount = count;
 }
 
-GRenderer::Primitives::VertexBuffer::VertexBuffer(double data[], unsigned int amount, unsigned int count) {
+GRenderer::Primitives::VertexBuffer::VertexBuffer(double data[], uint32_t amount, uint32_t count) {
 	glCreateBuffers(1, &ID);
 	bind();
 	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(float), data, GL_STATIC_DRAW);

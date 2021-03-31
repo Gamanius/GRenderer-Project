@@ -152,7 +152,7 @@ static int getWindowsVirtualKeyCode(GWindow::VK key) {
 
 struct WrapperClass {
 	GWindow::Window* window = nullptr;
-	unsigned int thisID = 0;
+	uint32_t thisID = 0;
 	std::vector<GEventWrapper::GEventWindowState> windowStateFun;
 	std::vector<GEventWrapper::GEventWindowResize> windowResizeFun;
 	std::vector<GEventWrapper::GEventWindowFocus> windowFocusFun;
